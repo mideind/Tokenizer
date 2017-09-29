@@ -11,6 +11,10 @@ Tokenizer is derived from a corresponding module in the `Greynir project <https:
 (GitHub repository `here <https://github.com/vthorsteinsson/Reynir>`_), by the same author.
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
 
+To install::
+
+	pip install tokenizer
+
 To use::
 
 	from tokenizer import tokenize, TOK
@@ -51,14 +55,14 @@ Output::
 
 Note the following:
 
-	* Sentences are delimited by TOK.S_BEGIN and TOK.S_END tokens.
-	* Composite words such as 'stjórnskipunar- og eftirlitsnefndar' are coalesced into one token.
-	* Known abbreviations are recognized and their full meaning is available in the token.val field.
-	* Ordinals (3., XVII.) are recognized and their value (3, 17) is available in the token.val field.
-	* Numbers are recognized and their value is available in the token.val field.
-	* Dates, years and times are recognized and the respective year, month, day, hour, minute and second
-		values are included in a tuple in token.val.
-	* Punctuation is annotated in token.val depending on its whitespace requirements::
+	- Sentences are delimited by TOK.S_BEGIN and TOK.S_END tokens.
+	- Composite words such as *stjórnskipunar- og eftirlitsnefndar* are coalesced into one token.
+	- Known abbreviations are recognized and their full meaning is available in the ``token.val`` field.
+	- Ordinals (*3., XVII.*) are recognized and their value (*3, 17*) is available in the ``token.val`` field.
+	- Numbers are recognized and their value is available in the ``token.val`` field.
+	- Dates, years and times are recognized and the respective year, month, day, hour, minute and second
+		values are included in a tuple in ``token.val``.
+	- Punctuation is annotated in ``token.val`` depending on its whitespace requirements::
 
 		TP_LEFT = 1   # Whitespace to the left
 		TP_CENTER = 2 # Whitespace to the left and right
@@ -70,9 +74,9 @@ Documentation
 -------------
 
 Each token object is a simple named tuple with three
-components: (kind, txt, val).
+components: ``(kind, txt, val)``.
 
-The kind field contains one of the following integer constants (defined within the TOK
+The ``kind`` field contains one of the following integer constants (defined within the ``TOK``
 class)::
 
     PUNCTUATION = 1
@@ -95,4 +99,13 @@ class)::
 
     S_BEGIN = 11001 # Sentence begin
     S_END = 11002 # Sentence end
+
+To obtain a descriptive text for a token kind, use ``TOK.descr[token.kind]`` (see example above).
+
+The ``txt`` field contains the original source text for the token. Note that in the case of
+abbreviations that end a sentence, the final period '.' is a separate token, and it is thus
+omitted from the of the abbreviation token's ``txt`` field.
+
+The ``val`` field contains auxiliary information, corresponding to the token kind.
+
 
