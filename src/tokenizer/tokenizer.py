@@ -631,8 +631,11 @@ def parse_particles(token_stream):
                         test_set = TOK.TEXT
 
                     finish = ((follow_token.kind in TOK.END) or
-                        (follow_token.kind in test_set and follow_token.txt[0].isupper() and
-                        not follow_token.txt.lower() in MONTHS))
+                        (follow_token.kind in test_set and
+                            follow_token.txt[0].isupper() and
+                            follow_token.txt.lower() not in MONTHS and
+                            not RE_ROMAN_NUMERAL.match(follow_token.txt))
+                        )
 
                     if finish:
                         # Potentially at the end of a sentence
