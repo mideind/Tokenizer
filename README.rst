@@ -7,8 +7,8 @@ to streams of token objects, where each token object is a separate word, punctua
 number/amount, date, e-mail, URL/URI, etc. The tokenizer takes care of corner cases such
 as abbreviations and dates in the middle of sentences.
 
-Tokenizer is derived from a corresponding module in the `Greynir project<https://greynir.is>`
-(GitHub repository `here<https://github.com/vthorsteinsson/Reynir>`), by the same author.
+Tokenizer is derived from a corresponding module in the `Greynir project<https://greynir.is>`_
+(GitHub repository `here<https://github.com/vthorsteinsson/Reynir>`_), by the same author.
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
 
 To use::

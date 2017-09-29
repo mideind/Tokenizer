@@ -379,8 +379,8 @@ def parse_digits(w):
         n = re.sub(r'\.', '', w) # Eliminate thousands separators
         return TOK.Number(w, int(n)), s.end()
     s = re.match(r'\d{1,2}/\d{1,2}', w)
-    if s:
-        # Looks like a date
+    if s and (s.end() >= len(w) or w[s.end()] not in "0123456789"):
+        # Looks like a date (and not something like 10/2007)
         w = s.group()
         p = w.split('/')
         m = int(p[1])
