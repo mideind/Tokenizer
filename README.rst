@@ -55,13 +55,13 @@ Output::
 
 Note the following:
 
-	- Sentences are delimited by TOK.S_BEGIN and TOK.S_END tokens.
-	- Composite words such as *stjórnskipunar- og eftirlitsnefndar* are coalesced into one token.
+	- Sentences are delimited by ``TOK.S_BEGIN`` and ``TOK.S_END`` tokens.
+	- Composite words, such as *stjórnskipunar- og eftirlitsnefndar*, are coalesced into one token.
 	- Known abbreviations are recognized and their full meaning is available in the ``token.val`` field.
-	- Ordinals (*3., XVII.*) are recognized and their value (*3, 17*) is available in the ``token.val`` field.
-	- Numbers are recognized and their value is available in the ``token.val`` field.
+	- Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*) is available in the ``token.val`` field.
+	- Numbers, both integer and real, are recognized and their value is available in the ``token.val`` field.
 	- Dates, years and times are recognized and the respective year, month, day, hour, minute and second
-		values are included in a tuple in ``token.val``.
+	  values are included in a tuple in ``token.val``.
 	- Punctuation is annotated in ``token.val`` depending on its whitespace requirements::
 
 		TP_LEFT = 1   # Whitespace to the left
@@ -72,6 +72,20 @@ Note the following:
 
 Documentation
 -------------
+
+To tokenize a text string, call ``tokenizer.tokenize(text)``. This function returns a
+Python *generator* of token objects. Typically, it is used in a ``for`` loop::
+
+	for token in tokenizer.tokenize(mystring):
+		kind, txt, val = token
+		if kind == tokenizer.TOK.EMAIL:
+			# Do something with e-mail tokens
+		else:
+			# Do something else
+
+Alternatively, create a token list from the returned generator::
+
+	token_list = list(tokenizer.tokenize(mystring))
 
 Each token object is a simple named tuple with three
 components: ``(kind, txt, val)``.
