@@ -118,7 +118,9 @@ To obtain a descriptive text for a token kind, use ``TOK.descr[token.kind]`` (se
 
 The ``txt`` field contains the original source text for the token. Note that in the case of
 abbreviations that end a sentence, the final period '.' is a separate token, and it is thus
-omitted from the of the abbreviation token's ``txt`` field.
+omitted from the abbreviation token's ``txt`` field. A sentence ending in *o.s.frv.* will
+thus end with two tokens, the next-to-last one being a ``TOK.WORD`` with ``txt = "o.s.frv"``
+(note the omitted period) and the last one being a ``TOK.PUNCTUATION`` with ``txt = "."``.
 
 The ``val`` field contains auxiliary information, corresponding to the token kind.
 
