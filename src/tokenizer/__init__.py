@@ -5,5 +5,5 @@
 
 """
 
-from .tokenizer import TOK, tokenize, correct_spaces, paragraphs
+from .tokenizer import TOK, tokenize, correct_spaces
 

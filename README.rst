@@ -66,8 +66,8 @@ Note the following:
 	  values are included as a tuple in ``token.val``.
 
 
-Documentation
--------------
+The ``tokenize()`` function
+---------------------------
 
 To tokenize a text string, call ``tokenizer.tokenize(text)``. This function returns a
 Python *generator* of token objects. Each token object is a simple named tuple with three
@@ -86,7 +86,15 @@ Alternatively, create a token list from the returned generator::
 
 	token_list = list(tokenizer.tokenize(mystring))
 
-The token object fields are described below.
+Reassemble the original string, evenly spaced (for correct spacing, see below)::
+
+	token_string = " ".join(t.txt for t in token_list)
+
+
+The token object
+----------------
+
+Each token is represented by a named tuple with three fields: ``(kind, txt, val)``.
 
 The ``kind`` field contains one of the following integer constants (defined within the ``TOK``
 class)::
@@ -145,6 +153,10 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
 - For ``TOK.AMOUNT``, the ``val`` field contains an ``(amount, currency, None, None)`` tuple. The
   amount is a float, and the currency is an ISO currency code, i.e. "USD" for dollars ($ sign) or
   "EUR" for euros (€ sign). (The two empty fields are included for compatibility with Greynir.)
+
+
+The ``correct_spaces()`` function
+---------------------------------
 
 Tokenizer also contains the utility function ``tokenizer.correct_spaces(text)``. This function
 returns a string after splitting it up and re-joining
