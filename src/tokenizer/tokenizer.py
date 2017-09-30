@@ -199,10 +199,10 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
-        P_BEGIN: "BEGIN PARA",
-        P_END: "END PARA",
-        S_BEGIN: "BEGIN SENT",
-        S_END: "END SENT"
+        P_BEGIN: "P_BEGIN",
+        P_END: "P_END",
+        S_BEGIN: "S_BEGIN",
+        S_END: "S_END"
     }
 
     # Token constructors
@@ -379,7 +379,7 @@ def parse_digits(w):
         n = re.sub(r'\.', '', w) # Eliminate thousands separators
         return TOK.Number(w, int(n)), s.end()
     s = re.match(r'\d{1,2}/\d{1,2}', w)
-    if s and (s.end() >= len(w) or w[s.end()] not in "0123456789"):
+    if s and (s.end() >= len(w) or w[s.end()] not in DIGITS):
         # Looks like a date (and not something like 10/2007)
         w = s.group()
         p = w.split('/')
@@ -1050,11 +1050,16 @@ def tokenize(text):
     return (t for t in token_stream if t.kind != TOK.X_END)
 
 
+RE_SPLIT = "([~\s" + "".join("\\" + c for c in PUNCTUATION) + "])"
+
 def correct_spaces(s):
     """ Utility function to split and re-compose a string with correct spacing between tokens"""
     r = []
     last = TP_NONE
-    for w in s.split():
+    for w in re.split(RE_SPLIT, s):
+        w = w.strip()
+        if not w:
+            continue
         if len(w) > 1:
             this = TP_WORD
         elif w in LEFT_PUNCTUATION:
@@ -1073,53 +1078,4 @@ def correct_spaces(s):
             r.append(w)
         last = this
     return "".join(r)
-
-
-def paragraphs(toklist):
-    """ Generator yielding paragraphs from a token list. Each paragraph is a list
-        of sentence tuples. Sentence tuples consist of the index of the first token
-        of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
-        sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
-        tokens. """
-
-    def valid_sent(sent):
-        """ Return True if the token list in sent is a proper
-            sentence that we want to process further """
-        if not sent:
-            return False
-        # A sentence with only punctuation is not valid
-        return any(t[0] != TOK.PUNCTUATION for t in sent)
-
-    if not toklist:
-        return
-    sent = [] # Current sentence
-    sent_begin = 0
-    current_p = [] # Current paragraph
-
-    for ix, t in enumerate(toklist):
-        t0 = t[0]
-        if t0 == TOK.S_BEGIN:
-            sent = []
-            sent_begin = ix
-        elif t0 == TOK.S_END:
-            if valid_sent(sent):
-                # Do not include or count zero-length sentences
-                current_p.append((sent_begin, sent))
-            sent = []
-        elif t0 == TOK.P_BEGIN or t0 == TOK.P_END:
-            # New paragraph marker: Start a new paragraph if we didn't have one before
-            # or if we already had one with some content
-            if valid_sent(sent):
-                current_p.append((sent_begin, sent))
-            sent = []
-            if current_p:
-                yield current_p
-                current_p = []
-        else:
-            sent.append(t)
-    if valid_sent(sent):
-        current_p.append((sent_begin, sent))
-    if current_p:
-        yield current_p
-
 
