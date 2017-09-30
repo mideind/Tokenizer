@@ -1,14 +1,38 @@
 """
 
-    Reynir: Natural language processing for Icelandic
-
-    Abbreviations module for the Reynir tokenizer
+    Abbreviations module for tokenization of Icelandic text
 
     Copyright(C) 2017 Miðeind ehf.
 
-    !!! TODO: Insert MIT License Text
+    This software is licensed under the MIT License:
+
+        Permission is hereby granted, free of charge, to any person
+        obtaining a copy of this software and associated documentation
+        files (the "Software"), to deal in the Software without restriction,
+        including without limitation the rights to use, copy, modify, merge,
+        publish, distribute, sublicense, and/or sell copies of the Software,
+        and to permit persons to whom the Software is furnished to do so,
+        subject to the following conditions:
+
+        The above copyright notice and this permission notice shall be
+        included in all copies or substantial portions of the Software.
+
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    
+    This module reads the definition of abbreviations from the file
+    Abbrev.conf, assumed to be located in the same directory (or installation
+    resource library) as this Python source file.
 
 """
+
+from threading import Lock
 
 
 class ConfigError(Exception):
@@ -32,6 +56,10 @@ class Abbreviations:
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
     NAME_FINISHERS = set()
+
+    # Ensure that only one thread initializes the abbreviations
+    _lock = Lock()
+
 
     @staticmethod
     def add (abbrev, meaning, gender, fl = None):
@@ -114,26 +142,27 @@ class Abbreviations:
     @staticmethod
     def initialize():
         """ Read the abbreviations config file """
-        if Abbreviations.DICT:
-            # Already initialized
-            return
-        from pkg_resources import resource_stream
-        with resource_stream(__name__, "Abbrev.conf") as config:
-            for b in config:
-                # We get lines as binary strings
-                s = b.decode('utf-8')
-                # Ignore comments
-                ix = s.find('#')
-                if ix >= 0:
-                    s = s[0:ix]
-                s = s.strip()
-                if not s:
-                    # Blank line: ignore
-                    continue
-                if s[0] == '[':
-                    # Section header (we are expecting [abbreviations])
-                    if s != "[abbreviations]":
-                        raise ConfigError("Wrong section header")
-                    continue
-                Abbreviations._handle_abbreviations(s)
+        with Abbreviations._lock:
+            if len(Abbreviations.DICT):
+                # Already initialized
+                return
+            from pkg_resources import resource_stream
+            with resource_stream(__name__, "Abbrev.conf") as config:
+                for b in config:
+                    # We get lines as binary strings
+                    s = b.decode('utf-8')
+                    # Ignore comments
+                    ix = s.find('#')
+                    if ix >= 0:
+                        s = s[0:ix]
+                    s = s.strip()
+                    if not s:
+                        # Blank line: ignore
+                        continue
+                    if s[0] == '[':
+                        # Section header (we are expecting [abbreviations])
+                        if s != "[abbreviations]":
+                            raise ConfigError("Wrong section header")
+                        continue
+                    Abbreviations._handle_abbreviations(s)
 

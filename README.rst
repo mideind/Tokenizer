@@ -1,6 +1,6 @@
----------
-Tokenizer
----------
+-----------------------------------------
+Tokenizer: A tokenizer for Icelandic text
+-----------------------------------------
 
 Overview
 --------
@@ -70,34 +70,32 @@ The ``tokenize()`` function
 ---------------------------
 
 To tokenize a text string, call ``tokenizer.tokenize(text)``. This function returns a
-Python *generator* of token objects. Each token object is a simple named tuple with three
-components: ``(kind, txt, val)``.
+Python *generator* of token objects. Each token object is a simple ``namedtuple`` with three
+fields: ``(kind, txt, val)`` (see below).
 
 The ``tokenizer.tokenize()`` function is typically called in a ``for`` loop::
 
 	for token in tokenizer.tokenize(mystring):
 		kind, txt, val = token
-		if kind == tokenizer.TOK.EMAIL:
-			# Do something with e-mail tokens
+		if kind == tokenizer.TOK.WORD:
+			# Do something with word tokens
+			pass
 		else:
 			# Do something else
+			pass
 
 Alternatively, create a token list from the returned generator::
 
 	token_list = list(tokenizer.tokenize(mystring))
 
-Reassemble the original string, evenly spaced (for correct spacing, see below)::
-
-	token_string = " ".join(t.txt for t in token_list)
-
 
 The token object
 ----------------
 
-Each token is represented by a named tuple with three fields: ``(kind, txt, val)``.
+Each token is represented by a ``namedtuple`` with three fields: ``(kind, txt, val)``.
 
-The ``kind`` field contains one of the following integer constants (defined within the ``TOK``
-class)::
+The ``kind`` field contains one of the following integer constants, defined within the ``TOK``
+class::
 
     PUNCTUATION = 1
     TIME = 2
@@ -117,7 +115,7 @@ class)::
     ENTITY = 16		# Not used
     UNKNOWN = 17
 
-    S_BEGIN = 11001 # Sentence begin
+    S_BEGIN = 11001	# Sentence begin
     S_END = 11002 	# Sentence end
 
 To obtain a descriptive text for a token kind, use ``TOK.descr[token.kind]`` (see example above).
@@ -126,9 +124,9 @@ The ``txt`` field contains the original source text for the token.
 
 In the case of abbreviations that end a sentence, the final period '.' is a separate token,
 and it is consequently omitted from the abbreviation token's ``txt`` field. A sentence ending
-in *o.s.frv.* will thus end with two tokens, the next-to-last one being a ``TOK.WORD`` with
-``txt = "o.s.frv"`` (note the omitted period) and the last one being a ``TOK.PUNCTUATION``
-with ``txt = "."``.
+in *o.s.frv.* will thus end with two tokens, the next-to-last one being the tuple
+``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted period in the ``txt`` field -
+and the last one being ``(TOK.PUNCTUATION, ".", 3)`` (the 3 is explained below).
 
 The ``val`` field contains auxiliary information, corresponding to the token kind, as follows:
 
@@ -164,4 +162,12 @@ it with correct whitespace around punctuation tokens. Example::
 
 	>>> tokenizer.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50")
 	'Frétt dagsins: Jón, Friðgeir og Páll! 100/2 = 50'
+
+
+The ``Abbrev.conf`` file
+------------------------
+
+Abbreviations recognized by Tokenizer are defined in the ``Abbrev.conf`` file, found in the
+``src/tokenizer/`` directory. This is a text file containing explanatory comments. The
+file is loaded into memory within the first call to ``tokenizer.tokenize()`` in a process.
 
