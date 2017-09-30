@@ -21,7 +21,7 @@ def read(*names, **kwargs):
             join(dirname(__file__), *names),
             encoding=kwargs.get('encoding', 'utf8')
         ).read()
-    except FileNotFoundError:
+    except (IOError, OSError):
         return ""
 
 

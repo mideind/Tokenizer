@@ -5,10 +5,15 @@ Tokenizer: A tokenizer for Icelandic text
 Overview
 --------
 
-Tokenizer tokenizes Icelandic text. It converts Python text strings
-to streams of token objects, where each token object is a separate word, punctuation sign,
-number/amount, date, e-mail, URL/URI, etc. The tokenizer takes care of corner cases such
-as abbreviations and dates in the middle of sentences.
+Tokenization is a necessary first step in many natural language processing tasks,
+such as word counting, parsing, spell checking, corpus generation, and
+statistical analysis of text.
+
+Tokenizer is a compact pure-Python module for tokenizing Icelandic text. It converts
+Python text strings to streams of token objects, where each token object is a separate
+word, punctuation sign, number/amount, date, e-mail, URL/URI, etc. It also segments
+the token stream into sentences, considering corner cases such as abbreviations
+and dates in the middle of sentences.
 
 Tokenizer is derived from a corresponding module in the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/vthorsteinsson/Reynir>`_), by the same author.
@@ -61,9 +66,9 @@ Note the following:
 	- Composite words, such as *stjórnskipunar- og eftirlitsnefndar*, are coalesced into one token.
 	- Well-known abbreviations are recognized and their full expansion is available in the ``token.val`` field.
 	- Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*) is available in the ``token.val`` field.
-	- Numbers, both integer and real, are recognized and their value is available in the ``token.val`` field.
 	- Dates, years and times are recognized and the respective year, month, day, hour, minute and second
 	  values are included as a tuple in ``token.val``.
+	- Numbers, both integer and real, are recognized and their value is available in the ``token.val`` field.
 
 
 The ``tokenize()`` function
@@ -168,6 +173,7 @@ The ``Abbrev.conf`` file
 ------------------------
 
 Abbreviations recognized by Tokenizer are defined in the ``Abbrev.conf`` file, found in the
-``src/tokenizer/`` directory. This is a text file containing explanatory comments. The
-file is loaded into memory within the first call to ``tokenizer.tokenize()`` in a process.
+``src/tokenizer/`` directory. This is a text file with abbreviations, their definitions and
+explanatory comments. The file is loaded into memory during the first call to
+``tokenizer.tokenize()`` within a process.
 

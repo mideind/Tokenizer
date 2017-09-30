@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 """
 
     Tokenizer for Icelandic text
@@ -36,6 +37,10 @@
     an abbreviation, or the day, month and year for dates).
 
 """
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
 
 from collections import namedtuple
 

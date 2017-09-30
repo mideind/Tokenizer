@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 """
 
   Copyright(C) 2017 Miðeind ehf.
@@ -25,5 +26,8 @@
 
 """
 
+from __future__ import absolute_import
+
 from .tokenizer import TOK, tokenize, correct_spaces
 
+__author__ = u"Vilhjálmur Þorsteinsson"

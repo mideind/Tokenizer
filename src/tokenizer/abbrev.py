@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 """
 
     Abbreviations module for tokenization of Icelandic text
@@ -31,6 +32,10 @@
     resource library) as this Python source file.
 
 """
+
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
 
 from threading import Lock
 
@@ -118,7 +123,7 @@ class Abbreviations:
         # Format: abbrev[*] = "meaning" gender (kk|kvk|hk)
         # An asterisk after an abbreviation ending with a period
         # indicates that the abbreviation may finish a sentence
-        a = s.split('=', maxsplit=1)
+        a = s.split('=', 1) # maxsplit=1
         if len(a) != 2:
             raise ConfigError("Wrong format for abbreviation: should be abbreviation = meaning")
         abbrev = a[0].strip()
