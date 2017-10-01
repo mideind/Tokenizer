@@ -27,8 +27,8 @@ def read(*names, **kwargs):
 
 setup(
     name='tokenizer',
-    version='0.1.0',
-    license='GPLv3',
+    version='0.1.2',
+    license='MIT',
     description='A tokenizer for Icelandic text',
     long_description='%s\n%s' % (
         re.compile('^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
@@ -46,7 +46,7 @@ setup(
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: Unix',
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
