@@ -15,6 +15,9 @@ word, punctuation sign, number/amount, date, e-mail, URL/URI, etc. It also segme
 the token stream into sentences, considering corner cases such as abbreviations
 and dates in the middle of sentences.
 
+The package contains a dictionary of common Icelandic abbreviations, in the file
+``src/tokenizer/Abbrev.conf``.
+
 Tokenizer is derived from a corresponding module in the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/vthorsteinsson/Reynir>`_), by the same author.
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
@@ -23,16 +26,16 @@ To install::
 
 	pip install tokenizer
 
-To use::
+To use (for Python 3, you can omit the ``u""`` string prefix)::
 
 	from tokenizer import tokenize, TOK
 
-	text = ("Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
-		"skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.")
+	text = (u"Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
+		u"skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.")
 
 	for token in tokenize(text):
 
-		print("{0}: '{1}' {2}".format(
+		print(u"{0}: '{1}' {2}".format(
 			TOK.descr[token.kind],
 			token.txt or "-",
 			token.val or ""))
