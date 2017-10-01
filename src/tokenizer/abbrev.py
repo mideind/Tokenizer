@@ -4,6 +4,7 @@
     Abbreviations module for tokenization of Icelandic text
 
     Copyright(C) 2017 Miðeind ehf.
+    Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
 
