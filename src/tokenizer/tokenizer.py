@@ -839,22 +839,6 @@ MULTIPLIERS = {
     "ma.": 1e9
 }
 
-# Recognize words for fractions
-FRACTIONS = {
-    "þriðji": 1.0 / 3,
-    "fjórði": 1.0 / 4,
-    "fimmti": 1.0 / 5,
-    "sjötti": 1.0 / 6,
-    "sjöundi": 1.0 / 7,
-    "áttundi": 1.0 / 8,
-    "níundi": 1.0 / 9,
-    "tíundi": 1.0 / 10,
-    "tuttugasti": 1.0 / 20,
-    "hundraðasti": 1.0 / 100,
-    "þúsundasti": 1.0 / 1000,
-    "milljónasti": 1.0 / 1e6
-}
-
 # Recognize words for percentages
 PERCENTAGES = {
     "prósent": 1,
@@ -872,9 +856,6 @@ AMOUNT_ABBREV = {
     "mkr.": 1e6,
     "ma.kr.": 1e9
 }
-
-# Number words can be marked as subjects (any gender) or as numbers
-NUMBER_CATEGORIES = frozenset(["töl", "to", "kk", "kvk", "hk", "lo"])
 
 
 def match_stem_list(token, stems):
@@ -907,10 +888,6 @@ def parse_phrases_1(token_stream):
                     # Do not accept 'áttu' (stem='átta', no kvk) as a number
                     return None
                 return match_stem_list(tok, MULTIPLIERS)
-
-            def fraction(tok):
-                """ If the token denotes a fraction, return a corresponding number - or None """
-                return match_stem_list(tok, FRACTIONS)
 
             # Check whether we have an initial number word
             multiplier = number(token) if token.kind == TOK.WORD else None
