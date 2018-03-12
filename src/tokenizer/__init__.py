@@ -31,5 +31,6 @@ from __future__ import absolute_import
 
 from .tokenizer import TOK, Tok, tokenize, correct_spaces
 from .tokenizer import TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD
+from .tokenizer import CURRENCIES
 
 __author__ = u"Vilhjálmur Þorsteinsson"
