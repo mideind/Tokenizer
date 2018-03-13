@@ -1033,13 +1033,19 @@ def tokenize(text):
     return (t for t in token_stream if t.kind != TOK.X_END)
 
 
-RE_SPLIT = "([~\s" + "".join("\\" + c for c in PUNCTUATION) + "])"
+RE_SPLIT = (
+    "([~\s" + "".join("\\" + c for c in PUNCTUATION) + "])" # Space and punctuation
+    r"|(\d+(?:\.\d\d\d)*(?:\,\d+)?)"        # Icelandic style numbers: 1.234,56
+    r"|(\d{1,3}(?:\,\d\d\d)+(?:\.\d+)?)"    # English style numbers: 1,234.56
+)
 
 def correct_spaces(s):
     """ Utility function to split and re-compose a string with correct spacing between tokens"""
     r = []
     last = TP_NONE
     for w in re.split(RE_SPLIT, s):
+        if w is None:
+            continue
         w = w.strip()
         if not w:
             continue
