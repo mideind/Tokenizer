@@ -1034,9 +1034,16 @@ def tokenize(text):
 
 
 RE_SPLIT = (
-    "([~\s" + "".join("\\" + c for c in PUNCTUATION) + "])" # Space and punctuation
-    r"|(\d+(?:\.\d\d\d)*(?:\,\d+)?)"        # Icelandic style numbers: 1.234,56
-    r"|(\d{1,3}(?:\,\d\d\d)+(?:\.\d+)?)"    # English style numbers: 1,234.56
+    # The following regex catches Icelandic numbers with dots and a comma
+    r"([\+\-\$€]?\d{1,3}(?:\.\d\d\d)+\,\d+)"    # +123.456,789
+    # The following regex catches English numbers with commas and a dot
+    r"|([\+\-\$€]?\d{1,3}(?:\,\d\d\d)+\.\d+)"     # +123,456.789
+    # The following regex catches Icelandic numbers with a comma only
+    r"|([\+\-\$€]?\d+\,\d+)"                      # -1234,56
+    # The following regex catches English numbers with a dot only
+    r"|([\+\-\$€]?\d+\.\d+)"                      # -1234.56
+    # Finally, space and punctuation
+    r"|([~\s" + "".join("\\" + c for c in PUNCTUATION) + r"])"
 )
 
 def correct_spaces(s):

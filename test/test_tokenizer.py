@@ -152,7 +152,6 @@ def test_sentences():
             ekind = KIND[e]
             assert token.kind == ekind
 
-
     test_sentence(
         "  Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
         "skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.",
@@ -178,7 +177,17 @@ def test_sentences():
         "U                P W  W    TEL    P E B W W  W   N    W P E B W W   W   N   W    P E")
 
 
+def test_correct_spaces():
+    s = t.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100,8  /  2  =   50.4")
+    assert s == 'Frétt dagsins: Jón, Friðgeir og Páll! 100,8/2 = 50.4'
+    s = t.correct_spaces("Hitinn    var\n-7,4 \t gráður en   álverðið var  \n $10,348.55.")
+    assert s == 'Hitinn var -7,4 gráður en álverðið var $10,348.55.'
+    s = t.correct_spaces("\n Breytingin var   +4,10 þingmenn \t  en dollarinn er nú á €1,3455  .")
+    assert s == 'Breytingin var +4,10 þingmenn en dollarinn er nú á €1,3455.'
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
     test_sentences()
+    test_correct_spaces()
