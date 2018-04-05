@@ -3,7 +3,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2017 Miðeind ehf.
+    Copyright (C) 2018 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -1031,6 +1031,54 @@ def tokenize(text):
     token_stream = parse_phrases_1(token_stream)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
+
+
+def paragraphs(toklist):
+    """ Generator yielding paragraphs from a token list. Each paragraph is a list
+        of sentence tuples. Sentence tuples consist of the index of the first token
+        of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
+        sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
+        tokens. """
+
+    def valid_sent(sent):
+        """ Return True if the token list in sent is a proper
+            sentence that we want to process further """
+        if not sent:
+            return False
+        # A sentence with only punctuation is not valid
+        return any(t[0] != TOK.PUNCTUATION for t in sent)
+
+    if not toklist:
+        return
+    sent = [] # Current sentence
+    sent_begin = 0
+    current_p = [] # Current paragraph
+
+    for ix, t in enumerate(toklist):
+        t0 = t[0]
+        if t0 == TOK.S_BEGIN:
+            sent = []
+            sent_begin = ix
+        elif t0 == TOK.S_END:
+            if valid_sent(sent):
+                # Do not include or count zero-length sentences
+                current_p.append((sent_begin, sent))
+            sent = []
+        elif t0 == TOK.P_BEGIN or t0 == TOK.P_END:
+            # New paragraph marker: Start a new paragraph if we didn't have one before
+            # or if we already had one with some content
+            if valid_sent(sent):
+                current_p.append((sent_begin, sent))
+            sent = []
+            if current_p:
+                yield current_p
+                current_p = []
+        else:
+            sent.append(t)
+    if valid_sent(sent):
+        current_p.append((sent_begin, sent))
+    if current_p:
+        yield current_p
 
 
 RE_SPLIT = (
