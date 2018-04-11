@@ -583,8 +583,13 @@ def parse_particles(token_stream):
         return False
 
     def lookup(abbrev):
-        wrd = Abbreviations.DICT.get(abbrev)
-        return wrd[0] if wrd is not None else Abbreviations.DICT[abbrev.lower()][0]
+        """ Look up an abbreviation, both in original case and in lower case,
+            and return either None if not found or a meaning list having one entry """
+        m = Abbreviations.DICT.get(abbrev)
+        if m is not None:
+            return [ m ]
+        m = Abbreviations.DICT[abbrev.lower()]
+        return None if m is None else [ m ]
 
     token = None
     try:
@@ -650,7 +655,7 @@ def parse_particles(token_stream):
                             # to be starting just after it.
                             # Yield the abbreviation without a trailing dot,
                             # and then an 'extra' period token to end the current sentence.
-                            token = TOK.Word(token.txt, Abbreviations.DICT[abbrev][0])
+                            token = TOK.Word(token.txt, lookup(abbrev))
                             yield token
                             token = next_token
                         elif abbrev in Abbreviations.NOT_FINISHERS:

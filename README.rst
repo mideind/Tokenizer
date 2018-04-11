@@ -48,13 +48,13 @@ Output::
 	WORD: 'vísað'
 	WORD: 'til'
 	WORD: 'stjórnskipunar- og eftirlitsnefndar'
-	WORD: 'skv.' samkvæmt
+	WORD: 'skv.' [('samkvæmt', 0, 'fs', 'skst', 'skv.', '-')]
 	ORDINAL: '3.' 3
-	WORD: 'gr.' grein
+	WORD: 'gr.' [('grein', 0, 'kvk', 'skst', 'gr.', '-')]
 	ORDINAL: 'XVII.' 17
 	WORD: 'kafla'
 	WORD: 'laga'
-	WORD: 'nr.' númer
+	WORD: 'nr.' [('númer', 0, 'hk', 'skst', 'nr.', '-')]
 	NUMBER: '10' (10, None, None)
 	PUNCTUATION: '/' 4
 	YEAR: '2007' 2007
@@ -152,7 +152,7 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
 - For ``TOK.NUMBER``, the ``val`` field contains a tuple ``(number, None, None)``.
   (The two empty fields are included for compatibility with Greynir.)
 - For ``TOK.WORD``, the ``val`` field contains the full expansion of an abbreviation,
-  or ``None`` if the word is not abbreviated.
+  as a list containing a single tuple, or ``None`` if the word is not abbreviated.
 - For ``TOK.PERCENT``, the ``val`` field contains a tuple of ``(percentage, None, None)``.
 - For ``TOK.ORDINAL``, the ``val`` field contains the ordinal value as an integer.
 - For ``TOK.TIMESTAMP``, the ``val`` field contains a ``(year, month, day, hour, minute, second)`` tuple.

@@ -61,28 +61,28 @@ def test_single_tokens():
         ("750 þús.kr.",
             [
                 Tok(TOK.NUMBER, "750", (750, None, None)),
-                Tok(TOK.WORD, "þús.kr", "þúsundir króna"),
+                Tok(TOK.WORD, "þús.kr", [ ('þúsundir króna', 0, 'kvk', 'skst', 'þús.kr.', '-') ]),
                 Tok(TOK.PUNCTUATION, ".", None)
             ]
         ),
         ("m.kr.",
             [
-                Tok(TOK.WORD, "m.kr", "milljónir króna"),
+                Tok(TOK.WORD, "m.kr", [ ('milljónir króna', 0, 'kvk', 'skst', 'm.kr.', '-') ]),
                 Tok(TOK.PUNCTUATION, ".", None)
             ]
         ),
         ("ma.kr.",
             [
-                Tok(TOK.WORD, "ma.kr", "milljarðar króna"),
+                Tok(TOK.WORD, "ma.kr", [ ('milljarðar króna', 0, 'kk', 'skst', 'ma.kr.', '-') ]),
                 Tok(TOK.PUNCTUATION, ".", None)
             ]
         ),
-        ("t.d.", TOK.WORD, "til dæmis"),
-        ("hr.", TOK.WORD, "herra"),
-        ("Hr.", TOK.WORD, "herra"),
+        ("t.d.", TOK.WORD, [ ('til dæmis', 0, 'ao', 'frasi', 't.d.', '-') ]),
+        ("hr.", TOK.WORD, [ ('herra', 0, 'kk', 'skst', 'hr.', '-') ]),
+        ("Hr.", TOK.WORD, [ ('herra', 0, 'kk', 'skst', 'hr.', '-') ]),
         ("o.s.frv.",
             [
-                Tok(TOK.WORD, "o.s.frv", "og svo framvegis"),
+                Tok(TOK.WORD, "o.s.frv", [ ('og svo framvegis', 0, 'ao', 'frasi', 'o.s.frv.', '-') ]),
                 Tok(TOK.PUNCTUATION, ".", None)
             ]
         ),
