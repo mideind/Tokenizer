@@ -28,7 +28,7 @@ interesting.
 
 To install::
 
-	pip install tokenizer
+	$ pip install tokenizer
 
 To use (for Python 3, you can omit the ``u""`` string prefix)::
 
@@ -183,4 +183,21 @@ Abbreviations recognized by Tokenizer are defined in the ``Abbrev.conf`` file, f
 ``src/tokenizer/`` directory. This is a text file with abbreviations, their definitions and
 explanatory comments. The file is loaded into memory during the first call to
 ``tokenizer.tokenize()`` within a process.
+
+
+Development installation
+------------------------
+
+To install Tokenizer in development mode, where you can easily modify the source files
+(assuming you have ``git`` available)::
+
+	$ git clone https://github.com/vthorsteinsson/Tokenizer
+	$ cd Tokenizer
+	$ # [ Activate your virtualenv here, if you have one ]
+	$ python setup.py develop
+
+To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`_, ``cd`` to your
+``Tokenizer`` subdirectory (and optionally activate your virtualenv), then run::
+
+    $ python -m pytest
 
