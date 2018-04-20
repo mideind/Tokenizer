@@ -22,6 +22,10 @@ Tokenizer is derived from a corresponding module in the `Greynir project <https:
 (GitHub repository `here <https://github.com/vthorsteinsson/Reynir>`_), by the same author.
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
 
+You might also find the
+`Reynir natural language parser for Icelandic <https://github.com/vthorsteinsson/ReynirPackage>`_
+interesting.
+
 To install::
 
 	pip install tokenizer
