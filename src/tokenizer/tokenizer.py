@@ -588,7 +588,7 @@ def parse_particles(token_stream):
         m = Abbreviations.DICT.get(abbrev)
         if m is not None:
             return [ m ]
-        m = Abbreviations.DICT[abbrev.lower()]
+        m = Abbreviations.DICT.get(abbrev.lower())
         return None if m is None else [ m ]
 
     token = None
