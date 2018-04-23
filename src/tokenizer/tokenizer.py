@@ -54,9 +54,9 @@ from .abbrev import Abbreviations
 # Recognized punctuation
 
 LEFT_PUNCTUATION = "([„«#$€<"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’…°>–"
+RIGHT_PUNCTUATION = ".,:;)]!%?“»”’…°>"
 CENTER_PUNCTUATION = '"*&+=@©|—'
-NONE_PUNCTUATION = "-/'~‘\\"
+NONE_PUNCTUATION = "-–/'~‘\\"
 PUNCTUATION = LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
 
 # Punctuation that ends a sentence

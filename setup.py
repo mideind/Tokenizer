@@ -27,7 +27,7 @@ def read(*names, **kwargs):
 
 setup(
     name='tokenizer',
-    version='1.0.0',
+    version='1.0.1',
     license='MIT',
     description='A tokenizer for Icelandic text',
     long_description='%s\n%s' % (
