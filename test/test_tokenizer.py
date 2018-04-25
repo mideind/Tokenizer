@@ -176,6 +176,10 @@ def test_sentences():
         "B W W W    W   W               M            P W "
         "U                P W  W    TEL    P E B W W  W   N    W P E B W W   W   N   W    P E")
 
+    test_sentence(
+        "Hann starfaði við stofnunina árin 1944-50.",
+        "B W  W        W   W          W    Y   P N P")
+
 
 def test_correct_spaces():
     s = t.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100,8  /  2  =   50.4")
@@ -184,6 +188,8 @@ def test_correct_spaces():
     assert s == 'Hitinn var -7,4 gráður en álverðið var $10,348.55.'
     s = t.correct_spaces("\n Breytingin var   +4,10 þingmenn \t  en dollarinn er nú á €1,3455  .")
     assert s == 'Breytingin var +4,10 þingmenn en dollarinn er nú á €1,3455.'
+    s = t.correct_spaces("Jón- sem var formaður — mótmælti málinu.")
+    assert s == 'Jón-sem var formaður — mótmælti málinu.'
 
 
 if __name__ == "__main__":

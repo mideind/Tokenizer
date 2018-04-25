@@ -23,7 +23,7 @@ Tokenizer is derived from a corresponding module in the `Greynir project <https:
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
 
 You might also find the
-`Reynir natural language parser for Icelandic <https://github.com/vthorsteinsson/ReynirPackage>`_,
+`Reynir natural language parser for Icelandic <https://github.com/vthorsteinsson/ReynirPackage>`_
 interesting. The Reynir parser uses Tokenizer on its input.
 
 To install::

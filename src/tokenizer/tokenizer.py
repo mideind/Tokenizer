@@ -698,7 +698,7 @@ def parse_particles(token_stream):
                     (token.kind == TOK.WORD and RE_ROMAN_NUMERAL.match(token.txt)):
                     # Ordinal, i.e. whole number or Roman numeral followed by period: convert to an ordinal token
                     follow_token = next(token_stream)
-                    if follow_token.kind in (TOK.S_END, TOK.P_END) or \
+                    if follow_token.kind in TOK.END or \
                         (follow_token.kind == TOK.PUNCTUATION and follow_token.txt in {'„', '"'}) or \
                         (follow_token.kind == TOK.WORD and follow_token.txt[0].isupper() and
                         follow_token.txt.lower() not in MONTHS):
