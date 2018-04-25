@@ -293,8 +293,8 @@ class TOK:
         return Tok(TOK.PERSON, w, m)
 
     @staticmethod
-    def Entity(w, definitions, cases=None, genders=None):
-        return Tok(TOK.ENTITY, w, (definitions, cases, genders))
+    def Entity(w):
+        return Tok(TOK.ENTITY, w, None)
 
     @staticmethod
     def Begin_Paragraph():
