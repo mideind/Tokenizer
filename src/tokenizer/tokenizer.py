@@ -872,9 +872,62 @@ def match_stem_list(token, stems):
 
 def parse_phrases_1(token_stream):
 
-    """ Parse a stream of tokens looking for phrases and making substitutions.
-        First pass
-    """
+    """ Handle dates and times """
+
+    token = None
+    try:
+
+        # Maintain a one-token lookahead
+        token = next(token_stream)
+        while True:
+            next_token = next(token_stream)
+
+            # Check for [number | ordinal] [month name]
+            if (token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER) and next_token.kind == TOK.WORD:
+
+                month = match_stem_list(next_token, MONTHS)
+                if month is not None:
+                    token = TOK.Date(token.txt + " " + next_token.txt, y = 0, m = month,
+                        d = token.val if token.kind == TOK.ORDINAL else token.val[0])
+                    # Eat the month name token
+                    next_token = next(token_stream)
+
+            # Check for [date] [year]
+            if token.kind == TOK.DATE and next_token.kind == TOK.YEAR:
+
+                if not token.val[0]:
+                    # No year yet: add it
+                    token = TOK.Date(token.txt + " " + next_token.txt,
+                        y = next_token.val, m = token.val[1], d = token.val[2])
+                    # Eat the year token
+                    next_token = next(token_stream)
+
+            # Check for [date] [time]
+            if token.kind == TOK.DATE and next_token.kind == TOK.TIME:
+
+                # Create a time stamp
+                y, mo, d = token.val
+                h, m, s = next_token.val
+                token = TOK.Timestamp(token.txt + " " + next_token.txt,
+                    y = y, mo = mo, d = d, h = h, m = m, s = s)
+                # Eat the time token
+                next_token = next(token_stream)
+
+            # Yield the current token and advance to the lookahead
+            yield token
+            token = next_token
+
+    except StopIteration:
+        pass
+
+    # Final token (previous lookahead)
+    if token:
+        yield token
+
+
+def parse_phrases_2(token_stream):
+
+    """ Handle numbers, amounts and composite words. """
 
     token = None
     try:
@@ -936,37 +989,6 @@ def parse_phrases_1(token_stream):
 
                 multiplier = None
 
-            # Check for [number | ordinal] [month name]
-            if (token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER) and next_token.kind == TOK.WORD:
-
-                month = match_stem_list(next_token, MONTHS)
-                if month is not None:
-                    token = TOK.Date(token.txt + " " + next_token.txt, y = 0, m = month,
-                        d = token.val if token.kind == TOK.ORDINAL else token.val[0])
-                    # Eat the month name token
-                    next_token = next(token_stream)
-
-            # Check for [date] [year]
-            if token.kind == TOK.DATE and next_token.kind == TOK.YEAR:
-
-                if not token.val[0]:
-                    # No year yet: add it
-                    token = TOK.Date(token.txt + " " + next_token.txt,
-                        y = next_token.val, m = token.val[1], d = token.val[2])
-                    # Eat the year token
-                    next_token = next(token_stream)
-
-            # Check for [date] [time]
-            if token.kind == TOK.DATE and next_token.kind == TOK.TIME:
-
-                # Create a time stamp
-                y, mo, d = token.val
-                h, m, s = next_token.val
-                token = TOK.Timestamp(token.txt + " " + next_token.txt,
-                    y = y, mo = mo, d = d, h = h, m = m, s = s)
-                # Eat the time token
-                next_token = next(token_stream)
-
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'viðskipta- og iðnaðarráðherra'
@@ -1027,6 +1049,21 @@ def tokenize(text):
         that processes tokens on-demand. """
 
     # Thank you Python for enabling this programming pattern ;-)
+
+    Abbreviations.initialize() # Make sure that the abbreviation config file has been read
+
+    token_stream = parse_tokens(text)
+    token_stream = parse_particles(token_stream)
+    token_stream = parse_sentences(token_stream)
+    token_stream = parse_phrases_1(token_stream)
+    token_stream = parse_phrases_2(token_stream)
+
+    return (t for t in token_stream if t.kind != TOK.X_END)
+
+
+def tokenize_without_annotation(text):
+    """ Tokenize without the last pass which can be done more thoroughly if BÍN
+        annotation is available, for instance in ReynirPackage. """
 
     Abbreviations.initialize() # Make sure that the abbreviation config file has been read
 
