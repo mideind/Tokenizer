@@ -45,6 +45,7 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 
+import sys
 import re
 import datetime
 
@@ -53,10 +54,10 @@ from .abbrev import Abbreviations
 
 # Recognized punctuation
 
-LEFT_PUNCTUATION = "([„«#$€<"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’…°>"
-CENTER_PUNCTUATION = '"*&+=@©|—'
-NONE_PUNCTUATION = "-–/'~‘\\"
+LEFT_PUNCTUATION = "([„‚«#$€<°"
+RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–"
+CENTER_PUNCTUATION = '"*&+=@©|'
+NONE_PUNCTUATION = "—–-/'´~\\"
 PUNCTUATION = LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
 
 # Punctuation that ends a sentence
@@ -75,11 +76,18 @@ HYPHEN = '-' # Normal hyphen
 COMPOSITE_HYPHENS = "–-"
 COMPOSITE_HYPHEN = '–' # en dash
 
+# Single and double quotes
+SQUOTES = "'‚‛‘´"
+DQUOTES = '"“„”«»'
+
 CLOCK_WORD = "klukkan"
 CLOCK_ABBREV = "kl"
 
 # Prefixes that can be applied to adjectives with an intervening hyphen
-ADJECTIVE_PREFIXES = frozenset(["hálf", "marg", "semí"])
+ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí"))
+
+# Words that can precede a year number; will be assimilated into the year token
+YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
 
 # Punctuation types: left, center or right of word
 
@@ -106,12 +114,15 @@ TP_SPACE = (
     ( True,   True,   False,  False,  True)
 )
 
-# Numeric digits
+if sys.version_info >= (3, 0):
+    items = lambda d: d.items()
+else:
+    items = lambda d: d.iteritems()
 
+# Numeric digits
 DIGITS = frozenset([d for d in "0123456789"]) # Set of digit characters
 
 # Month names and numbers
-
 MONTHS = {
     "janúar": 1,
     "febrúar": 2,
@@ -125,6 +136,145 @@ MONTHS = {
     "október": 10,
     "nóvember": 11,
     "desember": 12
+}
+
+# Days of the month spelled out
+DAYS_OF_MONTH = {
+    "fyrsti": 1,
+    "fyrsta": 1,
+    "annar": 2,
+    "annan": 2,
+    "þriðji": 3,
+    "þriðja": 3,
+    "fjórði": 4,
+    "fjórða": 4,
+    "fimmti": 5,
+    "fimmta": 5,
+    "sjötti": 6,
+    "sjötta": 6,
+    "sjöundi": 7,
+    "sjöunda": 7,
+    "áttundi": 8,
+    "áttunda": 8,
+    "níundi": 9,
+    "níunda": 9,
+    "tíundi": 10,
+    "tíunda": 10,
+    "ellefti": 11,
+    "ellefta": 11,
+    "tólfti": 12,
+    "tólfta": 12,
+    "þrettándi": 13,
+    "þrettánda": 13,
+    "fjórtándi": 14,
+    "fjórtánda": 14,
+    "fimmtándi": 15,
+    "fimmtánda": 15,
+    "sextándi": 16,
+    "sextánda": 16,
+    "sautjándi": 17,
+    "sautjánda": 17,
+    "átjándi": 18,
+    "átjánda": 18,
+    "nítjándi": 19,
+    "nítjánda": 19,
+    "tuttugasti": 20,
+    "tuttugasta": 20,
+    "þrítugasti": 30,
+    "þrítugasta": 30
+}
+
+# Time of day expressions spelled out
+CLOCK_NUMBERS = {
+    "eitt": [1,0,0],
+    "tvö": [2,0,0],
+    "þrjú": [3,0,0],
+    "fjögur": [4,0,0],
+    "fimm": [5,0,0],
+    "sex": [6,0,0],
+    "sjö": [7,0,0],
+    "átta": [8,0,0],
+    "níu": [9,0,0],
+    "tíu": [10,0,0],
+    "ellefu": [11,0,0],
+    "tólf": [12,0,0],
+    "hálfeitt": [12,30,0],
+    "hálftvö": [1,30,0],
+    "hálfþrjú": [2,30,0],
+    "hálffjögur": [3,30,0],
+    "hálffimm": [4,30,0],
+    "hálfsex": [5,30,0],
+    "hálfsjö": [6,30,0],
+    "hálfátta": [7,30,0],
+    "hálfníu": [8,30,0],
+    "hálftíu": [9,30,0],
+    "hálfellefu": [10,30,0],
+    "hálftólf": [11,30,0]
+}
+
+# Set of words only possible in temporal phrases
+CLOCK_HALF = frozenset([
+    "hálfeitt", 
+    "hálftvö", 
+    "hálfþrjú", 
+    "hálffjögur",
+    "hálffimm",
+    "hálfsex",
+    "hálfsjö",
+    "hálfátta",
+    "hálfníu",
+    "hálftíu",
+    "hálfellefu",
+    "hálftólf"
+])
+
+# A = Area
+# T = Time
+# L = Length
+# C = Temperature
+# W = Weight
+# V = Volume
+SI_UNITS = {
+    "m²" : "A",
+    "fm" : "A",
+    "cm²" : "A",
+    "cm³" : "V",
+    "l" : "V",
+    "ltr" : "V",
+    "dl" : "V",
+    "cl" : "V",
+    "m³" : "V",
+    "°C" : "C",
+    "gr" : "W",
+    "kg" : "W",
+    "mg" : "W",
+    "μg" : "W",
+    "m" : "L",
+    "km" : "L",
+    "mm" : "L",
+    "cm" : "L",
+    "sm" : "L"
+}
+
+# Incorrectly written ordinals
+ORDINAL_ERRORS = {
+    "1sti" : "fyrsti",
+    "1sta" : "fyrsta",
+    "1stu" : "fyrstu",
+    "3ji" : "þriðji",
+    "3ja" : "þriðja",   # eða þriggja!
+    "3ju" : "þriðju",
+    "4ði" : "fjórði",
+    "4ða" : "fjórða",
+    "4ðu" : "fjórðu",
+    "5ti" : "fimmti",
+    "5ta" : "fimmta",
+    "5tu" : "fimmtu",
+    "2svar" : "tvisvar",
+    "3svar" : "þrisvar",
+    "2ja" : "tveggja",
+    #"3ja" : "þriggja",
+    "4ra" : "fjögurra"
 }
 
 # Handling of Roman numerals
@@ -172,6 +322,11 @@ class TOK:
     EMAIL = 15
     ENTITY = 16
     UNKNOWN = 17
+    DATEABS = 18
+    DATEREL = 19
+    TIMESTAMPABS = 20
+    TIMESTAMPREL = 21
+    MEASUREMENT = 22
 
     P_BEGIN = 10001 # Paragraph begin
     P_END = 10002 # Paragraph end
@@ -191,11 +346,16 @@ class TOK:
         PUNCTUATION: "PUNCTUATION",
         TIME: "TIME",
         TIMESTAMP: "TIMESTAMP",
+        TIMESTAMPABS: "TIMESTAMPABS",
+        TIMESTAMPREL: "TIMESTAMPREL",
         DATE: "DATE",
+        DATEABS: "DATEABS",
+        DATEREL: "DATEREL",
         YEAR: "YEAR",
         NUMBER: "NUMBER",
         CURRENCY: "CURRENCY",
         AMOUNT: "AMOUNT",
+        MEASUREMENT: "MEASUREMENT",
         PERSON: "PERSON",
         WORD: "WORD",
         UNKNOWN: "UNKNOWN",
@@ -205,10 +365,10 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
-        P_BEGIN: "P_BEGIN",
-        P_END: "P_END",
-        S_BEGIN: "S_BEGIN",
-        S_END: "S_END"
+        P_BEGIN: "BEGIN PARA",
+        P_END: "END PARA",
+        S_BEGIN: "BEGIN SENT",
+        S_END: "END SENT"
     }
 
     # Token constructors
@@ -233,9 +393,25 @@ class TOK:
         return Tok(TOK.DATE, w, (y, m, d))
 
     @staticmethod
+    def Dateabs(w, y, m, d):
+        return Tok(TOK.DATEABS, w, (y, m, d))
+
+    @staticmethod
+    def Daterel(w, y, m, d):
+        return Tok(TOK.DATEREL, w, (y, m, d))
+
+    @staticmethod
     def Timestamp(w, y, mo, d, h, m, s):
         return Tok(TOK.TIMESTAMP, w, (y, mo, d, h, m, s))
 
+    @staticmethod
+    def Timestampabs(w, y, mo, d, h, m, s):
+        return Tok(TOK.TIMESTAMPABS, w, (y, mo, d, h, m, s))
+  
+    @staticmethod
+    def Timestamprel(w, y, mo, d, h, m, s):
+        return Tok(TOK.TIMESTAMPREL, w, (y, mo, d, h, m, s))
+ 
     @staticmethod
     def Year(w, n):
         return Tok(TOK.YEAR, w, n)
@@ -277,6 +453,10 @@ class TOK:
     @staticmethod
     def Url(w):
         return Tok(TOK.URL, w, None)
+
+    @staticmethod
+    def Measurement(w, unit, val):
+        return Tok(TOK.MEASUREMENT, w, (unit, val))
 
     @staticmethod
     def Word(w, m = None):
@@ -369,13 +549,13 @@ def parse_digits(w):
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(w, y, m, d), s.end()
-    s = re.match(r'\d+(\.\d\d\d)*,\d+', w)
+    s = re.match(r'\d+(\.\d\d\d)*,\d+(?!\d*\.\d)', w) # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
         w = s.group()
         n = re.sub(r'\.', '', w) # Eliminate thousands separators
-        n = re.sub(r',', '.', n) # Convert decimal comma to point
+        n = re.sub(',', '.', n) # Convert decimal comma to point
         return TOK.Number(w, float(n)), s.end()
     s = re.match(r'\d+(\.\d\d\d)+', w)
     if s:
@@ -408,10 +588,14 @@ def parse_digits(w):
         if 1776 <= n <= 2100:
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
-    s = re.match(r'\d\d\d-\d\d\d\d', w) or re.match(r'\d\d\d\d\d\d\d', w)
+    s = re.match(r'\d\d\d-\d\d\d\d', w)
     if s:
         # Looks like a telephone number
         return TOK.Telno(s.group()), s.end()
+    s = re.match(r'\d\d\d\d\d\d\d', w)
+    if s:
+        # Looks like a telephone number
+        return TOK.Telno(s.group()[:3] +"-" + s.group()[3:]), s.end()
     s = re.match(r'\d+\.\d+(\.\d+)+', w)
     if s:
         # Some kind of ordinal chapter number: 2.5.1 etc.
@@ -423,13 +607,17 @@ def parse_digits(w):
     if s:
         # Real number, possibly with a thousands separator and decimal comma/point
         w = s.group()
-        n = re.sub(r',', '', w) # Eliminate thousands separators
+        n = re.sub(',', '', w)     # Eliminate thousands separators
+        w = re.sub(',', 'x', w)   # Change thousands separator to 'x'
+        w = re.sub(r'\.', ',', w)  # Change decimal separator to ','
+        w = re.sub('x', '.', w)  # Change 'x' to '.'
         return TOK.Number(w, float(n)), s.end()
     s = re.match(r'\d+(,\d\d\d)*', w)
     if s:
         # Integer, possibly with a ',' thousands separator
         w = s.group()
-        n = re.sub(r',', '', w) # Eliminate thousands separators
+        n = re.sub(',', '', w)     # Eliminate thousands separators
+        w = re.sub(',', '.', w)  # Change thousands separator to a dot
         return TOK.Number(w, int(n)), s.end()
     # Strange thing
     return TOK.Unknown(w), len(w)
@@ -443,16 +631,45 @@ def parse_tokens(txt):
     for w in rough:
         # Handle each sequence of non-whitespace characters
 
-        if w.isalpha():
+        qmark = False
+
+        if w.isalpha() or w in SI_UNITS:
             # Shortcut for most common case: pure word
             yield TOK.Word(w, None)
             continue
 
         # More complex case of mixed punctuation, letters and numbers
-        if len(w) > 1 and w[0] == '"':
-            # Convert simple quotes to proper opening quotes
-            yield TOK.Punctuation('„')
-            w = w[1:]
+        if len(w) > 2:
+            if w[0] in DQUOTES and w[-1] in DQUOTES:
+                # Convert to matching Icelandic quotes
+                qmark = True
+                yield TOK.Punctuation('„')
+                if w[1:-1].isalpha():
+                    yield TOK.Word(w[1:-1], None)
+                    yield TOK.Punctuation('“')
+                    qmark = False
+                    continue
+                w = w[1:-1] + '“'
+            elif w[0] in SQUOTES and w[-1] in SQUOTES:
+                # Convert to matching Icelandic quotes
+                qmark = True
+                yield TOK.Punctuation('‚')
+                if w[1:-1].isalpha():
+                    yield TOK.Word(w[1:-1], None)
+                    yield TOK.Punctuation('‘')
+                    qmark = False
+                    continue
+                w = w[1:-1] + '‘'
+
+        if len(w) > 1:
+            if w[0] in DQUOTES:
+                # Convert simple quotes to proper opening quotes
+                yield TOK.Punctuation('„')
+                w = w[1:]
+            elif w[0] in SQUOTES:
+                # Convert simple quotes to proper opening quotes
+                yield TOK.Punctuation('‚')
+                w = w[1:]
 
         while w:
             # Punctuation
@@ -469,6 +686,10 @@ def parse_tokens(txt):
                     # Treat ellipsis as one piece of punctuation
                     yield TOK.Punctuation("…")
                     w = w[3:]
+                elif w == ",,":
+                    # Was at the end of a word or by itself, should be ",". GrammCorr 1K
+                    yield TOK.Punctuation(',')
+                    w = ""
                 elif w.startswith(",,"):
                     # Probably an idiot trying to type opening double quotes with commas
                     yield TOK.Punctuation('„')
@@ -484,12 +705,20 @@ def parse_tokens(txt):
                     # Represent all hyphens the same way
                     yield TOK.Punctuation(HYPHEN)
                     w = w[1:]
+                    # Any sequence of hyphens is treated as a single hyphen
+                    while w and w[0] in HYPHENS:
+                        w = w[1:]
+                elif w == '”' or w == '"':
+                    # Convert to a proper double quote
+                    yield TOK.Punctuation('“')
+                    w = ""
+                elif w == "'":
+                    # Left with a single quote, convert to proper closing quote
+                    yield TOK.Punctuation("‘")
+                    w = ""
                 else:
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
-                if w == '"':
-                    # We're left with a simple double quote: Convert to proper closing quote
-                    w = '”'
             if w and '@' in w:
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
@@ -501,12 +730,18 @@ def parse_tokens(txt):
                     w = w[s.end():]
             # Numbers or other stuff starting with a digit
             if w and w[0] in DIGITS:
-                ate = True
-                t, eaten = parse_digits(w)
-                yield t
+                for key, val in items(ORDINAL_ERRORS):
+                    if w.startswith(key):
+                        yield TOK.Word(val)
+                        eaten = len(key)
+                        break # This skips the else
+                else:
+                    t, eaten = parse_digits(w)
+                    yield t
                 # Continue where the digits parser left off
+                ate = True
                 w = w[eaten:]
-            if w and w.startswith("http://") or w.startswith("https://"):
+            if w and (w.startswith("http://") or w.startswith("https://") or w.startswith("www.")):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
                 # the IETF RFC
@@ -532,15 +767,15 @@ def parse_tokens(txt):
                 a = w.split('.')
                 if len(a) == 2 and a[0] and a[0][0].islower() and a[1] and a[1][0].isupper():
                     # We have a lowercase word immediately followed by a period and an uppercase word
-                    yield TOK.Word(a[0], None)
+                    yield TOK.Word(a[0])
                     yield TOK.Punctuation('.')
-                    yield TOK.Word(a[1], None)
+                    yield TOK.Word(a[1])
                     w = None
                 else:
                     while w[i-1] == '.':
                         # Don't eat periods at the end of words
                         i -= 1
-                    yield TOK.Word(w[0:i], None)
+                    yield TOK.Word(w[0:i])
                     w = w[i:]
                     if w and w[0] in COMPOSITE_HYPHENS:
                         # This is a hyphen or en dash directly appended to a word:
@@ -548,6 +783,16 @@ def parse_tokens(txt):
                         # Yield a special hyphen as a marker
                         yield TOK.Punctuation(COMPOSITE_HYPHEN)
                         w = w[1:]
+                    if qmark and w and w[:-1].isalpha():
+                        yield TOK.Word(w[:-1])
+                        w = w[-1:]
+                        if w in SQUOTES:
+                            yield TOK.Punctuation('‘')
+                            w = ""
+                        elif w in DQUOTES:
+                            yield TOK.Punctuation('“')
+                            w = ""
+                        qmark = False
             if not ate:
                 # Ensure that we eat everything, even unknown stuff
                 yield TOK.Unknown(w[0])
@@ -555,8 +800,11 @@ def parse_tokens(txt):
             # We have eaten something from the front of the raw token.
             # Check whether we're left with a simple double quote,
             # in which case we convert it to a proper closing double quote
-            if w and w[0] == '"':
-                w = '”' + w[1:]
+            if w:
+                if w[0] in DQUOTES:
+                    w = '“' + w[1:]
+                elif w[0] in SQUOTES:
+                    w = '‘' + w[1:]
 
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
@@ -677,11 +925,43 @@ def parse_particles(token_stream):
             if next_token.kind == TOK.TIME or next_token.kind == TOK.NUMBER:
                 if clock or (token.kind == TOK.WORD and token.txt.lower() == CLOCK_WORD):
                     # Match: coalesce and step to next token
+                    txt = CLOCK_ABBREV + "." if clock else token.txt
                     if next_token.kind == TOK.NUMBER:
-                        token = TOK.Time(CLOCK_ABBREV + ". " + next_token.txt, next_token.val[0], 0, 0)
+                        token = TOK.Time(txt + " " + next_token.txt, next_token.val[0], 0, 0)
                     else:
-                        token = TOK.Time(CLOCK_ABBREV + ". " + next_token.txt,
+                        # next_token.kind is TOK.TIME
+                        token = TOK.Time(txt + " " + next_token.txt,
                             next_token.val[0], next_token.val[1], next_token.val[2])
+                    next_token = next(token_stream)
+
+            # Coalesce 'klukkan/kl. átta/hálfátta' into a time
+            elif next_token.txt in CLOCK_NUMBERS:
+                if clock or (token.kind == TOK.WORD and token.txt.lower() == CLOCK_WORD):
+                    txt = CLOCK_ABBREV + "." if clock else token.txt
+                    # Match: coalesce and step to next token
+                    token = TOK.Time(txt + " " + next_token.txt, *CLOCK_NUMBERS[next_token.txt])
+                    next_token = next(token_stream)
+
+            # Words like 'hálftólf' only used in temporal expressions so can stand alone
+            if token.txt in CLOCK_HALF:
+                token = TOK.Time(token.txt, *CLOCK_NUMBERS[token.txt])
+
+            # Coalesce 'árið' + [year|number] into year
+            if (token.kind == TOK.WORD and token.txt in YEAR_WORD) and \
+                (next_token.kind == TOK.YEAR or next_token.kind == TOK.NUMBER):
+                token = TOK.Year(token.txt + " " + next_token.txt,
+                    next_token.val if next_token.kind == TOK.YEAR else next_token.val[0])
+                next_token = next(token_stream)
+
+            # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
+            if token.kind == TOK.YEAR or (token.kind == TOK.NUMBER):
+                val = token.val if token.kind == TOK.YEAR else token.val[0]
+                if next_token.txt == "f.Kr":
+                    # Yes, we set year X BCE as year -X ;-)
+                    token = TOK.Year(token.txt + " " + next_token.txt, -val)
+                    next_token = next(token_stream)
+                elif next_token.txt == "e.Kr":
+                    token = TOK.Year(token.txt + " " + next_token.txt, val)
                     next_token = next(token_stream)
 
             # Coalesce percentages into a single token
@@ -716,6 +996,11 @@ def parse_particles(token_stream):
                         # Continue with the following word
                         next_token = follow_token
 
+            if token.kind == TOK.NUMBER and next_token.txt in SI_UNITS:
+                # Convert "100 mm" or "30 °C" to a single measurement token
+                token = TOK.Measurement(token.txt + " " + next_token.txt, SI_UNITS[next_token.txt], token.val)
+                next_token = next(token_stream)
+ 
             # Yield the current token and advance to the lookahead
             yield token
             token = next_token
@@ -859,7 +1144,11 @@ AMOUNT_ABBREV = {
     "þús.kr.": 1e3,
     "m.kr.": 1e6,
     "mkr.": 1e6,
-    "ma.kr.": 1e9
+    "millj.kr.": 1e6,
+    "mljó.kr.": 1e6,
+    "ma.kr.": 1e9,
+    "mö.kr.": 1e9,
+    "mlja.kr.": 1e9
 }
 
 
@@ -974,7 +1263,7 @@ def parse_phrases_2(token_stream):
                     # but we try to retain the previous case information if any
                     token = convert_to_num(token)
                     token = TOK.Amount(token.txt + " " + next_token.txt, "ISK",
-                        token.val[0] * AMOUNT_ABBREV[next_token.txt]) # Cases and gender
+                        token.val[0] * AMOUNT_ABBREV[next_token.txt])
                     next_token = next(token_stream)
                 else:
                     # Check for [number] 'percent'
@@ -1123,24 +1412,25 @@ def paragraphs(toklist):
         yield current_p
 
 
-RE_SPLIT = (
+RE_SPLIT_STR = (
     # The following regex catches Icelandic numbers with dots and a comma
     r"([\+\-\$€]?\d{1,3}(?:\.\d\d\d)+\,\d+)"    # +123.456,789
     # The following regex catches English numbers with commas and a dot
     r"|([\+\-\$€]?\d{1,3}(?:\,\d\d\d)+\.\d+)"     # +123,456.789
     # The following regex catches Icelandic numbers with a comma only
-    r"|([\+\-\$€]?\d+\,\d+)"                      # -1234,56
+    r"|([\+\-\$€]?\d+\,\d+(?!\.\d))"              # -1234,56
     # The following regex catches English numbers with a dot only
-    r"|([\+\-\$€]?\d+\.\d+)"                      # -1234.56
+    r"|([\+\-\$€]?\d+\.\d+(?!\,\d))"              # -1234.56
     # Finally, space and punctuation
     r"|([~\s" + "".join("\\" + c for c in PUNCTUATION) + r"])"
 )
+RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 def correct_spaces(s):
     """ Utility function to split and re-compose a string with correct spacing between tokens"""
     r = []
     last = TP_NONE
-    for w in re.split(RE_SPLIT, s):
+    for w in RE_SPLIT.split(s):
         if w is None:
             continue
         w = w.strip()
