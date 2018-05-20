@@ -46,7 +46,7 @@ To use (for Python 3, you can omit the ``u""`` string prefix)::
 
 Output::
 
-	S_BEGIN: '-' (0, None)
+	BEGIN SENT: '-' (0, None)
 	WORD: 'Málinu'
 	WORD: 'var'
 	WORD: 'vísað'
@@ -63,19 +63,23 @@ Output::
 	PUNCTUATION: '/' 4
 	YEAR: '2007' 2007
 	WORD: 'þann'
-	DATE: '3. janúar 2010' (2010, 1, 3)
+	DATEABS: '3. janúar 2010' (2010, 1, 3)
 	PUNCTUATION: '.' 3
-	S_END: '-'
+	END SENT: '-'
 
 Note the following:
 
 	- Sentences are delimited by ``TOK.S_BEGIN`` and ``TOK.S_END`` tokens.
 	- Composite words, such as *stjórnskipunar- og eftirlitsnefndar*, are coalesced into one token.
-	- Well-known abbreviations are recognized and their full expansion is available in the ``token.val`` field.
-	- Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*) is available in the ``token.val`` field.
-	- Dates, years and times are recognized and the respective year, month, day, hour, minute and second
+	- Well-known abbreviations are recognized and their full expansion is available
+	  in the ``token.val`` field.
+	- Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*) is available
+	  in the ``token.val``  field.
+	- Dates, years and times, both absolute and relative, are recognized and
+	  the respective year, month, day, hour, minute and second
 	  values are included as a tuple in ``token.val``.
-	- Numbers, both integer and real, are recognized and their value is available in the ``token.val`` field.
+	- Numbers, both integer and real, are recognized and their value is available
+	  in the ``token.val`` field.
 
 
 The ``tokenize()`` function
@@ -106,39 +110,103 @@ The token object
 
 Each token is represented by a ``namedtuple`` with three fields: ``(kind, txt, val)``.
 
+The ``kind`` field
+==================
+
 The ``kind`` field contains one of the following integer constants, defined within the ``TOK``
-class::
+class:
 
-    PUNCTUATION = 1
-    TIME = 2
-    DATE = 3
-    YEAR = 4
-    NUMBER = 5
-    WORD = 6
-    TELNO = 7
-    PERCENT = 8
-    URL = 9
-    ORDINAL = 10
-    TIMESTAMP = 11
-    CURRENCY = 12	# Not used
-    AMOUNT = 13
-    PERSON = 14		# Not used
-    EMAIL = 15
-    ENTITY = 16		# Not used
-    UNKNOWN = 17
++---------------+---------+---------------------+---------------------------+
+| Constant      |  Value  | Explanation         | Example                   |
++===============+=========+=====================+===========================+
+| PUNCTUATION   |    1    | Punctuation         | .                         |
++---------------+---------+---------------------+---------------------------+
+| TIME          |    2    | Time (h, m, s)      | 11:35:40                  |
++---------------+---------+---------------------+---------------------------+
+| DATE *        |    3    | Date (y, m, d)      | [Unused, see DATEABS and  |
+|               |         |                     | DATEREL]                  |
++---------------+---------+---------------------+---------------------------+
+| YEAR          |    4    | Year                | árið 874 e.Kr.            |
+|               |         |                     | | 1965                    |
+|               |         |                     | | 44 f.Kr.                |
++---------------+---------+---------------------+---------------------------+
+| NUMBER        |    5    | Number              | 100                       |
+|               |         |                     | | 1.965                   |
+|               |         |                     | | 1.965,34                |
+|               |         |                     | | 1,965.34                |
++---------------+---------+---------------------+---------------------------+
+| WORD          |    6    | Word                | kattaeftirlit             |
+|               |         |                     | | hunda- og kattaeftirlit |
++---------------+---------+---------------------+---------------------------+
+| TELNO         |    7    | Telephone number    | 123444                    |
+|               |         |                     | | 123-4444                |
++---------------+---------+---------------------+---------------------------+
+| PERCENT       |    8    | Percentage          | 78%                       |
++---------------+---------+---------------------+---------------------------+
+| URL           |    9    | URL                 | ``https://greynir.is``    |
+|               |         |                     | | ``www.greynir.is``      |
++---------------+---------+---------------------+---------------------------+
+| ORDINAL       |    10   | Ordinal number      | 30.                       |
+|               |         |                     | | XVIII.                  |
++---------------+---------+---------------------+---------------------------+
+| TIMESTAMP *   |    11   | Timestamp           | [Unused, see              |
+|               |         |                     | TIMESTAMPABS and          |
+|               |         |                     | TIMESTAMPREL]             |
++---------------+---------+---------------------+---------------------------+
+| CURRENCY *    |    12   | Currency name       | [Unused]                  |
++---------------+---------+---------------------+---------------------------+
+| AMOUNT        |    13   | Amount              | €2.345,67                 |
++---------------+---------+---------------------+---------------------------+
+| PERSON *      |    14   | Person name         | [Unused]                  |
++---------------+---------+---------------------+---------------------------+
+| EMAIL         |    15   | E-mail              | ``fake@news.is``          |
++---------------+---------+---------------------+---------------------------+
+| ENTITY *      |    16   | Named entity        | [Unused]                  |
++---------------+---------+---------------------+---------------------------+
+| UNKNOWN       |    17   | Unknown token       |                           |
++---------------+---------+---------------------+---------------------------+
+| DATEABS       |    18   | Absolute date       | 30. desember 1965         |
+|               |         |                     | | 30/12/1965              |
+|               |         |                     | | 1965-12-30              |
++---------------+---------+---------------------+---------------------------+
+| DATEREL       |    19   | Relative date       | 15. mars                  |
++---------------+---------+---------------------+---------------------------+
+| TIMESTAMPABS  |    20   | Absolute timestamp  | 30. desember 1965 11:34   |
+|               |         |                     | | 1965-12-30 kl. 13:00    |
++---------------+---------+---------------------+---------------------------+
+| TIMESTAMPREL  |    21   | Relative timestamp  | 30. desember kl. 13:00    |
++---------------+---------+---------------------+---------------------------+
+| MEASUREMENT   |    22   | Value with a        | 690 MW                    |
+|               |         | measurement unit    | | 1.010 hPa               |
+|               |         |                     | | 220 m²                  |
++---------------+---------+---------------------+---------------------------+
+| S_BEGIN       |  11001  | Start of sentence   |                           |
++---------------+---------+---------------------+---------------------------+
+| S_END         |  11002  | End of sentence     |                           |
++---------------+---------+---------------------+---------------------------+
 
-    S_BEGIN = 11001	# Sentence begin
-    S_END = 11002 	# Sentence end
+(*) The token types marked with an asterisk are reserved for the Reynir package
+and not currently returned by the tokenizer.
 
 To obtain a descriptive text for a token kind, use ``TOK.descr[token.kind]`` (see example above).
 
-The ``txt`` field contains the original source text for the token.
+The ``txt`` field
+==================
+
+The ``txt`` field contains the original source text for the token. However, in a few cases,
+the tokenizer auto-corrects the original source text. For instance, it converts single and double
+quotes to the correct Icelandic ones (i.e. „these“ or ‚these‘). It also converts kludgy ordinals
+(*3ja*) to proper ones (*þriðja*), and English-style thousand and decimal separators to
+Icelandic ones (*10,345.67* becomes *10.345,67*).
 
 In the case of abbreviations that end a sentence, the final period '.' is a separate token,
 and it is consequently omitted from the abbreviation token's ``txt`` field. A sentence ending
 in *o.s.frv.* will thus end with two tokens, the next-to-last one being the tuple
 ``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted period in the ``txt`` field -
 and the last one being ``(TOK.PUNCTUATION, ".", 3)`` (the 3 is explained below).
+
+The ``val`` field
+==================
 
 The ``val`` field contains auxiliary information, corresponding to the token kind, as follows:
 
@@ -151,18 +219,27 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
 	TP_NONE = 4   # No whitespace
 
 - For ``TOK.TIME``, the ``val`` field contains an ``(hour, minute, second)`` tuple.
-- For ``TOK.DATE``, the ``val`` field contains a ``(year, month, day)`` tuple (all 1-based).
-- For ``TOK.YEAR``, the ``val`` field contains the year as an integer.
+- For ``TOK.DATEABS``, the ``val`` field contains a ``(year, month, day)`` tuple (all 1-based).
+- For ``TOK.DATEREL``, the ``val`` field contains a ``(year, month, day)`` tuple (all 1-based),
+  except that a least one of the tuple fields is missing and set to 0. Example: *þriðja júní*
+  becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)`` as the year is missing.
+- For ``TOK.YEAR``, the ``val`` field contains the year as an integer. A negative number
+  indicates that the year is BCE (*fyrir Krist*), specified with the suffix *f.Kr.*
+  (e.g. *árið 33 f.Kr.*).
 - For ``TOK.NUMBER``, the ``val`` field contains a tuple ``(number, None, None)``.
   (The two empty fields are included for compatibility with Greynir.)
 - For ``TOK.WORD``, the ``val`` field contains the full expansion of an abbreviation,
   as a list containing a single tuple, or ``None`` if the word is not abbreviated.
 - For ``TOK.PERCENT``, the ``val`` field contains a tuple of ``(percentage, None, None)``.
 - For ``TOK.ORDINAL``, the ``val`` field contains the ordinal value as an integer.
+  The original ordinal may be a decimal number or a Roman numeral.
 - For ``TOK.TIMESTAMP``, the ``val`` field contains a ``(year, month, day, hour, minute, second)`` tuple.
 - For ``TOK.AMOUNT``, the ``val`` field contains an ``(amount, currency, None, None)`` tuple. The
-  amount is a float, and the currency is an ISO currency code, i.e. "USD" for dollars ($ sign) or
-  "EUR" for euros (€ sign). (The two empty fields are included for compatibility with Greynir.)
+  amount is a float, and the currency is an ISO currency code, i.e. *USD* for dollars ($ sign) or
+  *EUR* for euros (€ sign). (The two empty fields are included for compatibility with Greynir.)
+- For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)`` tuple, where ``unit``
+  is a base SI unit (such as ``g``, ``m``, ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature
+  in Kelvin).
 
 
 The ``correct_spaces()`` function
