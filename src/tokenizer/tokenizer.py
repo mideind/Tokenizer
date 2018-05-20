@@ -52,6 +52,13 @@ import datetime
 from .abbrev import Abbreviations
 
 
+# Mask away difference between Python 2 and 3
+if sys.version_info >= (3, 0):
+    items = lambda d: d.items()
+else:
+    items = lambda d: d.iteritems()
+
+
 # Recognized punctuation
 
 LEFT_PUNCTUATION = "([„‚«#$€<°"
@@ -113,11 +120,6 @@ TP_SPACE = (
     # Last token was TP_WORD:
     ( True,   True,   False,  False,  True)
 )
-
-if sys.version_info >= (3, 0):
-    items = lambda d: d.items()
-else:
-    items = lambda d: d.iteritems()
 
 # Numeric digits
 DIGITS = frozenset([d for d in "0123456789"]) # Set of digit characters
@@ -228,12 +230,23 @@ CLOCK_HALF = frozenset([
     "hálftólf"
 ])
 
+# 'Current Era', 'Before Current Era'
+CE = frozenset(("e.Kr", "e.Kr.")) # !!! Add AD and CE here?
+BCE = frozenset(("f.Kr", "f.Kr.")) # !!! Add BCE here?
+
 # A = Area
 # T = Time
 # L = Length
 # C = Temperature
 # W = Weight
 # V = Volume
+# P = Power
+# E = Energy
+# F = Force
+# V = Voltage
+# U = Current
+# Q = Frequency
+# R = Pressure
 SI_UNITS = {
     "m²" : "A",
     "fm" : "A",
@@ -243,17 +256,56 @@ SI_UNITS = {
     "ltr" : "V",
     "dl" : "V",
     "cl" : "V",
+    "ml" : "V",
     "m³" : "V",
     "°C" : "C",
+    "°F" : "C",
+    "K" : "C",
+    "g" : "W",
     "gr" : "W",
     "kg" : "W",
+    "t" : "W",
     "mg" : "W",
     "μg" : "W",
     "m" : "L",
     "km" : "L",
     "mm" : "L",
+    "μm" : "L",
     "cm" : "L",
-    "sm" : "L"
+    "sm" : "L",
+    "s" : "T",
+    "ms" : "T",
+    "ms" : "T",
+    "μs" : "T",
+    "klst" : "T",
+    "W" : "P",
+    "mW" : "P",
+    "kW" : "P",
+    "MW" : "P",
+    "GW" : "P",
+    "TW" : "P",
+    "J" : "E",
+    "kJ" : "E",
+    "MJ" : "E",
+    "GJ" : "E",
+    "TJ" : "E",
+    "kWh" : "E",
+    "kWst" : "E",
+    "kcal" : "E",
+    "cal" : "E",
+    "N" : "F",
+    "kN" : "F",
+    "V" : "V",
+    "mV" : "V",
+    "kV" : "V",
+    "A" : "U",
+    "mA" : "U",
+    "Hz" : "Q",
+    "kHz" : "Q",
+    "MHz" : "Q",
+    "GHz" : "Q",
+    "Pa" : "R",
+    "hPa" : "R"
 }
 
 # Incorrectly written ordinals
@@ -889,12 +941,14 @@ def parse_particles(token_stream):
                     else:
                         test_set = TOK.TEXT
 
-                    finish = ((follow_token.kind in TOK.END) or
+                    finish = (
+                        (follow_token.kind in TOK.END) or
                         (follow_token.kind in test_set and
                             follow_token.txt[0].isupper() and
                             follow_token.txt.lower() not in MONTHS and
-                            not RE_ROMAN_NUMERAL.match(follow_token.txt))
+                            not RE_ROMAN_NUMERAL.match(follow_token.txt)
                         )
+                    )
 
                     if finish:
                         # Potentially at the end of a sentence
@@ -947,22 +1001,11 @@ def parse_particles(token_stream):
                 token = TOK.Time(token.txt, *CLOCK_NUMBERS[token.txt])
 
             # Coalesce 'árið' + [year|number] into year
-            if (token.kind == TOK.WORD and token.txt in YEAR_WORD) and \
+            if (token.kind == TOK.WORD and token.txt.lower() in YEAR_WORD) and \
                 (next_token.kind == TOK.YEAR or next_token.kind == TOK.NUMBER):
                 token = TOK.Year(token.txt + " " + next_token.txt,
                     next_token.val if next_token.kind == TOK.YEAR else next_token.val[0])
                 next_token = next(token_stream)
-
-            # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
-            if token.kind == TOK.YEAR or (token.kind == TOK.NUMBER):
-                val = token.val if token.kind == TOK.YEAR else token.val[0]
-                if next_token.txt == "f.Kr":
-                    # Yes, we set year X BCE as year -X ;-)
-                    token = TOK.Year(token.txt + " " + next_token.txt, -val)
-                    next_token = next(token_stream)
-                elif next_token.txt == "e.Kr":
-                    token = TOK.Year(token.txt + " " + next_token.txt, val)
-                    next_token = next(token_stream)
 
             # Coalesce percentages into a single token
             if next_token.kind == TOK.PUNCTUATION and next_token.txt == '%':
@@ -1171,6 +1214,17 @@ def parse_phrases_1(token_stream):
         while True:
             next_token = next(token_stream)
 
+            # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
+            if token.kind == TOK.YEAR or token.kind == TOK.NUMBER:
+                val = token.val if token.kind == TOK.YEAR else token.val[0]
+                if next_token.txt in BCE: # f.Kr.
+                    # Yes, we set year X BCE as year -X ;-)
+                    token = TOK.Year(token.txt + " " + next_token.txt, -val)
+                    next_token = next(token_stream)
+                elif next_token.txt in CE: # e.Kr.
+                    token = TOK.Year(token.txt + " " + next_token.txt, val)
+                    next_token = next(token_stream)
+
             # Check for [number | ordinal] [month name]
             if (token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER) and next_token.kind == TOK.WORD:
 
@@ -1277,6 +1331,84 @@ def parse_phrases_2(token_stream):
                         break
 
                 multiplier = None
+
+            # DATEABS and DATEREL made
+            # Check for [number | ordinal] [month name]
+            if (token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER or
+                (token.txt and token.txt.lower() in DAYS_OF_MONTH)) and next_token.kind == TOK.WORD:
+                month = match_stem_list(next_token, MONTHS)
+                if month is not None:
+                    token = TOK.Date(token.txt + " " + next_token.txt,
+                        y = 0, m = month,
+                        d = (token.val if token.kind == TOK.ORDINAL
+                            else token.val[0] if token.kind == TOK.NUMBER
+                            else DAYS_OF_MONTH[token.txt.lower()]))
+                    # Eat the month name token
+                    next_token = next(token_stream)
+
+            # Check for [DATE] [year]
+            if token.kind == TOK.DATE and (next_token.kind == TOK.NUMBER or
+                next_token.kind == TOK.YEAR):
+                if not token.val[0]:
+                    # No year yet: add it
+                    year = (next_token.val if next_token.kind == TOK.YEAR
+                        else next_token.val[0] if 1776 <= next_token.val[0] <= 2100
+                        else 0)
+                    if year != 0:
+                        token = TOK.Date(token.txt + " " + next_token.txt,
+                            y = year, m = token.val[1], d = token.val[2])
+                        # Eat the year token
+                        next_token = next(token_stream)
+
+            # Check for [month name] [year|YEAR]
+            if token.kind == TOK.WORD and (next_token.kind == TOK.NUMBER or
+                next_token.kind == TOK.YEAR):
+                month = match_stem_list(token, MONTHS)
+                if month is not None:
+                    year = (next_token.val if next_token.kind == TOK.YEAR
+                        else next_token.val[0] if 1776 <= next_token.val[0] <= 2100
+                        else 0)
+                    if year != 0:
+                        token = TOK.Date(token.txt + " " + next_token.txt, y = year, m = month, d = 0)
+                        # Eat the year token
+                        next_token = next(token_stream)
+
+            # Check for a single YEAR, change to DATEREL -- changed to keep distinction
+            #if token.kind == TOK.YEAR:
+            #    token = TOK.Daterel(token.txt, y = token.val, m = 0, d = 0)
+
+            # Check for a single month, change to DATEREL
+            if token.kind == TOK.WORD:
+                month = match_stem_list(token, MONTHS)
+                if month is not None:
+                    token = TOK.Daterel(token.txt, y = 0, m = month, d = 0)
+
+            # Split DATE into DATEABS and DATEREL
+            if token.kind == TOK.DATE:
+                if token.val[0] and token.val[1] and token.val[2]:
+                    token = TOK.Dateabs(token.txt, y = token.val[0], m = token.val[1], d = token.val[2])
+                else:
+                    token = TOK.Daterel(token.txt, y = token.val[0], m = token.val[1], d = token.val[2])
+
+            # Check for [date] [time] (absolute)
+            if token.kind == TOK.DATEABS and next_token.kind == TOK.TIME:
+                # Create an absolute time stamp
+                y, mo, d = token.val
+                h, m, s = next_token.val
+                token = TOK.Timestampabs(token.txt + " " + next_token.txt,
+                    y = y, mo = mo, d = d, h = h, m = m, s = s)
+                # Eat the time token
+                next_token = next(token_stream)
+
+            # Check for [date] [time] (relative)
+            if token.kind == TOK.DATEREL and next_token.kind == TOK.TIME:
+                # Create a time stamp
+                y, mo, d = token.val
+                h, m, s = next_token.val
+                token = TOK.Timestamprel(token.txt + " " + next_token.txt,
+                    y = y, mo = mo, d = d, h = h, m = m, s = s)
+                # Eat the time token
+                next_token = next(token_stream)
 
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
@@ -1414,7 +1546,7 @@ def paragraphs(toklist):
 
 RE_SPLIT_STR = (
     # The following regex catches Icelandic numbers with dots and a comma
-    r"([\+\-\$€]?\d{1,3}(?:\.\d\d\d)+\,\d+)"    # +123.456,789
+    r"([\+\-\$€]?\d{1,3}(?:\.\d\d\d)+\,\d+)"      # +123.456,789
     # The following regex catches English numbers with commas and a dot
     r"|([\+\-\$€]?\d{1,3}(?:\,\d\d\d)+\.\d+)"     # +123,456.789
     # The following regex catches Icelandic numbers with a comma only

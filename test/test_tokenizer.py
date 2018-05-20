@@ -56,8 +56,19 @@ def test_single_tokens():
         ("hálftólf", [ Tok(TOK.TIME, "hálftólf", (11,30,0)) ]),
         ("kl. hálfátta", [ Tok(TOK.TIME, "kl. hálfátta", (7,30,0)) ]),
         ("klukkan þrjú", [ Tok(TOK.TIME, "klukkan þrjú", (3,00,0)) ]),
-        ("17/6", [ Tok(TOK.DATE, "17/6", (0, 6, 17)) ]),
-        ("17/6/2013", [ Tok(TOK.DATE, "17/6/2013", (2013, 6, 17)) ]),
+        ("17/6", [ Tok(TOK.DATEREL, "17/6", (0, 6, 17)) ]),
+        ("3. maí", [ Tok(TOK.DATEREL, "3. maí", (0, 5, 3)) ]),
+        ("nóvember 1918", [ Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0)) ]),
+        ("sautjánda júní", [ Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17)) ]),
+        ("sautjánda júní 1811", [ Tok(TOK.DATEABS, "sautjánda júní 1811", (1811, 6, 17)) ]),
+        ("Sautjánda júní árið 1811", [ Tok(TOK.DATEABS, "Sautjánda júní árið 1811", (1811, 6, 17)) ]),
+        ("Fimmtánda mars árið 44 f.Kr.",
+            [
+                Tok(TOK.DATEABS, "Fimmtánda mars árið 44 f.Kr", (-44, 3, 15)),
+                Tok(TOK.PUNCTUATION, ".", None)
+            ]
+        ),
+        ("17/6/2013", [ Tok(TOK.DATEABS, "17/6/2013", (2013, 6, 17)) ]),
         ("2013", [ Tok(TOK.YEAR, "2013", 2013) ]),
         ("874 e.Kr.", [ Tok(TOK.YEAR, "874 e.Kr", 874), Tok(TOK.PUNCTUATION, ".", None) ]),
         ("2013 f.Kr.", [ Tok(TOK.YEAR, "2013 f.Kr", -2013), Tok(TOK.PUNCTUATION, ".", None) ]),
@@ -70,6 +81,8 @@ def test_single_tokens():
         ("2,013", [ Tok(TOK.NUMBER, "2,013", (2.013, None, None)) ]),
         ("2.013,45", [ Tok(TOK.NUMBER, "2.013,45", (2013.45, None, None)) ]),
         ("2,013.45", [ Tok(TOK.NUMBER, "2.013,45", (2013.45, None, None)) ]),
+        ("1/2", [ Tok(TOK.NUMBER, "1/2", (0.5, None, None)) ]),
+        ("1/4", [ Tok(TOK.NUMBER, "1/4", (0.25, None, None)) ]),
         ("1sti", [ Tok(TOK.WORD, "fyrsti", None) ]),
         ("4ðu", [ Tok(TOK.WORD, "fjórðu", None) ]),
         ("2svar", [ Tok(TOK.WORD, "tvisvar", None) ]),
@@ -135,7 +148,9 @@ def test_single_tokens():
         ("fake@news.is", TOK.EMAIL),
         ("100 mm", TOK.MEASUREMENT),
         ("30,7 °C", TOK.MEASUREMENT),
-        ("6.500 kg", TOK.MEASUREMENT)
+        ("6.500 kg", TOK.MEASUREMENT),
+        ("220 V", TOK.MEASUREMENT),
+        ("690 MW", TOK.MEASUREMENT),
     ]
 
     for test_case in TEST_CASES:
@@ -167,7 +182,8 @@ def test_sentences():
         "W" : TOK.WORD,
         "P" : TOK.PUNCTUATION,
         "T" : TOK.TIME,
-        "D" : TOK.DATE,
+        "DR" : TOK.DATEREL,
+        "DA" : TOK.DATEABS,
         "Y" : TOK.YEAR,
         "N" : TOK.NUMBER,
         "TEL" : TOK.TELNO,
@@ -196,19 +212,19 @@ def test_sentences():
         "  Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
         "skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.",
         "B W      W   W     W   W "
-        "W    O  W   O     W     W    W   N P Y   W    D             P E")
+        "W    O  W   O     W     W    W   N P Y   W    DA            P E")
 
     test_sentence(
         "  Góðan daginn! Ég á 10.000 kr. í vasanum, €100 og $40.Gengi USD er 103,45. "
         "Í dag er 10. júlí. Klukkan er 15:40 núna.Ég fer kl. 13 niður á Hlemm o.s.frv. ",
         "B W     W     P E B W W N   W   W W      P A    W  A  P E B W W   W  N     P E "
-        "B W W W  D       P E B W   W  T     W   P E B W W T     W     W W     W      P E")
+        "B W W W  DR      P E B W   W  T     W   P E B W W T     W     W W     W      P E")
 
     test_sentence(
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015. Ál-verið notar 60 MWst á ári.",
         "B W   W  W    W    W            W   W                                   W O   W "
-        "W    O     W     W    D                 P E B W P W W    N  W    W W  P E")
+        "W    O     W     W    DA                P E B W P W W    N  W    W W  P E")
 
     test_sentence(
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
@@ -221,12 +237,22 @@ def test_sentences():
         "B W  W        W   W          W    Y   P N P E")
 
     test_sentence(
-        "Landnám er talið hafa hafist um árið 874 en óvissa er nokkur.",
-        "B W     W  W     W    W      W  Y        W  W      W  W     P E") # !!! e.Kr. virkar ekki
+        "Landnám er talið hafa hafist um árið 874 e.Kr. en óvissa er nokkur.",
+        "B W     W  W     W    W      W  Y              W  W      W  W     P E")
 
     test_sentence(
         "Hitinn í \"pottinum\" var orðinn 30,7 °C þegar 2.000 l voru komnir í hann.",
         "B W    W P W        P W   W      ME      W     ME      W    W      W W   P E")
+
+    test_sentence(
+        "Skrifað var undir friðarsamninga í nóvember 1918. Júlíus Sesar var myrtur "
+        "þann fimmtánda mars árið 44 f.Kr. og þótti harmdauði.",
+        "B W     W   W     W              W DR           P E B W  W     W   W "
+        "W    DA                           W  W     W        P E")
+
+    test_sentence(
+        "1.030 hPa lægð gengur yfir landið árið 2019 e.Kr. Jógúrtin inniheldur 80 kcal.",
+        "B ME      W    W      W    W      Y             P E B W    W          ME     P E")
 
 
 def test_correction():
@@ -263,7 +289,7 @@ def test_correction():
     for sent, correct in SENT:
         s = t.tokenize(sent)
         txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
-        print(txt)
+        # print(txt)
         assert txt == correct
 
 
