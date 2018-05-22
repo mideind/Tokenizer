@@ -80,6 +80,9 @@ Note the following:
 	  values are included as a tuple in ``token.val``.
 	- Numbers, both integer and real, are recognized and their value is available
 	  in the ``token.val`` field.
+	- Further details of how Tokenizer processes text can be inferred from the
+	  `test module <https://github.com/vthorsteinsson/Tokenizer/blob/master/test/test_tokenizer.py>`_
+	  in the project's `GitHub repository <https://github.com/vthorsteinsson/Tokenizer>`_.
 
 
 The ``tokenize()`` function
@@ -126,27 +129,27 @@ class:
 | DATE *        |    3    | Date (y, m, d)      | [Unused, see DATEABS and  |
 |               |         |                     | DATEREL]                  |
 +---------------+---------+---------------------+---------------------------+
-| YEAR          |    4    | Year                | árið 874 e.Kr.            |
+| YEAR          |    4    | Year                | | árið 874 e.Kr.          |
 |               |         |                     | | 1965                    |
 |               |         |                     | | 44 f.Kr.                |
 +---------------+---------+---------------------+---------------------------+
-| NUMBER        |    5    | Number              | 100                       |
+| NUMBER        |    5    | Number              | | 100                     |
 |               |         |                     | | 1.965                   |
 |               |         |                     | | 1.965,34                |
 |               |         |                     | | 1,965.34                |
 +---------------+---------+---------------------+---------------------------+
-| WORD          |    6    | Word                | kattaeftirlit             |
+| WORD          |    6    | Word                | | kattaeftirlit           |
 |               |         |                     | | hunda- og kattaeftirlit |
 +---------------+---------+---------------------+---------------------------+
-| TELNO         |    7    | Telephone number    | 123444                    |
+| TELNO         |    7    | Telephone number    | | 123444                  |
 |               |         |                     | | 123-4444                |
 +---------------+---------+---------------------+---------------------------+
 | PERCENT       |    8    | Percentage          | 78%                       |
 +---------------+---------+---------------------+---------------------------+
-| URL           |    9    | URL                 | ``https://greynir.is``    |
+| URL           |    9    | URL                 | | ``https://greynir.is``  |
 |               |         |                     | | ``www.greynir.is``      |
 +---------------+---------+---------------------+---------------------------+
-| ORDINAL       |    10   | Ordinal number      | 30.                       |
+| ORDINAL       |    10   | Ordinal number      | | 30.                     |
 |               |         |                     | | XVIII.                  |
 +---------------+---------+---------------------+---------------------------+
 | TIMESTAMP *   |    11   | Timestamp           | [Unused, see              |
@@ -165,18 +168,18 @@ class:
 +---------------+---------+---------------------+---------------------------+
 | UNKNOWN       |    17   | Unknown token       |                           |
 +---------------+---------+---------------------+---------------------------+
-| DATEABS       |    18   | Absolute date       | 30. desember 1965         |
+| DATEABS       |    18   | Absolute date       | | 30. desember 1965       |
 |               |         |                     | | 30/12/1965              |
 |               |         |                     | | 1965-12-30              |
 +---------------+---------+---------------------+---------------------------+
 | DATEREL       |    19   | Relative date       | 15. mars                  |
 +---------------+---------+---------------------+---------------------------+
-| TIMESTAMPABS  |    20   | Absolute timestamp  | 30. desember 1965 11:34   |
+| TIMESTAMPABS  |    20   | Absolute timestamp  | | 30. desember 1965 11:34 |
 |               |         |                     | | 1965-12-30 kl. 13:00    |
 +---------------+---------+---------------------+---------------------------+
 | TIMESTAMPREL  |    21   | Relative timestamp  | 30. desember kl. 13:00    |
 +---------------+---------+---------------------+---------------------------+
-| MEASUREMENT   |    22   | Value with a        | 690 MW                    |
+| MEASUREMENT   |    22   | Value with a        | | 690 MW                  |
 |               |         | measurement unit    | | 1.010 hPa               |
 |               |         |                     | | 220 m²                  |
 +---------------+---------+---------------------+---------------------------+
