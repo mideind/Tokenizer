@@ -748,14 +748,16 @@ def parse_tokens(txt):
                     # Any sequence of hyphens is treated as a single hyphen
                     while w and w[0] in HYPHENS:
                         w = w[1:]
-                elif w == '”' or w == '"':
-                    # Convert to a proper double quote
+                elif len(w) == 1 and w in DQUOTES:
+                    # Convert to a proper closing double quote
                     yield TOK.Punctuation('“')
                     w = ""
-                elif w == "'":
+                    qmark = False
+                elif len(w) == 1 and w in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
                     yield TOK.Punctuation("‘")
                     w = ""
+                    qmark = False
                 else:
                     yield TOK.Punctuation(w[0])
                     w = w[1:]

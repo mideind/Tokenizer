@@ -120,7 +120,7 @@ The ``kind`` field contains one of the following integer constants, defined with
 class:
 
 +---------------+---------+---------------------+---------------------------+
-| Constant      |  Value  | Explanation         | Example                   |
+| Constant      |  Value  | Explanation         | Examples                  |
 +===============+=========+=====================+===========================+
 | PUNCTUATION   |    1    | Punctuation         | .                         |
 +---------------+---------+---------------------+---------------------------+
