@@ -1258,9 +1258,9 @@ def parse_phrases_1(token_stream):
         yield token
 
 
-def parse_phrases_2(token_stream):
+def parse_date_and_time(token_stream):
 
-    """ Handle numbers, amounts and composite words. """
+    """ Handle dates and times, absolute and relative. """
 
     token = None
     try:
@@ -1269,58 +1269,6 @@ def parse_phrases_2(token_stream):
         token = next(token_stream)
         while True:
             next_token = next(token_stream)
-
-            # Logic for numbers and fractions that are partially or entirely
-            # written out in words
-
-            def number(tok):
-                """ If the token denotes a number, return that number - or None """
-                if tok.txt.lower() == "áttu":
-                    # Do not accept 'áttu' (stem='átta', no kvk) as a number
-                    return None
-                return match_stem_list(tok, MULTIPLIERS)
-
-            # Check whether we have an initial number word
-            multiplier = number(token) if token.kind == TOK.WORD else None
-
-            # Check for [number] 'hundred|thousand|million|billion'
-            while (token.kind == TOK.NUMBER or multiplier is not None) \
-                and next_token.kind == TOK.WORD:
-
-                multiplier_next = number(next_token)
-
-                def convert_to_num(token):
-                    if multiplier is not None:
-                        token = TOK.Number(token.txt, multiplier)
-                    return token
-
-                if multiplier_next is not None:
-                    # Retain the case of the last multiplier
-                    token = convert_to_num(token)
-                    token = TOK.Number(token.txt + " " + next_token.txt,
-                        token.val[0] * multiplier_next)
-                    # Eat the multiplier token
-                    next_token = next(token_stream)
-                elif next_token.txt in AMOUNT_ABBREV:
-                    # Abbreviations for ISK amounts
-                    # For abbreviations, we do not know the case,
-                    # but we try to retain the previous case information if any
-                    token = convert_to_num(token)
-                    token = TOK.Amount(token.txt + " " + next_token.txt, "ISK",
-                        token.val[0] * AMOUNT_ABBREV[next_token.txt])
-                    next_token = next(token_stream)
-                else:
-                    # Check for [number] 'percent'
-                    percentage = match_stem_list(next_token, PERCENTAGES)
-                    if percentage is not None:
-                        token = convert_to_num(token)
-                        token = TOK.Percent(token.txt + " " + next_token.txt, token.val[0])
-                        # Eat the percentage token
-                        next_token = next(token_stream)
-                    else:
-                        break
-
-                multiplier = None
 
             # DATEABS and DATEREL made
             # Check for [number | ordinal] [month name]
@@ -1400,6 +1348,82 @@ def parse_phrases_2(token_stream):
                 # Eat the time token
                 next_token = next(token_stream)
 
+            # Yield the current token and advance to the lookahead
+            yield token
+            token = next_token
+
+    except StopIteration:
+        pass
+
+    # Final token (previous lookahead)
+    if token:
+        yield token
+
+
+def parse_phrases_2(token_stream):
+
+    """ Handle numbers, amounts and composite words. """
+
+    token = None
+    try:
+
+        # Maintain a one-token lookahead
+        token = next(token_stream)
+        while True:
+            next_token = next(token_stream)
+
+            # Logic for numbers and fractions that are partially or entirely
+            # written out in words
+
+            def number(tok):
+                """ If the token denotes a number, return that number - or None """
+                if tok.txt.lower() == "áttu":
+                    # Do not accept 'áttu' (stem='átta', no kvk) as a number
+                    return None
+                return match_stem_list(tok, MULTIPLIERS)
+
+            # Check whether we have an initial number word
+            multiplier = number(token) if token.kind == TOK.WORD else None
+
+            # Check for [number] 'hundred|thousand|million|billion'
+            while (token.kind == TOK.NUMBER or multiplier is not None) \
+                and next_token.kind == TOK.WORD:
+
+                multiplier_next = number(next_token)
+
+                def convert_to_num(token):
+                    if multiplier is not None:
+                        token = TOK.Number(token.txt, multiplier)
+                    return token
+
+                if multiplier_next is not None:
+                    # Retain the case of the last multiplier
+                    token = convert_to_num(token)
+                    token = TOK.Number(token.txt + " " + next_token.txt,
+                        token.val[0] * multiplier_next)
+                    # Eat the multiplier token
+                    next_token = next(token_stream)
+                elif next_token.txt in AMOUNT_ABBREV:
+                    # Abbreviations for ISK amounts
+                    # For abbreviations, we do not know the case,
+                    # but we try to retain the previous case information if any
+                    token = convert_to_num(token)
+                    token = TOK.Amount(token.txt + " " + next_token.txt, "ISK",
+                        token.val[0] * AMOUNT_ABBREV[next_token.txt])
+                    next_token = next(token_stream)
+                else:
+                    # Check for [number] 'percent'
+                    percentage = match_stem_list(next_token, PERCENTAGES)
+                    if percentage is not None:
+                        token = convert_to_num(token)
+                        token = TOK.Percent(token.txt + " " + next_token.txt, token.val[0])
+                        # Eat the percentage token
+                        next_token = next(token_stream)
+                    else:
+                        break
+
+                multiplier = None
+
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'viðskipta- og iðnaðarráðherra'
@@ -1467,6 +1491,7 @@ def tokenize(text):
     token_stream = parse_particles(token_stream)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
+    token_stream = parse_date_and_time(token_stream)
     token_stream = parse_phrases_2(token_stream)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
@@ -1482,6 +1507,7 @@ def tokenize_without_annotation(text):
     token_stream = parse_particles(token_stream)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
+    token_stream = parse_date_and_time(token_stream)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
 
