@@ -146,11 +146,11 @@ def test_single_tokens():
         ("$1,472.64", [ Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None)) ]),
         ("€3,472.64", [ Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None)) ]),
         ("fake@news.is", TOK.EMAIL),
-        ("100 mm", TOK.MEASUREMENT),
-        ("30,7 °C", TOK.MEASUREMENT),
-        ("6.500 kg", TOK.MEASUREMENT),
-        ("220 V", TOK.MEASUREMENT),
-        ("690 MW", TOK.MEASUREMENT),
+        ("100 mm", [ Tok(TOK.MEASUREMENT, "100 mm", ("m", 0.1)) ]),
+        ("30,7°C", [ Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7)) ]),
+        ("6.500 kg", [ Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6)) ]),
+        ("220V", [ Tok(TOK.MEASUREMENT, "220 V", ("V", 220)) ]),
+        ("690 MW", [ Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6)) ]),
     ]
 
     for test_case in TEST_CASES:
