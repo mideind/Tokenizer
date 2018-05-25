@@ -234,66 +234,66 @@ CLOCK_HALF = frozenset([
 CE = frozenset(("e.Kr", "e.Kr.")) # !!! Add AD and CE here?
 BCE = frozenset(("f.Kr", "f.Kr.")) # !!! Add BCE here?
 
-# Derived unit : base SI unit
+# Derived unit : (base SI unit, conversion factor/function)
 SI_UNITS = {
-    "m²" : "m²",
-    "fm" : "m²",
-    "cm²" : "m²",
-    "m³" : "m³",
-    "cm³" : "m³",
-    "l" : "m³",
-    "ltr" : "m³",
-    "dl" : "m³",
-    "cl" : "m³",
-    "ml" : "m³",
-    "°C" : "K",
-    "°F" : "K",
-    "K" : "K",
-    "g" : "g",
-    "gr" : "g",
-    "kg" : "g",
-    "t" : "g",
-    "mg" : "g",
-    "μg" : "g",
-    "m" : "m",
-    "km" : "m",
-    "mm" : "m",
-    "μm" : "m",
-    "cm" : "m",
-    "sm" : "m",
-    "s" : "s",
-    "ms" : "s",
-    "ms" : "s",
-    "μs" : "s",
-    "klst" : "s",
-    "W" : "W",
-    "mW" : "W",
-    "kW" : "W",
-    "MW" : "W",
-    "GW" : "W",
-    "TW" : "W",
-    "J" : "J",
-    "kJ" : "J",
-    "MJ" : "J",
-    "GJ" : "J",
-    "TJ" : "J",
-    "kWh" : "J",
-    "kWst" : "J",
-    "kcal" : "J",
-    "cal" : "J",
-    "N" : "N",
-    "kN" : "N",
-    "V" : "V",
-    "mV" : "V",
-    "kV" : "V",
-    "A" : "A",
-    "mA" : "A",
-    "Hz" : "Hz",
-    "kHz" : "Hz",
-    "MHz" : "Hz",
-    "GHz" : "Hz",
-    "Pa" : "Pa",
-    "hPa" : "Pa"
+    "m²" : ("m²", 1.0),
+    "fm" : ("m²", 1.0),
+    "cm²" : ("m²", 1.0e-2),
+    "m³" : ("m³", 1.0),
+    "cm³" : ("m³", 1.0),
+    "l" : ("m³", 1.0),
+    "ltr" : ("m³", 1.0e-3),
+    "dl" : ("m³", 1.0e-4),
+    "cl" : ("m³", 1.0e-5),
+    "ml" : ("m³", 1.0e-6),
+    "°C" : ("K", lambda x: x + 273.15),
+    "°F" : ("K", lambda x: (x + 459.67) * 5/9),
+    "K" : ("K", 1.0),
+    "g" : ("g", 1.0),
+    "gr" : ("g", 1.0),
+    "kg" : ("g", 1.0e3),
+    "t" : ("g", 1.0e6),
+    "mg" : ("g", 1.0e-3),
+    "μg" : ("g", 1.0e-6),
+    "m" : ("m", 1.0),
+    "km" : ("m", 1.0e3),
+    "mm" : ("m", 1.0e-3),
+    "μm" : ("m", 1.0e-6),
+    "cm" : ("m", 1.0e-2),
+    "sm" : ("m", 1.0e-2),
+    "s" : ("s", 1.0),
+    "ms" : ("s", 1.0e-3),
+    "μs" : ("s", 1.0e-6),
+    "klst" : ("s", 3600.0),
+    "mín" : ("s", 60.0),
+    "W" : ("W", 1.0),
+    "mW" : ("W", 1.0e-3),
+    "kW" : ("W", 1.0e3),
+    "MW" : ("W", 1.0e6),
+    "GW" : ("W", 1.0e9),
+    "TW" : ("W", 1.0e12),
+    "J" : ("J", 1.0),
+    "kJ" : ("J", 1.0e3),
+    "MJ" : ("J", 1.0e6),
+    "GJ" : ("J", 1.0e9),
+    "TJ" : ("J", 1.0e12),
+    "kWh" : ("J", 3.6e6),
+    "kWst" : ("J", 3.6e6),
+    "kcal" : ("J", 4184),
+    "cal" : ("J", 4.184),
+    "N" : ("N", 1.0),
+    "kN" : ("N", 1.0e3),
+    "V" : ("V", 1.0),
+    "mV" : ("V", 1.0e-3),
+    "kV" : ("V", 1.0e3),
+    "A" : ("A", 1.0),
+    "mA" : ("A", 1.0e-3),
+    "Hz" : ("Hz", 1.0),
+    "kHz" : ("Hz", 1.0e3),
+    "MHz" : ("Hz", 1.0e6),
+    "GHz" : ("Hz", 1.0e9),
+    "Pa" : ("Pa", 1.0),
+    "hPa" : ("Pa", 1.0e2),
 }
 
 # Incorrectly written ordinals
@@ -783,6 +783,13 @@ def parse_tokens(txt):
                 # Continue where the digits parser left off
                 ate = True
                 w = w[eaten:]
+                if w in SI_UNITS:
+                    # Handle the case where a measurement unit is
+                    # immediately following a number, without an intervening space
+                    # (note that some of them contain nonalphabetic characters,
+                    # so they won't be caught by the isalpha() check below)
+                    yield TOK.Word(w, None)
+                    w = ""
             if w and (w.startswith("http://") or w.startswith("https://") or w.startswith("www.")):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
@@ -1031,7 +1038,15 @@ def parse_particles(token_stream):
 
             if token.kind == TOK.NUMBER and next_token.txt in SI_UNITS:
                 # Convert "100 mm" or "30 °C" to a single measurement token
-                token = TOK.Measurement(token.txt + " " + next_token.txt, SI_UNITS[next_token.txt], token.val)
+                value = token.val[0]
+                unit, factor = SI_UNITS[next_token.txt]
+                if callable(factor):
+                    # We have a lambda conversion function
+                    value = factor(value)
+                else:
+                    # Simple scaling factor
+                    value *= factor
+                token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
                 next_token = next(token_stream)
  
             # Yield the current token and advance to the lookahead
