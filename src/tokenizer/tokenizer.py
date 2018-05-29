@@ -137,7 +137,33 @@ MONTHS = {
     "september": 9,
     "október": 10,
     "nóvember": 11,
-    "desember": 12
+    "desember": 12,
+    "jan.": 1,
+    "feb.": 2,
+    "mar.": 3,
+    "apr.": 4,
+    "jún.": 6,
+    "júl.": 7,
+    "ág.": 8,
+    "ágú.": 8,
+    "sep.": 9,
+    "sept.": 9,
+    "okt.": 10,
+    "nóv.": 11,
+    "des.": 12,
+    "jan": 1,
+    "feb": 2,
+    "mar": 3,
+    "apr": 4,
+    "jún": 6,
+    "júl": 7,
+    "ág": 8,
+    "ágú": 8,
+    "sep": 9,
+    "sept": 9,
+    "okt": 10,
+    "nóv": 11,
+    "des": 12
 }
 
 # Days of the month spelled out
@@ -1343,25 +1369,46 @@ def parse_date_and_time(token_stream):
                 else:
                     token = TOK.Daterel(token.txt, y = token.val[0], m = token.val[1], d = token.val[2])
 
+            # Split TIMESTAMP into TIMESTAMPABS and TIMESTAMPREL
+            if token.kind == TOK.TIMESTAMP:
+                if all(x != 0 for x in token.val[0:3]):
+                    # Year, month and date all non-zero (h, m, s can be zero)
+                    token = TOK.Timestampabs(token.txt, *token.val)
+                else:
+                    token = TOK.Timestamprel(token.txt, *token.val)
+
+            # Swallow "e.Kr." and "f.Kr." postfixes
+            if token.kind == TOK.DATEABS:
+                if next_token.kind == TOK.WORD and next_token.txt in { "e.Kr.", "e.Kr", "f.Kr.", "f.Kr" }:
+                    y = token.val[0]
+                    if next_token.txt in { "f.Kr.", "f.Kr" }:
+                        # Change year to negative number
+                        y = -y
+                    token = TOK.Dateabs(token.txt + " " + next_token.txt, y = y, m = token.val[1], d = token.val[2])
+                    # Swallow the postfix
+                    next_token = next(token_stream)
+
             # Check for [date] [time] (absolute)
-            if token.kind == TOK.DATEABS and next_token.kind == TOK.TIME:
-                # Create an absolute time stamp
-                y, mo, d = token.val
-                h, m, s = next_token.val
-                token = TOK.Timestampabs(token.txt + " " + next_token.txt,
-                    y = y, mo = mo, d = d, h = h, m = m, s = s)
-                # Eat the time token
-                next_token = next(token_stream)
+            if token.kind == TOK.DATEABS:
+                if next_token.kind == TOK.TIME:
+                    # Create an absolute time stamp
+                    y, mo, d = token.val
+                    h, m, s = next_token.val
+                    token = TOK.Timestampabs(token.txt + " " + next_token.txt,
+                        y = y, mo = mo, d = d, h = h, m = m, s = s)
+                    # Eat the time token
+                    next_token = next(token_stream)
 
             # Check for [date] [time] (relative)
-            if token.kind == TOK.DATEREL and next_token.kind == TOK.TIME:
-                # Create a time stamp
-                y, mo, d = token.val
-                h, m, s = next_token.val
-                token = TOK.Timestamprel(token.txt + " " + next_token.txt,
-                    y = y, mo = mo, d = d, h = h, m = m, s = s)
-                # Eat the time token
-                next_token = next(token_stream)
+            if token.kind == TOK.DATEREL:
+                if next_token.kind == TOK.TIME:
+                    # Create a time stamp
+                    y, mo, d = token.val
+                    h, m, s = next_token.val
+                    token = TOK.Timestamprel(token.txt + " " + next_token.txt,
+                        y = y, mo = mo, d = d, h = h, m = m, s = s)
+                    # Eat the time token
+                    next_token = next(token_stream)
 
             # Yield the current token and advance to the lookahead
             yield token
