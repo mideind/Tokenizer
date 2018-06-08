@@ -281,3 +281,9 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 
     $ python -m pytest
 
+
+Changelog
+---------
+
+* Version 1.0.4: Added TOK.DATEABS, TOK.TIMESTAMPABS, TOK.MEASUREMENT
+
