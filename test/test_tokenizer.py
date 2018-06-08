@@ -134,10 +134,10 @@ def test_single_tokens():
         ("https://www.greynir.is", TOK.URL),
         ("www.greynir.is", TOK.URL),
         ("19/3/1977 14:56:10",
-            [ Tok(TOK.TIMESTAMP, "19/3/1977 14:56:10", (1977,3,19,14,56,10)) ]
+            [ Tok(TOK.TIMESTAMPABS, "19/3/1977 14:56:10", (1977,3,19,14,56,10)) ]
         ),
         ("19/3/1977 kl. 14:56:10",
-            [ Tok(TOK.TIMESTAMP, "19/3/1977 kl. 14:56:10", (1977,3,19,14,56,10)) ]
+            [ Tok(TOK.TIMESTAMPABS, "19/3/1977 kl. 14:56:10", (1977,3,19,14,56,10)) ]
         ),
         ("$472,64", TOK.AMOUNT),
         ("€472,64", TOK.AMOUNT),
