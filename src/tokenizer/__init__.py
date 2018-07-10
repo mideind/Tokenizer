@@ -32,5 +32,6 @@ from __future__ import absolute_import
 from .tokenizer import TOK, Tok, tokenize, tokenize_without_annotation
 from .tokenizer import parse_tokens, correct_spaces, paragraphs
 from .tokenizer import TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD
+from .abbrev import Abbreviations, ConfigError
 
 __author__ = u"Vilhjálmur Þorsteinsson"
