@@ -158,7 +158,9 @@ class:
 +---------------+---------+---------------------+---------------------------+
 | CURRENCY *    |    12   | Currency name       | [Unused]                  |
 +---------------+---------+---------------------+---------------------------+
-| AMOUNT        |    13   | Amount              | €2.345,67                 |
+| AMOUNT        |    13   | Amount              | | €2.345,67               |
+|               |         |                     | | 750 þús.kr.             |
+|               |         |                     | | 2,7 mrð. USD            |
 +---------------+---------+---------------------+---------------------------+
 | PERSON *      |    14   | Person name         | [Unused]                  |
 +---------------+---------+---------------------+---------------------------+
@@ -238,8 +240,9 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
   The original ordinal may be a decimal number or a Roman numeral.
 - For ``TOK.TIMESTAMP``, the ``val`` field contains a ``(year, month, day, hour, minute, second)`` tuple.
 - For ``TOK.AMOUNT``, the ``val`` field contains an ``(amount, currency, None, None)`` tuple. The
-  amount is a float, and the currency is an ISO currency code, i.e. *USD* for dollars ($ sign) or
-  *EUR* for euros (€ sign). (The two empty fields are included for compatibility with Greynir.)
+  amount is a float, and the currency is an ISO currency code, e.g. *USD* for dollars ($ sign),
+  *EUR* for euros (€ sign) or *ISK* for Icelandic króna (*kr.* abbreviation).
+  (The two empty fields are included for compatibility with Greynir.)
 - For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)`` tuple, where ``unit``
   is a base SI unit (such as ``g``, ``m``, ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature
   in Kelvin).
@@ -286,4 +289,5 @@ Changelog
 ---------
 
 * Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``, ``TOK.MEASUREMENT``
+* Version 1.0.5: Date/time and amount tokens coalesced to a further extent
 
