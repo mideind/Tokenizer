@@ -108,12 +108,28 @@ def test_single_tokens():
         (
             "750 þús.kr.",
             [
-                Tok(TOK.NUMBER, "750", (750, None, None)),
-                Tok(
-                    TOK.WORD,
-                    "þús.kr",
-                    [("þúsundir króna", 0, "kvk", "skst", "þús.kr.", "-")],
-                ),
+                Tok(TOK.AMOUNT, "750 þús.kr", (750e3, "ISK", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
+            "750 þús. kr.",
+            [
+                Tok(TOK.AMOUNT, "750 þús. kr", (750e3, "ISK", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
+            "750 þús. ISK.",
+            [
+                Tok(TOK.AMOUNT, "750 þús. ISK", (750e3, "ISK", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
+            "2,7 mrð. USD.",
+            [
+                Tok(TOK.AMOUNT, "2,7 mrð. USD", (2.7e9, "USD", None, None)),
                 Tok(TOK.PUNCTUATION, ".", None),
             ],
         ),
@@ -142,12 +158,7 @@ def test_single_tokens():
         (
             "30,7 mö.kr.",
             [
-                Tok(TOK.NUMBER, "30,7", (30.7, None, None)),
-                Tok(
-                    TOK.WORD,
-                    "mö.kr",
-                    [("milljörðum króna", 0, "kk", "skst", "mö.kr.", "-")],
-                ),
+                Tok(TOK.AMOUNT, "30,7 mö.kr", (30.7e9, "ISK", None, None)),
                 Tok(TOK.PUNCTUATION, ".", None),
             ],
         ),
@@ -295,7 +306,7 @@ def test_sentences():
     test_sentence(
         "  Góðan daginn! Ég á 10.000 kr. í vasanum, €100 og $40.Gengi USD er 103,45. "
         "Í dag er 10. júlí. Klukkan er 15:40 núna.Ég fer kl. 13 niður á Hlemm o.s.frv. ",
-        "B W     W     P E B W W N   W   W W      P A    W  A  P E B W W   W  N     P E "
+        "B W     W     P E B W W A       W W      P A    W  A  P E B W W   W  N     P E "
         "B W W W  DR      P E B W   W  T     W   P E B W W T     W     W W     W      P E",
     )
 
@@ -310,7 +321,7 @@ def test_sentences():
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
         "http://greynir.is og www.greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi.",
         "B W W W    W   W               M            P W "
-        "U                 W  U             P W  W    TEL    P E B W W  W   N    W P E B W W   W   N   W    P E",
+        "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E",
     )
 
     test_sentence(
