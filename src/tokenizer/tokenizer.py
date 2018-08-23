@@ -55,9 +55,49 @@ from .abbrev import Abbreviations
 # Mask away difference between Python 2 and 3
 if sys.version_info >= (3, 0):
     items = lambda d: d.items()
+    keys = lambda d: d.keys()
+    make_str = lambda s: s
+    unicode_chr = lambda c: chr(c)
 else:
     items = lambda d: d.iteritems()
+    keys = lambda d: d.iterkeys()
+    def make_str(s):
+        if isinstance(s, unicode):
+            return s
+        # Assume that incoming byte strings are UTF-8 encoded
+        return s.decode("utf-8")
+    unicode_chr = lambda c: unichr(c)
 
+ACCENT = unicode_chr(769)
+UMLAUT = unicode_chr(776)
+
+# Translations of separate umlauts and accents to single glyphs.
+# The strings to the left in each tuple are two Unicode code
+# points: vowel + COMBINING ACUTE ACCENT (chr(769)) or
+# vowel + COMBINING DIAERESIS (chr(776)).
+UNICODE_REPLACEMENTS = {
+    "a" + ACCENT: "á",
+    "a" + UMLAUT: "ä",
+    "e" + ACCENT: "é",
+    "e" + UMLAUT: "ë",
+    "i" + ACCENT: "í",
+    "o" + ACCENT: "ó",
+    "u" + ACCENT: "ú",
+    "u" + UMLAUT: "ü",
+    "y" + ACCENT: "ý",
+    "o" + UMLAUT: "ö",
+    "A" + UMLAUT: "Ä",
+    "A" + ACCENT: "Á",
+    "E" + ACCENT: "É",
+    "E" + UMLAUT: "Ë",
+    "I" + ACCENT: "Í",
+    "O" + ACCENT: "Ó",
+    "U" + ACCENT: "Ú",
+    "U" + UMLAUT: "Ü",
+    "Y" + ACCENT: "Ý",
+    "O" + UMLAUT: "Ö"
+}
+UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
 # Recognized punctuation
 
@@ -711,10 +751,19 @@ def parse_digits(w):
     return TOK.Unknown(w), len(w)
 
 
+def prepare(txt):
+    """ Convert txt to Unicode (on Python 2.7) and replace composite glyphs
+        with single code points """
+    return UNICODE_REGEX.sub(
+        lambda match: UNICODE_REPLACEMENTS[match.group(0)],
+        make_str(txt)
+    )
+
+
 def parse_tokens(txt):
     """ Generator that parses contiguous text into a stream of tokens """
 
-    rough = txt.split()
+    rough = prepare(txt).split()
 
     for w in rough:
         # Handle each sequence of non-whitespace characters

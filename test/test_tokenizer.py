@@ -35,6 +35,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import tokenizer as t
 
 
@@ -350,6 +351,26 @@ def test_sentences():
         "1.030 hPa lægð gengur yfir landið árið 2019 e.Kr. Jógúrtin inniheldur 80 kcal.",
         "B ME      W    W      W    W      Y             P E B W    W          ME     P E",
     )
+
+
+def test_unicode():
+    """ Test composite Unicode characters, where a glyph has two code points """
+    # Mask away Python 2/3 difference
+    if sys.version_info >= (3, 0):
+        unicode_chr = lambda c: chr(c)
+    else:
+        unicode_chr = lambda c: unichr(c)
+    ACUTE = unicode_chr(769)
+    UMLAUT = unicode_chr(776)
+    sent = (
+        "Ko" + UMLAUT + "rfuboltamaðurinn og KR-ingurinn Kristo" + ACUTE + "fer Acox "
+        "heldur a" + ACUTE + " vit ævinty" + ACUTE + "ranna."
+    )
+    tokens = list(t.tokenize(sent))
+    assert tokens[1].txt == "Körfuboltamaðurinn"
+    assert tokens[6].txt == "Kristófer"
+    assert tokens[9].txt == "á"
+    assert tokens[11].txt == "ævintýranna"
 
 
 def test_correction():

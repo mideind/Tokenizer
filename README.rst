@@ -107,6 +107,9 @@ Alternatively, create a token list from the returned generator::
 
 	token_list = list(tokenizer.tokenize(mystring))
 
+In Python 2.7, you can pass either ``unicode`` strings or ``str`` byte strings to
+``tokenizer.tokenize()``. In the latter case, the byte string is assumed to be
+encoded in UTF-8.
 
 The token object
 ----------------
@@ -199,10 +202,16 @@ The ``txt`` field
 ==================
 
 The ``txt`` field contains the original source text for the token. However, in a few cases,
-the tokenizer auto-corrects the original source text. For instance, it converts single and double
-quotes to the correct Icelandic ones (i.e. „these“ or ‚these‘). It also converts kludgy ordinals
-(*3ja*) to proper ones (*þriðja*), and English-style thousand and decimal separators to
-Icelandic ones (*10,345.67* becomes *10.345,67*).
+the tokenizer auto-corrects the original source text:
+
+* It converts single and double quotes to the correct Icelandic ones (i.e. „these“ or ‚these‘).
+
+* It converts kludgy ordinals (*3ja*) to proper ones (*þriðja*), and English-style
+  thousand and decimal separators to Icelandic ones (*10,345.67* becomes *10.345,67*).
+
+* Tokenizer automatically merges Unicode ``COMBINING ACUTE ACCENT`` (code point 769)
+  and ``COMBINING DIAERESIS`` (code point 776) with vowels to form single code points
+  for the Icelandic letters á, é, í, ó, ú, ý and ö, in both lower and upper case.
 
 In the case of abbreviations that end a sentence, the final period '.' is a separate token,
 and it is consequently omitted from the abbreviation token's ``txt`` field. A sentence ending
@@ -290,4 +299,6 @@ Changelog
 
 * Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``, ``TOK.MEASUREMENT``
 * Version 1.0.5: Date/time and amount tokens coalesced to a further extent
+* Version 1.0.6: Automatic merging of Unicode ``COMBINING ACUTE ACCENT`` and
+  ``COMBINING DIAERESIS`` code points with vowels
 
