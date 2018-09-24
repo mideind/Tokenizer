@@ -188,7 +188,7 @@ class:
 |               |         | measurement unit    | | 1.010 hPa               |
 |               |         |                     | | 220 m²                  |
 +---------------+---------+---------------------+---------------------------+
-| NUMWITHCHAR   |    23   | Number followed by  | | 14a                     |
+| NUMWLETTER    |    23   | Number followed by  | | 14a                     |
 |               |         | a letter            | | 7B                      |
 +---------------+---------+---------------------+---------------------------+
 | S_BEGIN       |  11001  | Start of sentence   |                           |

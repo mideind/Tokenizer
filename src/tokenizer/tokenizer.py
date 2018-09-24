@@ -51,7 +51,6 @@ import datetime
 
 from .abbrev import Abbreviations
 
-
 # Mask away difference between Python 2 and 3
 if sys.version_info >= (3, 0):
     items = lambda d: d.items()
@@ -454,7 +453,7 @@ class TOK:
     TIMESTAMPABS = 20
     TIMESTAMPREL = 21
     MEASUREMENT = 22
-    NUMWITHCHAR = 23
+    NUMWLETTER = 23
 
     P_BEGIN = 10001 # Paragraph begin
     P_END = 10002 # Paragraph end
@@ -481,6 +480,7 @@ class TOK:
         DATEREL: "DATEREL",
         YEAR: "YEAR",
         NUMBER: "NUMBER",
+        NUMWLETTER: "NUMBER WITH LETTER",
         CURRENCY: "CURRENCY",
         AMOUNT: "AMOUNT",
         MEASUREMENT: "MEASUREMENT",
@@ -493,7 +493,6 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
-        NUMWITHCHAR: "NUMBER WITH CHARACTER",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
         S_BEGIN: "BEGIN SENT",
@@ -560,8 +559,8 @@ class TOK:
         return Tok(TOK.NUMBER, w, (n, cases, genders))
 
     @staticmethod
-    def NumberWithCharacter(w, n, c):
-        return Tok(TOK.NUMWITHCHAR, w, (n, c))
+    def NumberWithLetter(w, n, l):
+        return Tok(TOK.NUMWLETTER, w, (int(n), l))
 
     @staticmethod
     def Currency(w, iso, cases=None, genders=None):
@@ -654,13 +653,6 @@ def parse_digits(w):
         sec = int(p[2])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
             return TOK.Time(w, h, m, sec), s.end()
-    s = re.match(r'\d+[A-Za-z]{1}', w)
-    if s:
-        # Looks like a number with a single appended character, e.g. 14b, 23C
-        w = s.group()
-        n = w[:-1]
-        c = w[-1:]
-        return TOK.NumberWithCharacter(w, n, c), s.end()
     s = re.match(r'\d{1,2}:\d\d', w)
     if s:
         # Looks like a 24-hour clock, H:M
@@ -689,6 +681,15 @@ def parse_digits(w):
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(w, y, m, d), s.end()
+    s = re.match(r'\d+([a-zA-Z])(?!\w)', w)
+    if s:
+        # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
+        w = s.group()
+        n = w[:-1]
+        l = w[-1:]
+        # Only if single character is not a unit of measurement (e.g. 'A', 'l', 'V')
+        if l not in SI_UNITS.keys():
+            return TOK.NumberWithLetter(w, n, l), s.end()    
     s = re.match(r'\d+(\.\d\d\d)*,\d+(?!\d*\.\d)', w) # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator

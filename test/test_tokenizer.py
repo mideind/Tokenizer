@@ -229,10 +229,16 @@ def test_single_tokens():
         ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
         ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
         ("fake@news.is", TOK.EMAIL),
+        ("7a", [Tok(TOK.NUMWLETTER, "7a", (7, 'a'))]),
+        ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, 'B'))]),
+        ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, 'c'))]),
+        ("7l", [Tok(TOK.MEASUREMENT, "7 l", ('m³', 7.0))]),
+        ("150m", [Tok(TOK.MEASUREMENT, "150 m", ('m', 150))]),
+        ("220V", [Tok(TOK.MEASUREMENT, "220 V", ("V", 220))]),
+        ("11A", [Tok(TOK.MEASUREMENT, "11 A", ("A", 11))]),
         ("100 mm", [Tok(TOK.MEASUREMENT, "100 mm", ("m", 0.1))]),
         ("30,7°C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
         ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6))]),
-        ("220V", [Tok(TOK.MEASUREMENT, "220 V", ("V", 220))]),
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
     ]
 
@@ -275,6 +281,7 @@ def test_sentences():
         "DA": TOK.DATEABS,
         "Y": TOK.YEAR,
         "N": TOK.NUMBER,
+        "NL": TOK.NUMWLETTER,
         "TEL": TOK.TELNO,
         "PC": TOK.PERCENT,
         "U": TOK.URL,
@@ -351,7 +358,16 @@ def test_sentences():
         "1.030 hPa lægð gengur yfir landið árið 2019 e.Kr. Jógúrtin inniheldur 80 kcal.",
         "B ME      W    W      W    W      Y             P E B W    W          ME     P E",
     )
-
+    
+    test_sentence(
+        "Maður var lagður inn á deild 33C eftir handtöku á Bárugötu 14a þann nítjánda júlí 2016.",
+        "B W   W   W      W   W W     NL  W     W        W W        NL  W    DA                P E"
+    )
+    
+    test_sentence(
+        "Þessir 10Milljón vírar með 20A straum kostuðu 3000ISK og voru geymdir á Hagamel á 2hæð.",
+        "B W    N         W     W   ME  W      W       A       W  W    W       W W       W N W P E"
+    )
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
