@@ -560,7 +560,7 @@ class TOK:
 
     @staticmethod
     def NumberWithLetter(w, n, l):
-        return Tok(TOK.NUMWLETTER, w, (int(n), l))
+        return Tok(TOK.NUMWLETTER, w, (n, l))
 
     @staticmethod
     def Currency(w, iso, cases=None, genders=None):
@@ -685,11 +685,11 @@ def parse_digits(w):
     if s:
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
         w = s.group()
-        n = w[:-1]
         l = w[-1:]
-        # Only if single character is not a unit of measurement (e.g. 'A', 'l', 'V')
+        # Only match if the single character is not a unit of measurement (e.g. 'A', 'l', 'V')
         if l not in SI_UNITS.keys():
-            return TOK.NumberWithLetter(w, n, l), s.end()    
+            n = int(w[:-1])
+            return TOK.NumberWithLetter(w, n, l), s.end()
     s = re.match(r'\d+(\.\d\d\d)*,\d+(?!\d*\.\d)', w) # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator

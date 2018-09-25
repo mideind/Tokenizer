@@ -189,7 +189,7 @@ class:
 |               |         |                     | | 220 m²                  |
 +---------------+---------+---------------------+---------------------------+
 | NUMWLETTER    |    23   | Number followed by  | | 14a                     |
-|               |         | a letter            | | 7B                      |
+|               |         | a single letter     | | 7B                      |
 +---------------+---------+---------------------+---------------------------+
 | S_BEGIN       |  11001  | Start of sentence   |                           |
 +---------------+---------+---------------------+---------------------------+
@@ -300,8 +300,9 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
-* Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``, ``TOK.MEASUREMENT``
-* Version 1.0.5: Date/time and amount tokens coalesced to a further extent
+* Version 1.0.7: Added NUMWLETTER token type
 * Version 1.0.6: Automatic merging of Unicode ``COMBINING ACUTE ACCENT`` and
   ``COMBINING DIAERESIS`` code points with vowels
+* Version 1.0.5: Date/time and amount tokens coalesced to a further extent
+* Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``, ``TOK.MEASUREMENT``
 
