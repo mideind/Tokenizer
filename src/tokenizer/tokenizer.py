@@ -51,7 +51,6 @@ import datetime
 
 from .abbrev import Abbreviations
 
-
 # Mask away difference between Python 2 and 3
 if sys.version_info >= (3, 0):
     items = lambda d: d.items()
@@ -454,6 +453,7 @@ class TOK:
     TIMESTAMPABS = 20
     TIMESTAMPREL = 21
     MEASUREMENT = 22
+    NUMWLETTER = 23
 
     P_BEGIN = 10001 # Paragraph begin
     P_END = 10002 # Paragraph end
@@ -480,6 +480,7 @@ class TOK:
         DATEREL: "DATEREL",
         YEAR: "YEAR",
         NUMBER: "NUMBER",
+        NUMWLETTER: "NUMBER WITH LETTER",
         CURRENCY: "CURRENCY",
         AMOUNT: "AMOUNT",
         MEASUREMENT: "MEASUREMENT",
@@ -556,6 +557,10 @@ class TOK:
         """ cases is a list of possible cases for this number
             (if it was originally stated in words) """
         return Tok(TOK.NUMBER, w, (n, cases, genders))
+
+    @staticmethod
+    def NumberWithLetter(w, n, l):
+        return Tok(TOK.NUMWLETTER, w, (int(n), l))
 
     @staticmethod
     def Currency(w, iso, cases=None, genders=None):
@@ -676,6 +681,15 @@ def parse_digits(w):
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(w, y, m, d), s.end()
+    s = re.match(r'\d+([a-zA-Z])(?!\w)', w)
+    if s:
+        # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
+        w = s.group()
+        n = w[:-1]
+        l = w[-1:]
+        # Only if single character is not a unit of measurement (e.g. 'A', 'l', 'V')
+        if l not in SI_UNITS.keys():
+            return TOK.NumberWithLetter(w, n, l), s.end()    
     s = re.match(r'\d+(\.\d\d\d)*,\d+(?!\d*\.\d)', w) # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
