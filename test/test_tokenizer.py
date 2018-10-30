@@ -240,6 +240,8 @@ def test_single_tokens():
         ("30,7°C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
         ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6))]),
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
+        ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
+        ("1976kWst", [Tok(TOK.MEASUREMENT, "1976 kWst", ("J", 7113.6e6))]),
     ]
 
     for test_case in TEST_CASES:
@@ -322,7 +324,7 @@ def test_sentences():
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015 nk. Ál-verið notar 60 MWst á ári.",
         "B W   W  W    W    W            W   W                                   W O   W "
-        "W    O     W     W    DA                 W P E B W P W W    N  W    W W  P E",
+        "W    O     W     W    DA                 W P E B W P W W    ME      W W  P E",
     )
 
     test_sentence(
