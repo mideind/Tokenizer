@@ -18,3 +18,5 @@ install:
 script:
   - python -m pytest
 
+notifications:
+  slack: greynir:38FfPr1S8oZRNFMmt47mzT3z
