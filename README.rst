@@ -303,6 +303,7 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers
 * Version 1.0.8: Bug fixes in DATEREL, MEASUREMENT and NUMWLETTER token handling;
   added kWst and MWst measurement units; blackened
 * Version 1.0.7: Added NUMWLETTER token type
