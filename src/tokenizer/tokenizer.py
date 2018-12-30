@@ -1015,8 +1015,9 @@ def parse_particles(token_stream):
 
     def is_abbr_with_period(txt):
         """ Return True if the given token text is an abbreviation when followed by a period """
-        if "." in txt:
+        if "." in txt and txt not in Abbreviations.DICT:
             # There is already a period in it: must be an abbreviation
+            # (this applies for instance to "t.d" but not to "mbl.is")
             return True
         if txt in Abbreviations.SINGLES:
             # The token's literal text is defined as an abbreviation followed by a single period
@@ -1092,7 +1093,7 @@ def parse_particles(token_stream):
                     if abbrev in Abbreviations.NAME_FINISHERS:
                         # For name finishers (such as 'próf.') we don't consider a
                         # following person name as an indicator of an end-of-sentence
-                        # !!! BUG: This does not work as intended because person names
+                        # !!! TODO: This does not work as intended because person names
                         # !!! have not been recognized at this phase in the token pipeline.
                         test_set = TOK.TEXT_EXCL_PERSON
                     else:
@@ -1245,6 +1246,13 @@ def parse_particles(token_stream):
                 token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
                 next_token = next(token_stream)
 
+            # Replace straight abbreviations (i.e. those that don't end with
+            # a period)
+            if token.kind == TOK.WORD and token.val is None:
+                if token.txt in Abbreviations.DICT:
+                    # Add a meaning to the token
+                    token = TOK.Word(token.txt, [Abbreviations.DICT[token.txt]])
+
             # Yield the current token and advance to the lookahead
             yield token
             token = next_token
@@ -1280,9 +1288,8 @@ def parse_sentences(token_stream):
                 if token.kind == TOK.P_BEGIN and next_token.kind == TOK.P_END:
                     # P_BEGIN immediately followed by P_END:
                     # skip both and continue
-                    token = (
-                        None
-                    )  # Make sure we have correct status if next() raises StopIteration
+                    # Make sure we have correct status if next() raises StopIteration
+                    token = None
                     token = next(token_stream)
                     continue
             elif token.kind == TOK.X_END:

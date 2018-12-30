@@ -183,7 +183,6 @@ class Abbreviations:
                 # Already initialized
                 return
             from pkg_resources import resource_stream
-
             with resource_stream(__name__, "Abbrev.conf") as config:
                 for b in config:
                     # We get lines as binary strings

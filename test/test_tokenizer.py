@@ -200,6 +200,7 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
+        ("mbl.is", TOK.WORD),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
         ("123-4444", TOK.TELNO),
         ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
@@ -371,6 +372,7 @@ def test_sentences():
         "B W    N         W     W   ME  W      W       A       W  W    W       W W       W N W P E"
     )
 
+
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
     # Mask away Python 2/3 difference
@@ -446,9 +448,44 @@ def test_correct_spaces():
     assert s == "Jón-sem var formaður—mótmælti málinu."
 
 
+def test_abbrev():
+    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á mbl.is."))
+    assert (
+        tokens == [
+            Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+            Tok(kind=TOK.WORD, txt='Ég', val=None),
+            Tok(kind=TOK.WORD, txt='las', val=None),
+            Tok(kind=TOK.WORD, txt='fréttina', val=None),
+            Tok(kind=TOK.WORD, txt='um', val=None),
+            Tok(
+                kind=TOK.WORD, txt='IBM',
+                val=[
+                    ('International Business Machines', 0, 'hk', 'skst', 'IBM', '-')
+                ]
+            ),
+            Tok(
+                kind=TOK.WORD, txt='t.d.',
+                val=[
+                    ('til dæmis', 0, 'ao', 'frasi', 't.d.', '-')
+                ]
+            ),
+            Tok(kind=TOK.WORD, txt='á', val=None),
+            Tok(
+                kind=TOK.WORD, txt='mbl.is',
+                val=[
+                    ('Mbl.is', 0, 'hk', 'skst', 'mbl.is', '-')
+                ]
+            ),
+            Tok(kind=TOK.PUNCTUATION, txt='.', val=3),
+            Tok(kind=TOK.S_END, txt=None, val=None)
+        ]
+    )
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
     test_sentences()
     test_correct_spaces()
     test_correction()
+    test_abbrev()
