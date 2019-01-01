@@ -32,7 +32,6 @@
 """
 
 from __future__ import absolute_import
-from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
@@ -427,7 +426,6 @@ def test_correction():
     for sent, correct in SENT:
         s = t.tokenize(sent)
         txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
-        # print(txt)
         assert txt == correct
 
 
