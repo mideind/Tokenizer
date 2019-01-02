@@ -303,6 +303,8 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.1.0: All abbreviations in Abbrec.conf are now returned with their
+  meaning in a tuple in token.val; handling of 'mbl.is' fixed
 * Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers
 * Version 1.0.8: Bug fixes in DATEREL, MEASUREMENT and NUMWLETTER token handling;
   added kWst and MWst measurement units; blackened
