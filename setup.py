@@ -60,7 +60,7 @@ setup(
     version="1.1.1",
     license="MIT",
     description="A tokenizer for Icelandic text",
-    long_description="{0}\n{1}".format(
+    long_description=u"{0}\n{1}".format(
         re.compile("^.. start-badges.*^.. end-badges", re.M | re.S)
             .sub("", read("README.rst")
         ),
