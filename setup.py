@@ -48,7 +48,8 @@ from setuptools import setup
 def read(*names, **kwargs):
     try:
         return io.open(
-            join(dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")
+            join(dirname(__file__), *names),
+            encoding=kwargs.get("encoding", "utf8")
         ).read()
     except (IOError, OSError):
         return ""
@@ -56,11 +57,10 @@ def read(*names, **kwargs):
 
 setup(
     name="tokenizer",
-    version="1.1.0",
+    version="1.1.1",
     license="MIT",
     description="A tokenizer for Icelandic text",
-    long_description="%s\n%s"
-    % (
+    long_description="{0}\n{1}".format(
         re.compile("^.. start-badges.*^.. end-badges", re.M | re.S)
             .sub("", read("README.rst")
         ),

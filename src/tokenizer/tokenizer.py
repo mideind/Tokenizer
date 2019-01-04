@@ -1841,6 +1841,13 @@ def tokenize_without_annotation(text):
     return (t for t in token_stream if t.kind != TOK.X_END)
 
 
+def mark_paragraphs(txt):
+    """ Insert paragraph markers into plaintext, by newlines """
+    if not txt:
+        return "[[ ]]"
+    return "[[ " + " ]] [[ ".join(txt.split("\n")) + " ]]"
+
+
 def paragraphs(toklist):
     """ Generator yielding paragraphs from a token list. Each paragraph is a list
         of sentence tuples. Sentence tuples consist of the index of the first token
