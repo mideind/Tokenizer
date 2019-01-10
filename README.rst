@@ -304,6 +304,7 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.1.2: Fixed bug in liter (``l`` and ``ltr``) measurement units
 * Version 1.1.1: Added ``mark_paragraphs()`` function
 * Version 1.1.0: All abbreviations in ``Abbrev.conf`` are now returned with their
   meaning in a tuple in ``token.val``; handling of 'mbl.is' fixed
