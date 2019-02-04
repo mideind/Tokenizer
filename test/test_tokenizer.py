@@ -472,7 +472,7 @@ def test_abbrev():
             Tok(
                 kind=TOK.WORD, txt='mbl.is',
                 val=[
-                    ('Mbl.is', 0, 'hk', 'skst', 'mbl.is', '-')
+                    ('mbl.is', 0, 'hk', 'skst', 'mbl.is', '-')
                 ]
             ),
             Tok(kind=TOK.PUNCTUATION, txt='.', val=3),
