@@ -101,8 +101,8 @@ UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
 # Recognized punctuation
 
-LEFT_PUNCTUATION = "([„‚«#$€<°"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–"
+LEFT_PUNCTUATION = "([„‚«#$€<"
+RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–°"
 CENTER_PUNCTUATION = '"*&+=@©|'
 NONE_PUNCTUATION = "—–-/'´~\\"
 PUNCTUATION = (
@@ -389,6 +389,7 @@ SI_UNITS = {
     "GHz": ("Hz", 1.0e9),
     "Pa": ("Pa", 1.0),
     "hPa": ("Pa", 1.0e2),
+    "°": ("°", 1.0), # Degree
 }
 
 # Incorrectly written ordinals
@@ -1242,7 +1243,29 @@ def parse_particles(token_stream):
                 else:
                     # Simple scaling factor
                     value *= factor
-                token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
+                if next_token.txt in RIGHT_PUNCTUATION:
+                    # Probably a degree (°)
+                    token = TOK.Measurement(token.txt + next_token.txt, unit, value)
+                else:
+                    token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
+                next_token = next(token_stream)
+
+            if (
+                token.kind == TOK.MEASUREMENT
+                and token.val[0] == "°"
+                and next_token.kind == TOK.WORD
+                and next_token.txt in {"C", "F"}
+            ):
+                # Handle 200° C
+                new_unit = "°" + next_token.txt
+                unit, factor = SI_UNITS[new_unit]
+                # Both °C and °F have callable (lambda) factors
+                assert callable(factor)
+                token = TOK.Measurement(
+                    token.txt[:-1] + " " + new_unit,  # 200 °C
+                    unit,  # K
+                    factor(token.val[1])  # 200 converted to Kelvin
+                )
                 next_token = next(token_stream)
 
             # Replace straight abbreviations (i.e. those that don't end with

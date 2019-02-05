@@ -239,6 +239,15 @@ def test_single_tokens():
         ("11A", [Tok(TOK.MEASUREMENT, "11 A", ("A", 11))]),
         ("100 mm", [Tok(TOK.MEASUREMENT, "100 mm", ("m", 0.1))]),
         ("30,7°C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7 °C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7° C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7 ° C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("32°F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32 °F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32° F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32 ° F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("180°", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
+        ("180 °", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
         ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6))]),
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
         ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
@@ -370,6 +379,21 @@ def test_sentences():
     test_sentence(
         "Þessir 10Milljón vírar með 20A straum kostuðu 3000ISK og voru geymdir á Hagamel á 2hæð.",
         "B W    N         W     W   ME  W      W       A       W  W    W       W W       W N W P E"
+    )
+
+    test_sentence(
+        "Hitinn í dag var 32°C en á morgun verður hann 33° C og svo 37 °C.",
+        "B W    W W   W   ME   W  W W      W      W    ME    W  W   ME   P E"
+    )
+
+    test_sentence(
+        "Hitinn í dag var 100,3°F en á morgun verður hann 102,7 ° F og svo 99.88 °F.",
+        "B W    W W   W   ME      W  W W      W      W    ME        W  W   ME      P E"
+    )
+
+    test_sentence(
+        "Ég tók stefnu 45° til suðurs og svo 70°N en eftir það 88 ° vestur.",
+        "B W W  W      ME  W   W      W  W   ME W W  W     W   ME   W     P E"
     )
 
 
