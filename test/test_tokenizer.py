@@ -32,7 +32,6 @@
 """
 
 from __future__ import absolute_import
-from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
@@ -200,6 +199,7 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
+        ("mbl.is", TOK.WORD),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
         ("123-4444", TOK.TELNO),
         ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
@@ -232,12 +232,22 @@ def test_single_tokens():
         ("7a", [Tok(TOK.NUMWLETTER, "7a", (7, 'a'))]),
         ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, 'B'))]),
         ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, 'c'))]),
-        ("7l", [Tok(TOK.MEASUREMENT, "7 l", ('m³', 7.0))]),
+        ("7l", [Tok(TOK.MEASUREMENT, "7 l", ('m³', 0.007))]),
+        ("17 ltr", [Tok(TOK.MEASUREMENT, "17 ltr", ('m³', 17.0e-3))]),
         ("150m", [Tok(TOK.MEASUREMENT, "150 m", ('m', 150))]),
         ("220V", [Tok(TOK.MEASUREMENT, "220 V", ("V", 220))]),
         ("11A", [Tok(TOK.MEASUREMENT, "11 A", ("A", 11))]),
         ("100 mm", [Tok(TOK.MEASUREMENT, "100 mm", ("m", 0.1))]),
         ("30,7°C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7 °C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7° C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7 ° C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("32°F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32 °F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32° F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32 ° F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("180°", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
+        ("180 °", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
         ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6))]),
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
         ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
@@ -371,6 +381,22 @@ def test_sentences():
         "B W    N         W     W   ME  W      W       A       W  W    W       W W       W N W P E"
     )
 
+    test_sentence(
+        "Hitinn í dag var 32°C en á morgun verður hann 33° C og svo 37 °C.",
+        "B W    W W   W   ME   W  W W      W      W    ME    W  W   ME   P E"
+    )
+
+    test_sentence(
+        "Hitinn í dag var 100,3°F en á morgun verður hann 102,7 ° F og svo 99.88 °F.",
+        "B W    W W   W   ME      W  W W      W      W    ME        W  W   ME      P E"
+    )
+
+    test_sentence(
+        "Ég tók stefnu 45° til suðurs og svo 70°N en eftir það 88 ° vestur.",
+        "B W W  W      ME  W   W      W  W   ME W W  W     W   ME   W     P E"
+    )
+
+
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
     # Mask away Python 2/3 difference
@@ -425,7 +451,6 @@ def test_correction():
     for sent, correct in SENT:
         s = t.tokenize(sent)
         txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
-        # print(txt)
         assert txt == correct
 
 
@@ -446,9 +471,44 @@ def test_correct_spaces():
     assert s == "Jón-sem var formaður—mótmælti málinu."
 
 
+def test_abbrev():
+    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á mbl.is."))
+    assert (
+        tokens == [
+            Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+            Tok(kind=TOK.WORD, txt='Ég', val=None),
+            Tok(kind=TOK.WORD, txt='las', val=None),
+            Tok(kind=TOK.WORD, txt='fréttina', val=None),
+            Tok(kind=TOK.WORD, txt='um', val=None),
+            Tok(
+                kind=TOK.WORD, txt='IBM',
+                val=[
+                    ('International Business Machines', 0, 'hk', 'skst', 'IBM', '-')
+                ]
+            ),
+            Tok(
+                kind=TOK.WORD, txt='t.d.',
+                val=[
+                    ('til dæmis', 0, 'ao', 'frasi', 't.d.', '-')
+                ]
+            ),
+            Tok(kind=TOK.WORD, txt='á', val=None),
+            Tok(
+                kind=TOK.WORD, txt='mbl.is',
+                val=[
+                    ('mbl.is', 0, 'hk', 'skst', 'mbl.is', '-')
+                ]
+            ),
+            Tok(kind=TOK.PUNCTUATION, txt='.', val=3),
+            Tok(kind=TOK.S_END, txt=None, val=None)
+        ]
+    )
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
     test_sentences()
     test_correct_spaces()
     test_correction()
+    test_abbrev()

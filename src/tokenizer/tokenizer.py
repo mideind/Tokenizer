@@ -40,7 +40,6 @@
 """
 
 from __future__ import absolute_import
-from __future__ import print_function
 from __future__ import unicode_literals
 
 from collections import namedtuple
@@ -102,8 +101,8 @@ UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
 # Recognized punctuation
 
-LEFT_PUNCTUATION = "([„‚«#$€<°"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–"
+LEFT_PUNCTUATION = "([„‚«#$€<"
+RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–°"
 CENTER_PUNCTUATION = '"*&+=@©|'
 NONE_PUNCTUATION = "—–-/'´~\\"
 PUNCTUATION = (
@@ -334,8 +333,8 @@ SI_UNITS = {
     "fm": ("m²", 1.0),
     "cm²": ("m²", 1.0e-2),
     "m³": ("m³", 1.0),
-    "cm³": ("m³", 1.0),
-    "l": ("m³", 1.0),
+    "cm³": ("m³", 1.0e-6),
+    "l": ("m³", 1.0e-3),
     "ltr": ("m³", 1.0e-3),
     "dl": ("m³", 1.0e-4),
     "cl": ("m³", 1.0e-5),
@@ -390,6 +389,7 @@ SI_UNITS = {
     "GHz": ("Hz", 1.0e9),
     "Pa": ("Pa", 1.0),
     "hPa": ("Pa", 1.0e2),
+    "°": ("°", 1.0), # Degree
 }
 
 # Incorrectly written ordinals
@@ -1015,8 +1015,9 @@ def parse_particles(token_stream):
 
     def is_abbr_with_period(txt):
         """ Return True if the given token text is an abbreviation when followed by a period """
-        if "." in txt:
+        if "." in txt and txt not in Abbreviations.DICT:
             # There is already a period in it: must be an abbreviation
+            # (this applies for instance to "t.d" but not to "mbl.is")
             return True
         if txt in Abbreviations.SINGLES:
             # The token's literal text is defined as an abbreviation followed by a single period
@@ -1092,7 +1093,7 @@ def parse_particles(token_stream):
                     if abbrev in Abbreviations.NAME_FINISHERS:
                         # For name finishers (such as 'próf.') we don't consider a
                         # following person name as an indicator of an end-of-sentence
-                        # !!! BUG: This does not work as intended because person names
+                        # !!! TODO: This does not work as intended because person names
                         # !!! have not been recognized at this phase in the token pipeline.
                         test_set = TOK.TEXT_EXCL_PERSON
                     else:
@@ -1242,8 +1243,37 @@ def parse_particles(token_stream):
                 else:
                     # Simple scaling factor
                     value *= factor
-                token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
+                if next_token.txt in RIGHT_PUNCTUATION:
+                    # Probably a degree (°)
+                    token = TOK.Measurement(token.txt + next_token.txt, unit, value)
+                else:
+                    token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
                 next_token = next(token_stream)
+
+            if (
+                token.kind == TOK.MEASUREMENT
+                and token.val[0] == "°"
+                and next_token.kind == TOK.WORD
+                and next_token.txt in {"C", "F"}
+            ):
+                # Handle 200° C
+                new_unit = "°" + next_token.txt
+                unit, factor = SI_UNITS[new_unit]
+                # Both °C and °F have callable (lambda) factors
+                assert callable(factor)
+                token = TOK.Measurement(
+                    token.txt[:-1] + " " + new_unit,  # 200 °C
+                    unit,  # K
+                    factor(token.val[1])  # 200 converted to Kelvin
+                )
+                next_token = next(token_stream)
+
+            # Replace straight abbreviations (i.e. those that don't end with
+            # a period)
+            if token.kind == TOK.WORD and token.val is None:
+                if token.txt in Abbreviations.DICT:
+                    # Add a meaning to the token
+                    token = TOK.Word(token.txt, [Abbreviations.DICT[token.txt]])
 
             # Yield the current token and advance to the lookahead
             yield token
@@ -1280,9 +1310,8 @@ def parse_sentences(token_stream):
                 if token.kind == TOK.P_BEGIN and next_token.kind == TOK.P_END:
                     # P_BEGIN immediately followed by P_END:
                     # skip both and continue
-                    token = (
-                        None
-                    )  # Make sure we have correct status if next() raises StopIteration
+                    # Make sure we have correct status if next() raises StopIteration
+                    token = None
                     token = next(token_stream)
                     continue
             elif token.kind == TOK.X_END:
@@ -1833,6 +1862,13 @@ def tokenize_without_annotation(text):
     token_stream = parse_date_and_time(token_stream)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
+
+
+def mark_paragraphs(txt):
+    """ Insert paragraph markers into plaintext, by newlines """
+    if not txt:
+        return "[[ ]]"
+    return "[[ " + " ]] [[ ".join(txt.split("\n")) + " ]]"
 
 
 def paragraphs(toklist):

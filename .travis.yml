@@ -1,12 +1,15 @@
 language: python
 
+dist: xenial
+
 python:
   - "2.7"
-  - "3.3"
+#  - "3.3" # Not supported by Travis CI on Xenial
   - "3.4"
   - "3.5"
   - "3.6"
-  - "pypy" # 2.7
+  - "3.7"
+#  - "pypy" # 2.7 # Not supported by Travis CI on Xenial
   - "pypy3.5"
 
 install:
@@ -15,3 +18,5 @@ install:
 script:
   - python -m pytest
 
+notifications:
+  slack: greynir:38FfPr1S8oZRNFMmt47mzT3z

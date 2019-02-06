@@ -2,6 +2,9 @@
 Tokenizer: A tokenizer for Icelandic text
 -----------------------------------------
 
+.. image:: https://travis-ci.org/vthorsteinsson/Tokenizer.svg?branch=master
+   :target: https://travis-ci.com/vthorsteinsson/Tokenizer
+
 Overview
 --------
 
@@ -18,7 +21,7 @@ and dates in the middle of sentences.
 The package contains a dictionary of common Icelandic abbreviations, in the file
 ``src/tokenizer/Abbrev.conf``.
 
-Tokenizer is derived from a corresponding module in the `Greynir project <https://greynir.is>`_
+Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/vthorsteinsson/Reynir>`_), by the same authors.
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
 
@@ -238,8 +241,9 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
 - For ``TOK.TIME``, the ``val`` field contains an ``(hour, minute, second)`` tuple.
 - For ``TOK.DATEABS``, the ``val`` field contains a ``(year, month, day)`` tuple (all 1-based).
 - For ``TOK.DATEREL``, the ``val`` field contains a ``(year, month, day)`` tuple (all 1-based),
-  except that a least one of the tuple fields is missing and set to 0. Example: *þriðja júní*
-  becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)`` as the year is missing.
+  except that a least one of the tuple fields is missing and set to 0.
+  Example: *þriðja júní* becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)``
+  as the year is missing.
 - For ``TOK.YEAR``, the ``val`` field contains the year as an integer. A negative number
   indicates that the year is BCE (*fyrir Krist*), specified with the suffix *f.Kr.*
   (e.g. *árið 33 f.Kr.*).
@@ -255,16 +259,16 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
   amount is a float, and the currency is an ISO currency code, e.g. *USD* for dollars ($ sign),
   *EUR* for euros (€ sign) or *ISK* for Icelandic króna (*kr.* abbreviation).
   (The two empty fields are included for compatibility with Greynir.)
-- For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)`` tuple, where ``unit``
-  is a base SI unit (such as ``g``, ``m``, ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature
-  in Kelvin).
+- For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)`` tuple,
+  where ``unit`` is a base SI unit (such as ``g``, ``m``, ``m²``, ``s``, ``W``,
+  ``Hz``, ``K`` for temperature in Kelvin).
 
 
 The ``correct_spaces()`` function
 ---------------------------------
 
-Tokenizer also contains the utility function ``tokenizer.correct_spaces(text)``. This function
-returns a string after splitting it up and re-joining
+Tokenizer also contains the utility function ``tokenizer.correct_spaces(text)``. This
+function returns a string after splitting it up and re-joining
 it with correct whitespace around punctuation tokens. Example::
 
 	>>> tokenizer.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50")
@@ -300,9 +304,14 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
-* Version 1.0.8: Bug fixes in DATEREL, MEASUREMENT and NUMWLETTER token handling;
-  added kWst and MWst measurement units; blackened
-* Version 1.0.7: Added NUMWLETTER token type
+* Version 1.1.2: Fixed bug in liter (``l`` and ``ltr``) measurement units
+* Version 1.1.1: Added ``mark_paragraphs()`` function
+* Version 1.1.0: All abbreviations in ``Abbrev.conf`` are now returned with their
+  meaning in a tuple in ``token.val``; handling of 'mbl.is' fixed
+* Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers
+* Version 1.0.8: Bug fixes in ``DATEREL``, ``MEASUREMENT`` and ``NUMWLETTER``
+  token handling; added 'kWst' and 'MWst' measurement units; blackened
+* Version 1.0.7: Added ``NUMWLETTER`` token type
 * Version 1.0.6: Automatic merging of Unicode ``COMBINING ACUTE ACCENT`` and
   ``COMBINING DIAERESIS`` code points with vowels
 * Version 1.0.5: Date/time and amount tokens coalesced to a further extent
