@@ -47,6 +47,7 @@ from collections import namedtuple
 import sys
 import re
 import datetime
+import unicodedata
 
 from .abbrev import Abbreviations
 
@@ -327,6 +328,9 @@ CURRENCY_ABBREV = frozenset(
     )
 )
 
+# Single-character vulgar fractions in Unicode
+SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
+
 # Derived unit : (base SI unit, conversion factor/function)
 SI_UNITS = {
     "m²": ("m²", 1.0),
@@ -389,7 +393,7 @@ SI_UNITS = {
     "GHz": ("Hz", 1.0e9),
     "Pa": ("Pa", 1.0),
     "hPa": ("Pa", 1.0e2),
-    "°": ("°", 1.0), # Degree
+    "°": ("°", 1.0),  # Degree
 }
 
 # Incorrectly written ordinals
@@ -711,6 +715,13 @@ def parse_digits(w):
         if l not in SI_UNITS.keys():
             n = int(w[:-1])
             return TOK.NumberWithLetter(w, n, l), s.end()
+    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
+    if s:
+        # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
+        ln = s.group(1)
+        vf = s.group(2)
+        val = float(ln) + unicodedata.numeric(vf)
+        return TOK.Number(w, val), s.end()
     s = re.match(r"\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
@@ -904,6 +915,15 @@ def parse_tokens(txt):
                     ate = True
                     yield TOK.Email(s.group())
                     w = w[s.end() :]
+
+            # Unicode single-char vulgar fractions
+            # TODO: Support multiple-char unicode fractions that
+            # use super/subscript w. DIVISION SLASH (U+2215)
+            if w and w[0] in SINGLECHAR_FRACTIONS:
+                ate = True
+                yield TOK.Number(w[0], unicodedata.numeric(w[0]))
+                w = w[1:]
+
             # Numbers or other stuff starting with a digit
             if w and w[0] in DIGITS:
                 for key, val in items(ORDINAL_ERRORS):
@@ -1247,7 +1267,9 @@ def parse_particles(token_stream):
                     # Probably a degree (°)
                     token = TOK.Measurement(token.txt + next_token.txt, unit, value)
                 else:
-                    token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
+                    token = TOK.Measurement(
+                        token.txt + " " + next_token.txt, unit, value
+                    )
                 next_token = next(token_stream)
 
             if (
@@ -1264,7 +1286,7 @@ def parse_particles(token_stream):
                 token = TOK.Measurement(
                     token.txt[:-1] + " " + new_unit,  # 200 °C
                     unit,  # K
-                    factor(token.val[1])  # 200 converted to Kelvin
+                    factor(token.val[1]),  # 200 converted to Kelvin
                 )
                 next_token = next(token_stream)
 
