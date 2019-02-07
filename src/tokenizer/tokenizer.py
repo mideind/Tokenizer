@@ -1267,7 +1267,9 @@ def parse_particles(token_stream):
                     # Probably a degree (°)
                     token = TOK.Measurement(token.txt + next_token.txt, unit, value)
                 else:
-                    token = TOK.Measurement(token.txt + " " + next_token.txt, unit, value)
+                    token = TOK.Measurement(
+                        token.txt + " " + next_token.txt, unit, value
+                    )
                 next_token = next(token_stream)
 
             if (

@@ -11,6 +11,8 @@ __pycache__/
 p2/
 p3/
 env/
+venv/
+python2.7/
 build/
 develop-eggs/
 dist/
