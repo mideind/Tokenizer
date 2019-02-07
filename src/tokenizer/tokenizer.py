@@ -715,7 +715,7 @@ def parse_digits(w):
         if l not in SI_UNITS.keys():
             n = int(w[:-1])
             return TOK.NumberWithLetter(w, n, l), s.end()
-    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])$", w)
+    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
         ln = s.group(1)
@@ -917,10 +917,12 @@ def parse_tokens(txt):
                     w = w[s.end() :]
 
             # Unicode single-char vulgar fractions
-            if w and len(w) == 1 and w in SINGLECHAR_FRACTIONS:
-                yield TOK.Number(w, unicodedata.numeric(w))
-                w = ""
+            # TODO: Support multiple-char unicode fractions that
+            # use super/subscript w. DIVISION SLASH (U+2215)
+            if w and w[0] in SINGLECHAR_FRACTIONS:
                 ate = True
+                yield TOK.Number(w[0], unicodedata.numeric(w[0]))
+                w = w[1:]
 
             # Numbers or other stuff starting with a digit
             if w and w[0] in DIGITS:

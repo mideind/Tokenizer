@@ -399,6 +399,10 @@ def test_sentences():
         "B W W  W      ME  W   W      W  W   ME W W  W     W   ME   W     P E"
     )
 
+    test_sentence(
+        "Byrjum á 2½ dl af rjóma því ¼-½ matskeið er ekki nóg. Helmingur er ½. Svarið er 42, ekki 41⅞.",
+        "B    W W ME    W  W     W  N P N W       W  W    W P E B W       W N P E B W W  N P W    N P E"
+    )
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
