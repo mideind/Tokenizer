@@ -143,6 +143,7 @@ class:
 |               |         |                     | | 1.965                   |
 |               |         |                     | | 1.965,34                |
 |               |         |                     | | 1,965.34                |
+|               |         |                     | | 2⅞                      |
 +---------------+---------+---------------------+---------------------------+
 | WORD          |    6    | Word                | | kattaeftirlit           |
 |               |         |                     | | hunda- og kattaeftirlit |
@@ -190,6 +191,7 @@ class:
 | MEASUREMENT   |    22   | Value with a        | | 690 MW                  |
 |               |         | measurement unit    | | 1.010 hPa               |
 |               |         |                     | | 220 m²                  |
+|               |         |                     | | 80° C                   |
 +---------------+---------+---------------------+---------------------------+
 | NUMWLETTER    |    23   | Number followed by  | | 14a                     |
 |               |         | a single letter     | | 7B                      |
@@ -304,6 +306,9 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.2.0: Added support for Unicode fraction characters; enhanced handing
+  of degrees (°, °C, °F); fixed bug in cubic meter measurement unit;
+  more abbreviations
 * Version 1.1.2: Fixed bug in liter (``l`` and ``ltr``) measurement units
 * Version 1.1.1: Added ``mark_paragraphs()`` function
 * Version 1.1.0: All abbreviations in ``Abbrev.conf`` are now returned with their

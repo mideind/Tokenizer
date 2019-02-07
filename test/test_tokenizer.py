@@ -5,7 +5,7 @@
 
     Tests for Tokenizer module
 
-    Copyright(C) 2018 by Miðeind ehf.
+    Copyright(C) 2019 by Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
