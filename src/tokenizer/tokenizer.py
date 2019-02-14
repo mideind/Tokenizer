@@ -1643,6 +1643,7 @@ def parse_date_and_time(token_stream):
                     "Júl",
                     "des",
                     "Des",
+                    "Ágúst",
                 }:
                     token = TOK.Daterel(token.txt, y=0, m=month, d=0)
 

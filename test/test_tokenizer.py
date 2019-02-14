@@ -58,6 +58,8 @@ def test_single_tokens():
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
         ("3. maí", [Tok(TOK.DATEREL, "3. maí", (0, 5, 3))]),
+        ("Ágúst", TOK.WORD), # On its own, it
+        ("13. ágúst", [Tok(TOK.DATEREL, "13. ágúst", (0, 8, 13))]),
         ("nóvember 1918", [Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0))]),
         ("sautjánda júní", [Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17))]),
         (
@@ -394,6 +396,11 @@ def test_sentences():
     test_sentence(
         "Byrjum á 2½ dl af rjóma því ¼-½ matskeið er ekki nóg. Helmingur er ½. Svarið er 42, ekki 41⅞.",
         "B    W W ME    W  W     W  N P N W       W  W    W P E B W       W N P E B W W  N P W    N P E",
+    )
+
+    test_sentence(
+        "Ágúst og frændi hans, sem hét líka Ágúst, hittust í ágúst, nánar tiltekið 13. ágúst 2018.",
+        "B   W W  W      W   P W   W   W    W    P W       W DR   P W     W        DA            P E",
     )
 
 
