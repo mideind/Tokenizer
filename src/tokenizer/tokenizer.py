@@ -102,7 +102,7 @@ UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
 # Recognized punctuation
 
-LEFT_PUNCTUATION = "([„‚«#$€<"
+LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
 RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–°"
 CENTER_PUNCTUATION = '"*&+=@©|'
 NONE_PUNCTUATION = "—–-/'´~\\"
@@ -327,6 +327,15 @@ CURRENCY_ABBREV = frozenset(
         "RMB",
     )
 )
+
+# Map symbols to currency abbreviations
+CURRENCY_SYMBOLS = {
+    "$": "USD",
+    "€": "EUR",
+    "£": "GBP",
+    "¥": "JPY", # Also used for China's renminbi (yuan)
+    "₽": "RUB", # Russian ruble
+}
 
 # Single-character vulgar fractions in Unicode
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
@@ -1070,25 +1079,16 @@ def parse_particles(token_stream):
 
             clock = False
 
-            # Check for $[number]
-            if (
-                token.kind == TOK.PUNCTUATION
-                and token.txt == "$"
-                and next_token.kind == TOK.NUMBER
-            ):
-
-                token = TOK.Amount(token.txt + next_token.txt, "USD", next_token.val[0])
-                next_token = next(token_stream)
-
-            # Check for €[number]
-            if (
-                token.kind == TOK.PUNCTUATION
-                and token.txt == "€"
-                and next_token.kind == TOK.NUMBER
-            ):
-
-                token = TOK.Amount(token.txt + next_token.txt, "EUR", next_token.val[0])
-                next_token = next(token_stream)
+            # Check for currency symbol followed by number, e.g. $10
+            for symbol, currabbr in CURRENCY_SYMBOLS.items():
+                if (
+                    token.kind == TOK.PUNCTUATION
+                    and token.txt == symbol
+                    and next_token.kind == TOK.NUMBER
+                ):
+                    token = TOK.Amount(token.txt + next_token.txt, currabbr, next_token.val[0])
+                    next_token = next(token_stream)
+                    break
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token

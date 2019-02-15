@@ -223,9 +223,14 @@ def test_single_tokens():
         ("€472,64", TOK.AMOUNT),
         ("$1.472,64", TOK.AMOUNT),
         ("€3.472,64", TOK.AMOUNT),
+        ("£1.922", TOK.AMOUNT),
+        ("¥212,11", TOK.AMOUNT),
         ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
         ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
+        ("£5,199.99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
         ("fake@news.is", TOK.EMAIL),
+        ("jon.jonsson.99@netfang.is", TOK.EMAIL),
+        ("valid@my-domain.reallylongtld", TOK.EMAIL),
         ("7a", [Tok(TOK.NUMWLETTER, "7a", (7, "a"))]),
         ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, "B"))]),
         ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, "c"))]),
@@ -325,6 +330,11 @@ def test_sentences():
         "Í dag er 10. júlí. Klukkan er 15:40 núna.Ég fer kl. 13 niður á Hlemm o.s.frv. ",
         "B W     W     P E B W W A       W W      P A    W  A  P E B W W   W  N     P E "
         "B W W W  DR      P E B W   W  T     W   P E B W W T     W     W W     W      P E",
+    )
+
+    test_sentence(
+        "Jæja, bjór í Bretlandi kominn upp í £4.29 (ISK 652).  Dýrt!     Í Japan er hann bara ¥600.",
+        "B W P W    W W         W      W   W A    P W N P P E  B W P E B W W     W  W    W    A   P E",
     )
 
     test_sentence(
