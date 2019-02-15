@@ -337,6 +337,13 @@ def test_sentences():
         "B W P W    W W         W      W   W A    P W N P P E  B W P E B W W     W  W    W    A   P E",
     )
 
+    # '\u00AD': soft hyphen
+    # '\u200B': zero-width space
+    test_sentence(
+        "Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\u00ADis\u00ADins.",
+        "B W                      W  W PC                       W          W        W                  P E"
+    )
+
     test_sentence(
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015 nk. Ál-verið notar 60 MWst á ári.",

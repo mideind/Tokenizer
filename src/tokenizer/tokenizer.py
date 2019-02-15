@@ -100,6 +100,12 @@ UNICODE_REPLACEMENTS = {
 }
 UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
+
+SOFT_HYPHEN = unicode_chr(173)
+ZEROWIDTH_SPACE = unicode_chr(8203)
+
+UNWANTED_CHARACTERS = frozenset((SOFT_HYPHEN, ZEROWIDTH_SPACE))
+
 # Recognized punctuation
 
 LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
@@ -333,8 +339,8 @@ CURRENCY_SYMBOLS = {
     "$": "USD",
     "€": "EUR",
     "£": "GBP",
-    "¥": "JPY", # Also used for China's renminbi (yuan)
-    "₽": "RUB", # Russian ruble
+    "¥": "JPY",  # Also used for China's renminbi (yuan)
+    "₽": "RUB",  # Russian ruble
 }
 
 # Single-character vulgar fractions in Unicode
@@ -812,9 +818,16 @@ def parse_digits(w):
 def prepare(txt):
     """ Convert txt to Unicode (on Python 2.7) and replace composite glyphs
         with single code points """
-    return UNICODE_REGEX.sub(
+
+    txt = UNICODE_REGEX.sub(
         lambda match: UNICODE_REPLACEMENTS[match.group(0)], make_str(txt)
     )
+
+    # Remove unwanted characters (e.g. soft hyphens, etc.)
+    for char in UNWANTED_CHARACTERS:
+        txt = txt.replace(char, '')
+
+    return txt
 
 
 def parse_tokens(txt):
@@ -1086,7 +1099,9 @@ def parse_particles(token_stream):
                     and token.txt == symbol
                     and next_token.kind == TOK.NUMBER
                 ):
-                    token = TOK.Amount(token.txt + next_token.txt, currabbr, next_token.val[0])
+                    token = TOK.Amount(
+                        token.txt + next_token.txt, currabbr, next_token.val[0]
+                    )
                     next_token = next(token_stream)
                     break
 
