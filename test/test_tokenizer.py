@@ -58,6 +58,8 @@ def test_single_tokens():
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
         ("3. maí", [Tok(TOK.DATEREL, "3. maí", (0, 5, 3))]),
+        ("Ágúst", TOK.WORD), # Not month name if capitalized
+        ("13. ágúst", [Tok(TOK.DATEREL, "13. ágúst", (0, 8, 13))]),
         ("nóvember 1918", [Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0))]),
         ("sautjánda júní", [Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17))]),
         (
@@ -221,9 +223,14 @@ def test_single_tokens():
         ("€472,64", TOK.AMOUNT),
         ("$1.472,64", TOK.AMOUNT),
         ("€3.472,64", TOK.AMOUNT),
+        ("£1.922", TOK.AMOUNT),
+        ("¥212,11", TOK.AMOUNT),
         ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
         ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
+        ("£5,199.99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
         ("fake@news.is", TOK.EMAIL),
+        ("jon.jonsson.99@netfang.is", TOK.EMAIL),
+        ("valid@my-domain.reallylongtld", TOK.EMAIL),
         ("7a", [Tok(TOK.NUMWLETTER, "7a", (7, "a"))]),
         ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, "B"))]),
         ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, "c"))]),
@@ -326,6 +333,19 @@ def test_sentences():
     )
 
     test_sentence(
+        "Jæja, bjór í Bretlandi kominn upp í £4.29 (ISK 652).  Dýrt!     Í Japan er hann bara ¥600.",
+        "B W P W    W W         W      W   W A    P W N P P E  B W P E B W W     W  W    W    A   P E",
+    )
+
+    # '\u00AD': soft hyphen
+    # '\u200B': zero-width space
+    # '\uFEFF': zero-width non-breaking space
+    test_sentence(
+        "Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\uFEFFis\u00ADins.",
+        "B W                      W  W PC                       W          W        W                  P E"
+    )
+
+    test_sentence(
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015 nk. Ál-verið notar 60 MWst á ári.",
         "B W   W  W    W    W            W   W                                   W O   W "
@@ -394,6 +414,11 @@ def test_sentences():
     test_sentence(
         "Byrjum á 2½ dl af rjóma því ¼-½ matskeið er ekki nóg. Helmingur er ½. Svarið er 42, ekki 41⅞.",
         "B    W W ME    W  W     W  N P N W       W  W    W P E B W       W N P E B W W  N P W    N P E",
+    )
+
+    test_sentence(
+        "Ágúst bjó á hæð númer 13. Ágúst kunni vel við það, enda var 12. ágúst. ÞAÐ VAR 12. ÁGÚST!",
+        "B   W W   W W   W    N P E B W     W     W   W   W P  W    W   DR  P E B W W   DR      P E",
     )
 
 
