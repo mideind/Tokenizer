@@ -71,12 +71,16 @@ else:
 
 ACCENT = unicode_chr(769)
 UMLAUT = unicode_chr(776)
+SOFT_HYPHEN = unicode_chr(173)
+ZEROWIDTH_SPACE = unicode_chr(8203)
+ZEROWIDTH_NBSP = unicode_chr(65279)
 
-# Translations of separate umlauts and accents to single glyphs.
-# The strings to the left in each tuple are two Unicode code
-# points: vowel + COMBINING ACUTE ACCENT (chr(769)) or
-# vowel + COMBINING DIAERESIS (chr(776)).
+# Preprocessing of unicode characters before tokenization
 UNICODE_REPLACEMENTS = {
+    # Translations of separate umlauts and accents to single glyphs.
+    # The strings to the left in each tuple are two Unicode code
+    # points: vowel + COMBINING ACUTE ACCENT (chr(769)) or
+    # vowel + COMBINING DIAERESIS (chr(776)).
     "a" + ACCENT: "á",
     "a" + UMLAUT: "ä",
     "e" + ACCENT: "é",
@@ -97,14 +101,12 @@ UNICODE_REPLACEMENTS = {
     "U" + UMLAUT: "Ü",
     "Y" + ACCENT: "Ý",
     "O" + UMLAUT: "Ö",
+    # Also remove these unwanted characters
+    SOFT_HYPHEN: "",
+    ZEROWIDTH_SPACE: "",
+    ZEROWIDTH_NBSP: "",
 }
 UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
-
-
-SOFT_HYPHEN = unicode_chr(173)
-ZEROWIDTH_SPACE = unicode_chr(8203)
-
-UNWANTED_CHARACTERS = frozenset((SOFT_HYPHEN, ZEROWIDTH_SPACE))
 
 # Recognized punctuation
 
@@ -214,6 +216,9 @@ MONTHS = {
     "nóv": 11,
     "des": 12,
 }
+
+# The masculine Icelandic name should not be identified as a month
+MONTH_BLACKLIST = frozenset(('Ágúst',))
 
 # Days of the month spelled out
 DAYS_OF_MONTH = {
@@ -818,16 +823,9 @@ def parse_digits(w):
 def prepare(txt):
     """ Convert txt to Unicode (on Python 2.7) and replace composite glyphs
         with single code points """
-
-    txt = UNICODE_REGEX.sub(
+    return UNICODE_REGEX.sub(
         lambda match: UNICODE_REPLACEMENTS[match.group(0)], make_str(txt)
     )
-
-    # Remove unwanted characters (e.g. soft hyphens, etc.)
-    for char in UNWANTED_CHARACTERS:
-        txt = txt.replace(char, '')
-
-    return txt
 
 
 def parse_tokens(txt):
@@ -1093,17 +1091,18 @@ def parse_particles(token_stream):
             clock = False
 
             # Check for currency symbol followed by number, e.g. $10
-            for symbol, currabbr in CURRENCY_SYMBOLS.items():
-                if (
-                    token.kind == TOK.PUNCTUATION
-                    and token.txt == symbol
-                    and next_token.kind == TOK.NUMBER
-                ):
-                    token = TOK.Amount(
-                        token.txt + next_token.txt, currabbr, next_token.val[0]
-                    )
-                    next_token = next(token_stream)
-                    break
+            if token.txt in CURRENCY_SYMBOLS:
+                for symbol, currabbr in CURRENCY_SYMBOLS.items():
+                    if (
+                        token.kind == TOK.PUNCTUATION
+                        and token.txt == symbol
+                        and next_token.kind == TOK.NUMBER
+                    ):
+                        token = TOK.Amount(
+                            token.txt + next_token.txt, currabbr, next_token.val[0]
+                        )
+                        next_token = next(token_stream)
+                        break
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
@@ -1244,7 +1243,7 @@ def parse_particles(token_stream):
                         or (
                             follow_token.kind == TOK.WORD
                             and follow_token.txt[0].isupper()
-                            and follow_token.txt.lower() not in MONTHS
+                            and month_for_token(follow_token) is None
                         )
                     ):
                         # Next token is a sentence or paragraph end, or opening quotes,
@@ -1482,6 +1481,11 @@ def match_stem_list(token, stems):
         return None
     return stems.get(token.txt.lower(), None)
 
+def month_for_token(token):
+    if token.txt in MONTH_BLACKLIST:
+        return None
+    return match_stem_list(token, MONTHS)
+
 
 def parse_phrases_1(token_stream):
 
@@ -1511,7 +1515,7 @@ def parse_phrases_1(token_stream):
                 token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER
             ) and next_token.kind == TOK.WORD:
 
-                month = match_stem_list(next_token, MONTHS)
+                month = month_for_token(next_token)
                 if month is not None:
                     token = TOK.Date(
                         token.txt + " " + next_token.txt,
@@ -1580,7 +1584,7 @@ def parse_date_and_time(token_stream):
                 or (token.txt and token.txt.lower() in DAYS_OF_MONTH)
             ) and next_token.kind == TOK.WORD:
 
-                month = match_stem_list(next_token, MONTHS)
+                month = month_for_token(next_token)
                 if month is not None:
                     token = TOK.Date(
                         token.txt + " " + next_token.txt,
@@ -1624,7 +1628,7 @@ def parse_date_and_time(token_stream):
             if token.kind == TOK.WORD and (
                 next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR
             ):
-                month = match_stem_list(token, MONTHS)
+                month = month_for_token(token)
                 if month is not None:
                     year = (
                         next_token.val
@@ -1646,7 +1650,7 @@ def parse_date_and_time(token_stream):
 
             # Check for a single month, change to DATEREL
             if token.kind == TOK.WORD:
-                month = match_stem_list(token, MONTHS)
+                month = month_for_token(token)
                 # Don't automatically interpret "mar", etc. as month names,
                 # since they are ambiguous
                 if month is not None and token.txt not in {
