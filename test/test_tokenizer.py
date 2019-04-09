@@ -494,6 +494,8 @@ def test_correct_spaces():
     assert s == "Breytingin var +4,10 þingmenn en dollarinn er nú á €1,3455."
     s = t.correct_spaces("Jón- sem var formaður — mótmælti málinu.")
     assert s == "Jón-sem var formaður—mótmælti málinu."
+    s = t.correct_spaces("Það á   að geyma mjólkina við  20 ±  3 °C")
+    assert s == "Það á að geyma mjólkina við 20 ± 3° C"
 
 
 def test_abbrev():

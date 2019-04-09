@@ -159,17 +159,19 @@ TP_WORD = 5  # Flexible whitespace depending on surroundings
 
 TP_SPACE = (
     # Next token is:
-    # LEFT    CENTER  RIGHT   NONE    WORD
+
+    # LEFT  CENTER RIGHT   NONE   WORD
+
     # Last token was TP_LEFT:
-    (False, True, False, False, False),
+    (False, True,  False,  False, False),
     # Last token was TP_CENTER:
-    (True, True, True, True, True),
+    (True,  True,  True,   True,  True),
     # Last token was TP_RIGHT:
-    (True, True, False, False, True),
+    (True,  True,  False,  False, True),
     # Last token was TP_NONE:
-    (False, True, False, False, False),
+    (False, True,  False,  False, False),
     # Last token was TP_WORD:
-    (True, True, False, False, True),
+    (True,  True,  False,  False, True),
 )
 
 # Numeric digits
@@ -1979,7 +1981,8 @@ RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 
 def correct_spaces(s):
-    """ Utility function to split and re-compose a string with correct spacing between tokens"""
+    """ Utility function to split and re-compose a string
+        with correct spacing between tokens """
     r = []
     last = TP_NONE
     for w in RE_SPLIT.split(s):
