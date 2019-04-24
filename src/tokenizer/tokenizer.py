@@ -1851,7 +1851,8 @@ def parse_phrases_2(token_stream):
                         # Incorrect: yield the accumulated token
                         # queue and keep the current token and the
                         # next_token lookahead unchanged
-                        yield from tq
+                        for t in tq:
+                            yield t
                     else:
                         # We have 'viðskipta- og iðnaðarráðherra'
                         # Return a single token with the meanings of
@@ -1872,7 +1873,8 @@ def parse_phrases_2(token_stream):
                         # hálf-opinberri, marg-ítrekaðri
                         token = TOK.Word(tq[0].txt + "-" + token.txt)
                     else:
-                        yield from tq
+                        for t in tq:
+                            yield t
 
             # Yield the current token and advance to the lookahead
             yield token
