@@ -198,6 +198,10 @@ def test_single_tokens():
         ("BSRB", TOK.WORD),
         ("mbl.is", TOK.WORD),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
+        ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("ferðamála- dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
         ("123-4444", TOK.TELNO),
         ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
         ("12,3%", TOK.PERCENT),
@@ -421,6 +425,15 @@ def test_sentences():
         "B   W W   W W   W    N P E B W     W     W   W   W P  W    W   DR  P E B W W   DR      P E",
     )
 
+    test_sentence(
+        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
+        "B W    W       W         W           W   W      W                                        W    DA           P E"
+    )
+
+    test_sentence(
+        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
+        "B W    W       W         W           W   W      W                                       W    DA           P E"
+    )
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
