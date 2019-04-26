@@ -202,6 +202,35 @@ def test_single_tokens():
         ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
         ("ferðamála- dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
         ("ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
+        # Test backoff if composition is not successful
+        (
+            "ferðamála- ráðherra",
+            [
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ráðherra", None),
+            ],
+        ),
+        (
+            "ferðamála-, iðnaðar- ráðherra",
+            [
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.WORD, "iðnaðar", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ráðherra", None),
+            ],
+        ),
+        (
+            "ferðamála- og 500",
+            [
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.NUMBER, "500", (500, None, None)),
+            ],
+        ),
         ("123-4444", TOK.TELNO),
         ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
         ("12,3%", TOK.PERCENT),
