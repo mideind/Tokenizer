@@ -110,6 +110,8 @@ def test_single_tokens():
         ("þjóðhátíð", TOK.WORD),
         ("Þjóðhátíð", TOK.WORD),
         ("marg-ítrekað", TOK.WORD),
+        ("full-ítarlegur", TOK.WORD),
+        ("hálf-óviðbúinn", TOK.WORD),
         (
             "750 þús.kr.",
             [

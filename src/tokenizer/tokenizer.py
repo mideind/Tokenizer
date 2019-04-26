@@ -142,7 +142,7 @@ CLOCK_WORD = "klukkan"
 CLOCK_ABBREV = "kl"
 
 # Prefixes that can be applied to adjectives with an intervening hyphen
-ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí"))
+ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
 
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))

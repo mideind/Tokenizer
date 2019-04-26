@@ -306,6 +306,9 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.2.2: Added support for composites with more than two parts, i.e.
+  *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for
+  ``±`` sign; added several abbreviations
 * Version 1.2.1: Fixed bug where the name 'Ágúst' was recognized as a month name;
   Unicode nonbreaking and invisble space characters are now removed
   before tokenization
