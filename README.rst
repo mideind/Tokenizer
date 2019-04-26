@@ -2,7 +2,7 @@
 Tokenizer: A tokenizer for Icelandic text
 -----------------------------------------
 
-.. image:: https://travis-ci.org/mideind/Tokenizer.svg?branch=master
+.. image:: https://travis-ci.com/mideind/Tokenizer.svg?branch=master
    :target: https://travis-ci.com/mideind/Tokenizer
 
 Overview
