@@ -110,6 +110,8 @@ def test_single_tokens():
         ("þjóðhátíð", TOK.WORD),
         ("Þjóðhátíð", TOK.WORD),
         ("marg-ítrekað", TOK.WORD),
+        ("full-ítarlegur", TOK.WORD),
+        ("hálf-óviðbúinn", TOK.WORD),
         (
             "750 þús.kr.",
             [
@@ -198,6 +200,39 @@ def test_single_tokens():
         ("BSRB", TOK.WORD),
         ("mbl.is", TOK.WORD),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
+        ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("ferðamála- dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
+        # Test backoff if composition is not successful
+        (
+            "ferðamála- ráðherra",
+            [
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ráðherra", None),
+            ],
+        ),
+        (
+            "ferðamála-, iðnaðar- ráðherra",
+            [
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.WORD, "iðnaðar", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ráðherra", None),
+            ],
+        ),
+        (
+            "ferðamála- og 500",
+            [
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.NUMBER, "500", (500, None, None)),
+            ],
+        ),
         ("123-4444", TOK.TELNO),
         ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
         ("12,3%", TOK.PERCENT),
@@ -421,6 +456,15 @@ def test_sentences():
         "B   W W   W W   W    N P E B W     W     W   W   W P  W    W   DR  P E B W W   DR      P E",
     )
 
+    test_sentence(
+        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
+        "B W    W       W         W           W   W      W                                        W    DA           P E"
+    )
+
+    test_sentence(
+        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
+        "B W    W       W         W           W   W      W                                       W    DA           P E"
+    )
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """

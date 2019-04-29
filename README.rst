@@ -2,8 +2,8 @@
 Tokenizer: A tokenizer for Icelandic text
 -----------------------------------------
 
-.. image:: https://travis-ci.org/vthorsteinsson/Tokenizer.svg?branch=master
-   :target: https://travis-ci.com/vthorsteinsson/Tokenizer
+.. image:: https://travis-ci.com/mideind/Tokenizer.svg?branch=master
+   :target: https://travis-ci.com/mideind/Tokenizer
 
 Overview
 --------
@@ -22,11 +22,11 @@ The package contains a dictionary of common Icelandic abbreviations, in the file
 ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
-(GitHub repository `here <https://github.com/vthorsteinsson/Reynir>`_), by the same authors.
+(GitHub repository `here <https://github.com/mideind/Reynir>`_), by the same authors.
 Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
 
 You might also find the
-`Reynir natural language parser for Icelandic <https://github.com/vthorsteinsson/ReynirPackage>`_
+`Reynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
 interesting. The Reynir parser uses Tokenizer on its input.
 
 To install::
@@ -84,8 +84,8 @@ Note the following:
 	- Numbers, both integer and real, are recognized and their value is available
 	  in the ``token.val`` field.
 	- Further details of how Tokenizer processes text can be inferred from the
-	  `test module <https://github.com/vthorsteinsson/Tokenizer/blob/master/test/test_tokenizer.py>`_
-	  in the project's `GitHub repository <https://github.com/vthorsteinsson/Tokenizer>`_.
+	  `test module <https://github.com/mideind/Tokenizer/blob/master/test/test_tokenizer.py>`_
+	  in the project's `GitHub repository <https://github.com/mideind/Tokenizer>`_.
 
 
 The ``tokenize()`` function
@@ -292,7 +292,7 @@ Development installation
 To install Tokenizer in development mode, where you can easily modify the source files
 (assuming you have ``git`` available)::
 
-	$ git clone https://github.com/vthorsteinsson/Tokenizer
+	$ git clone https://github.com/mideind/Tokenizer
 	$ cd Tokenizer
 	$ # [ Activate your virtualenv here, if you have one ]
 	$ python setup.py develop
@@ -306,6 +306,9 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.2.2: Added support for composites with more than two parts, i.e.
+  *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for
+  ``±`` sign; added several abbreviations
 * Version 1.2.1: Fixed bug where the name 'Ágúst' was recognized as a month name;
   Unicode nonbreaking and invisble space characters are now removed
   before tokenization
