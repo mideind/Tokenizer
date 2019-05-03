@@ -57,7 +57,7 @@ def read(*names, **kwargs):
 
 setup(
     name="tokenizer",
-    version="1.2.2",
+    version="1.2.3",
     license="MIT",
     description="A tokenizer for Icelandic text",
     long_description=u"{0}\n{1}".format(
@@ -68,7 +68,7 @@ setup(
     ),
     author="Vilhjálmur Þorsteinsson",
     author_email="vt@extrada.com",
-    url="https://github.com/vthorsteinsson/Tokenizer",
+    url="https://github.com/mideind/Tokenizer",
     packages=find_packages("src"),
     package_dir={"": "src"},
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
