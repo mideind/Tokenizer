@@ -68,7 +68,7 @@ setup(
     ),
     author="Vilhjálmur Þorsteinsson",
     author_email="vt@extrada.com",
-    url="https://github.com/vthorsteinsson/Tokenizer",
+    url="https://github.com/mideind/Tokenizer",
     packages=find_packages("src"),
     package_dir={"": "src"},
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
