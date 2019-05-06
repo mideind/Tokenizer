@@ -495,6 +495,8 @@ class TOK:
     TIMESTAMPREL = 21
     MEASUREMENT = 22
     NUMWLETTER = 23
+    DOMAIN = 24
+    HASHTAG = 25
 
     P_BEGIN = 10001  # Paragraph begin
     P_END = 10002  # Paragraph end
@@ -531,6 +533,8 @@ class TOK:
         TELNO: "TELNO",
         PERCENT: "PERCENT",
         URL: "URL",
+        DOMAIN: "DOMAIN",
+        HASHTAG: "HASHTAG",
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
@@ -626,6 +630,14 @@ class TOK:
     @staticmethod
     def Url(w):
         return Tok(TOK.URL, w, None)
+
+    @staticmethod
+    def Domain(w):
+        return Tok(TOK.DOMAIN, w, None)
+
+    @staticmethod
+    def Hashtag(w):
+        return Tok(TOK.HASHTAG, w, None)
 
     @staticmethod
     def Measurement(w, unit, val):
@@ -964,11 +976,7 @@ def parse_tokens(txt):
                     # so they won't be caught by the isalpha() check below)
                     yield TOK.Word(w, None)
                     w = ""
-            if w and (
-                w.startswith("http://")
-                or w.startswith("https://")
-                or w.startswith("www.")
-            ):
+            if w and (w.startswith("http://") or w.startswith("https://")):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
                 # the IETF RFC
@@ -977,6 +985,14 @@ def parse_tokens(txt):
                     endp = w[-1] + endp
                     w = w[:-1]
                 yield TOK.Url(w)
+                ate = True
+                w = endp
+            if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
+                endp = ""
+                while w and w[-1] in RIGHT_PUNCTUATION:
+                    endp = w[-1] + endp
+                    w = w[:-1]
+                yield TOK.Hashtag(w)
                 ate = True
                 w = endp
             # Alphabetic characters
@@ -1489,7 +1505,6 @@ def month_for_token(token):
 
 
 def parse_phrases_1(token_stream):
-
     """ Handle dates and times """
 
     token = None
