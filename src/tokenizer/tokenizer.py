@@ -159,19 +159,17 @@ TP_WORD = 5  # Flexible whitespace depending on surroundings
 
 TP_SPACE = (
     # Next token is:
-
     # LEFT  CENTER RIGHT   NONE   WORD
-
     # Last token was TP_LEFT:
-    (False, True,  False,  False, False),
+    (False, True, False, False, False),
     # Last token was TP_CENTER:
-    (True,  True,  True,   True,  True),
+    (True, True, True, True, True),
     # Last token was TP_RIGHT:
-    (True,  True,  False,  False, True),
+    (True, True, False, False, True),
     # Last token was TP_NONE:
-    (False, True,  False,  False, False),
+    (False, True, False, False, False),
     # Last token was TP_WORD:
-    (True,  True,  False,  False, True),
+    (True, True, False, False, True),
 )
 
 # Numeric digits
@@ -220,7 +218,7 @@ MONTHS = {
 }
 
 # The masculine Icelandic name should not be identified as a month
-MONTH_BLACKLIST = frozenset(('Ágúst',))
+MONTH_BLACKLIST = frozenset(("Ágúst",))
 
 # Days of the month spelled out
 DAYS_OF_MONTH = {
@@ -1483,6 +1481,7 @@ def match_stem_list(token, stems):
         return None
     return stems.get(token.txt.lower(), None)
 
+
 def month_for_token(token):
     if token.txt in MONTH_BLACKLIST:
         return None
@@ -1831,7 +1830,7 @@ def parse_phrases_2(token_stream):
                 tq.append(TOK.Punctuation(HYPHEN))
                 # Check for optional comma after the prefix
                 comma_token = next(token_stream)
-                if comma_token.kind == TOK.PUNCTUATION and comma_token.txt == ',':
+                if comma_token.kind == TOK.PUNCTUATION and comma_token.txt == ",":
                     # A comma is present: append it to the queue
                     # and skip to the next token
                     tq.append(comma_token)
@@ -1843,9 +1842,7 @@ def parse_phrases_2(token_stream):
             if tq:
                 # We have accumulated one or more prefixes
                 # ('dómsmála-, viðskipta-')
-                if token.kind == TOK.WORD and (
-                    token.txt == "og" or token.txt == "eða"
-                ):
+                if token.kind == TOK.WORD and (token.txt == "og" or token.txt == "eða"):
                     # We have 'viðskipta- og'
                     if next_token.kind != TOK.WORD:
                         # Incorrect: yield the accumulated token
@@ -1866,9 +1863,10 @@ def parse_phrases_2(token_stream):
                 else:
                     # Incorrect prediction: make amends and continue
                     if (
-                        token.kind == TOK.WORD and
-                        len(tq) == 2 and tq[1].txt == HYPHEN and
-                        tq[0].txt.lower() in ADJECTIVE_PREFIXES
+                        token.kind == TOK.WORD
+                        and len(tq) == 2
+                        and tq[1].txt == HYPHEN
+                        and tq[0].txt.lower() in ADJECTIVE_PREFIXES
                     ):
                         # hálf-opinberri, marg-ítrekaðri
                         token = TOK.Word(tq[0].txt + "-" + token.txt)
