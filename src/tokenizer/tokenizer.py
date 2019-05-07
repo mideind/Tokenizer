@@ -935,6 +935,10 @@ def parse_tokens(txt):
                     yield TOK.Punctuation("‘")
                     w = ""
                     qmark = False
+                elif len(w) > 1 and w.startswith('#'):
+                    # Might be a hashtag, processed later
+                    ate = False
+                    break
                 else:
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
@@ -988,13 +992,21 @@ def parse_tokens(txt):
                 ate = True
                 w = endp
             if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
-                endp = ""
-                while w and w[-1] in RIGHT_PUNCTUATION:
-                    endp = w[-1] + endp
-                    w = w[:-1]
-                yield TOK.Hashtag(w)
+                # Handle hashtags. Eat all text up to next punctuation character
+                # so we can handle strings like "#MeToo-hreyfingin" as
+                # two words seperated by punctuation.
+                tag = w[:1]
+                w = w[1:]
+                while w and w[0] not in PUNCTUATION:
+                    tag += w[0]
+                    w = w[1:]
+                if re.search(r"^#\d+$", tag):
+                    # Hash being used as a number sign, e.g. "#12"
+                    yield TOK.Punctuation(tag[0])
+                    yield TOK.Ordinal(tag[1:], int(tag[1:]))
+                else:
+                    yield TOK.Hashtag(tag)
                 ate = True
-                w = endp
             # Alphabetic characters
             if w and w[0].isalpha():
                 ate = True
