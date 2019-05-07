@@ -58,7 +58,7 @@ def test_single_tokens():
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
         ("3. maí", [Tok(TOK.DATEREL, "3. maí", (0, 5, 3))]),
-        ("Ágúst", TOK.WORD), # Not month name if capitalized
+        ("Ágúst", TOK.WORD),  # Not month name if capitalized
         ("13. ágúst", [Tok(TOK.DATEREL, "13. ágúst", (0, 8, 13))]),
         ("nóvember 1918", [Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0))]),
         ("sautjánda júní", [Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17))]),
@@ -239,7 +239,11 @@ def test_single_tokens():
         ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
         ("https://www.greynir.is", TOK.URL),
-        ("www.greynir.is", TOK.URL),
+        ("http://tiny.cc/28695y", TOK.URL),
+        ("#MeToo", TOK.HASHTAG),
+        ("#12stig12", TOK.HASHTAG),
+        ("#égermeðíslenskastafi", TOK.HASHTAG),
+        # ("www.greynir.is", TOK.URL),
         (
             "19/3/1977 14:56:10",
             [Tok(TOK.TIMESTAMPABS, "19/3/1977 14:56:10", (1977, 3, 19, 14, 56, 10))],
@@ -340,6 +344,8 @@ def test_sentences():
         "A": TOK.AMOUNT,
         "M": TOK.EMAIL,
         "ME": TOK.MEASUREMENT,
+        "DM": TOK.DOMAIN,
+        "HT": TOK.HASHTAG,
         "X": TOK.UNKNOWN,
     }
 
@@ -377,7 +383,7 @@ def test_sentences():
     # '\uFEFF': zero-width non-breaking space
     test_sentence(
         "Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\uFEFFis\u00ADins.",
-        "B W                      W  W PC                       W          W        W                  P E"
+        "B W                      W  W PC                       W          W        W                  P E",
     )
 
     test_sentence(
@@ -389,7 +395,7 @@ def test_sentences():
 
     test_sentence(
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
-        "http://greynir.is og www.greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi.",
+        "http://greynir.is og https://greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi.",
         "B W W W    W   W               M            P W "
         "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E",
     )
@@ -458,13 +464,19 @@ def test_sentences():
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W                                        W    DA           P E"
+        "B W    W       W         W           W   W      W                                        W    DA           P E",
     )
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W                                       W    DA           P E"
+        "B W    W       W         W           W   W      W                                                  W    DA         P E",
     )
+
+    test_sentence(
+        "#MeToo-byltingin er til staðar á Íslandsmóti #1. #12stig í Eurovision en #égerekkiaðfílaþað! #ruv50.",
+        "B HT  P W        W  W   W      W W       P O P E B HT    W W          W  HT              P E B HT P E",
+    )
+
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
