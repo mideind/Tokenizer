@@ -198,7 +198,11 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
-        ("mbl.is", TOK.WORD),
+        ("mbl.is", TOK.DOMAIN),
+        ("RÚV.is", TOK.DOMAIN),
+        ("Eitthvað.org", TOK.DOMAIN),
+        ("Sann_Leikurinn.com", TOK.DOMAIN),
+        ("Íslenskir.stafir-leyfilegir.net", TOK.DOMAIN),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
         ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
         ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
@@ -477,6 +481,16 @@ def test_sentences():
         "B HT  P W        W  W   W      W W       P O P E B HT    W W          W  HT              P E B HT P E",
     )
 
+    test_sentence(
+        "Mbl.is er fjölsóttari en www.visir.is, og Rúv.is... En greynir.is, hann er skemmtilegri.Far þú þangað!",
+        "B DM   W  W           W  DM          P W  DM    P   W  DM        P W    W  W        P E B W W W P E",
+    )
+
+    test_sentence(
+        "Sjá nánar á NRK.no eða WhiteHouse.gov. Some.how.com er fínn vefur, skárri en dailymail.co.uk, eða Extrabladet.dk.",
+        "B W W     W DM     W   DM          P E B DM         W  W    W    P W      W  DM             P W   DM          P E",
+    )
+
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
@@ -555,7 +569,7 @@ def test_correct_spaces():
 
 
 def test_abbrev():
-    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á mbl.is."))
+    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á vefnum."))
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -573,11 +587,7 @@ def test_abbrev():
             val=[("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="á", val=None),
-        Tok(
-            kind=TOK.WORD,
-            txt="mbl.is",
-            val=[("mbl.is", 0, "hk", "skst", "mbl.is", "-")],
-        ),
+        Tok(kind=TOK.WORD, txt="vefnum", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=3),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]

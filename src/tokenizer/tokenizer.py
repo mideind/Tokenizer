@@ -348,6 +348,12 @@ CURRENCY_SYMBOLS = {
     "₽": "RUB",  # Russian ruble
 }
 
+# Top-level domains for recognising domain names
+MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
+TOP_LEVEL_DOMAINS = frozenset(("is", "com", "net", "org", "eu", "edu", "gov", "int", "uk", "no", "dk"))
+PUNCT_REGEX = "[" + "|".join(re.escape(p) for p in PUNCTUATION) + "]"
+TLD_REGEX = re.compile("|".join([r"\w\." + d + PUNCT_REGEX + "*" for d in map(re.escape, TOP_LEVEL_DOMAINS)]))
+
 # Single-character vulgar fractions in Unicode
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
@@ -935,7 +941,7 @@ def parse_tokens(txt):
                     yield TOK.Punctuation("‘")
                     w = ""
                     qmark = False
-                elif len(w) > 1 and w.startswith('#'):
+                elif len(w) > 1 and w.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
                     break
@@ -1001,12 +1007,25 @@ def parse_tokens(txt):
                     tag += w[0]
                     w = w[1:]
                 if re.search(r"^#\d+$", tag):
-                    # Hash being used as a number sign, e.g. "#12"
+                    # Hash is being used as a number sign, e.g. "#12"
                     yield TOK.Punctuation(tag[0])
                     yield TOK.Ordinal(tag[1:], int(tag[1:]))
                 else:
                     yield TOK.Hashtag(tag)
                 ate = True
+            if (
+                w
+                and len(w) >= MIN_DOMAIN_LENGTH
+                and (w.startswith("www.") or TLD_REGEX.search(w))
+            ):
+                endp = ""
+                while w and w[-1] in RIGHT_PUNCTUATION:
+                    endp = w[-1] + endp
+                    w = w[:-1]
+                yield TOK.Domain(w)
+                ate = True
+                w = endp
+
             # Alphabetic characters
             if w and w[0].isalpha():
                 ate = True
