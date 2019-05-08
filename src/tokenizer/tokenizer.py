@@ -976,27 +976,6 @@ def parse_tokens(txt):
                 ate = True
                 yield TOK.Number(w[0], unicodedata.numeric(w[0]))
                 w = w[1:]
-
-            # Numbers or other stuff starting with a digit
-            if w and w[0] in DIGITS:
-                for key, val in items(ORDINAL_ERRORS):
-                    if w.startswith(key):
-                        yield TOK.Word(val)
-                        eaten = len(key)
-                        break  # This skips the else
-                else:
-                    t, eaten = parse_digits(w)
-                    yield t
-                # Continue where the digits parser left off
-                ate = True
-                w = w[eaten:]
-                if w in SI_UNITS:
-                    # Handle the case where a measurement unit is
-                    # immediately following a number, without an intervening space
-                    # (note that some of them contain nonalphabetic characters,
-                    # so they won't be caught by the isalpha() check below)
-                    yield TOK.Word(w, None)
-                    w = ""
             if w and w.startswith(URL_PREFIXES):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
@@ -1022,12 +1001,12 @@ def parse_tokens(txt):
                 else:
                     yield TOK.Hashtag(tag)
                 ate = True
-            # Domain name
+            # Domain name (e.g. greynir.is)
             if (
                 w
                 and len(w) >= MIN_DOMAIN_LENGTH
-                and w[0].isalpha()
-                and "." in w[1:-2]  # Optimization, TLD at least 2 chars
+                and w[0].isalnum()  # All domains start with an alphanumeric char
+                and "." in w[1:-2]  # Optimization, TLD is at least 2 chars
                 and (w.startswith("www.") or TLD_REGEX.search(w))
             ):
                 endp = ""
@@ -1037,7 +1016,26 @@ def parse_tokens(txt):
                 yield TOK.Domain(w)
                 ate = True
                 w = endp
-
+            # Numbers or other stuff starting with a digit
+            if w and w[0] in DIGITS:
+                for key, val in items(ORDINAL_ERRORS):
+                    if w.startswith(key):
+                        yield TOK.Word(val)
+                        eaten = len(key)
+                        break  # This skips the else
+                else:
+                    t, eaten = parse_digits(w)
+                    yield t
+                # Continue where the digits parser left off
+                ate = True
+                w = w[eaten:]
+                if w in SI_UNITS:
+                    # Handle the case where a measurement unit is
+                    # immediately following a number, without an intervening space
+                    # (note that some of them contain nonalphabetic characters,
+                    # so they won't be caught by the isalpha() check below)
+                    yield TOK.Word(w, None)
+                    w = ""
             # Alphabetic characters
             if w and w[0].isalpha():
                 ate = True
