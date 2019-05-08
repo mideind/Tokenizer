@@ -1022,9 +1022,12 @@ def parse_tokens(txt):
                 else:
                     yield TOK.Hashtag(tag)
                 ate = True
+            # Domain name
             if (
                 w
                 and len(w) >= MIN_DOMAIN_LENGTH
+                and w[0].isalpha()
+                and "." in w[1:-2]  # Optimization, TLD at least 2 chars
                 and (w.startswith("www.") or TLD_REGEX.search(w))
             ):
                 endp = ""
