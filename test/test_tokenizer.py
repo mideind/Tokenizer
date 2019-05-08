@@ -198,11 +198,6 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
-        ("mbl.is", TOK.DOMAIN),
-        ("RÚV.is", TOK.DOMAIN),
-        ("Eitthvað.org", TOK.DOMAIN),
-        ("Sann_Leikurinn.com", TOK.DOMAIN),
-        ("Íslenskir.stafir-leyfilegir.net", TOK.DOMAIN),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
         ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
         ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
@@ -242,12 +237,19 @@ def test_single_tokens():
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
-        ("https://www.greynir.is", TOK.URL),
+        ("https://greynir.is", TOK.URL),
+        ("https://pypi.org/project/tokenizer/", TOK.URL),
         ("http://tiny.cc/28695y", TOK.URL),
+        ("www.greynir.is", TOK.DOMAIN),
+        ("mbl.is", TOK.DOMAIN),
+        ("RÚV.is", TOK.DOMAIN),
+        ("Eitthvað.org", TOK.DOMAIN),
+        ("Sann_Leikurinn.com", TOK.DOMAIN),
+        ("ílénumeruíslenskir.stafir-leyfilegir.net", TOK.DOMAIN),
         ("#MeToo", TOK.HASHTAG),
         ("#12stig12", TOK.HASHTAG),
         ("#égermeðíslenskastafi", TOK.HASHTAG),
-        # ("www.greynir.is", TOK.URL),
+        ("#", TOK.PUNCTUATION),
         (
             "19/3/1977 14:56:10",
             [Tok(TOK.TIMESTAMPABS, "19/3/1977 14:56:10", (1977, 3, 19, 14, 56, 10))],
@@ -478,7 +480,7 @@ def test_sentences():
 
     test_sentence(
         "#MeToo-byltingin er til staðar á Íslandsmóti #1. #12stig í Eurovision en #égerekkiaðfílaþað! #ruv50.",
-        "B HT  P W        W  W   W      W W       P O P E B HT    W W          W  HT              P E B HT P E",
+        "B HT  P W        W  W   W      W W         O P E B HT    W W          W  HT              P E B HT P E",
     )
 
     test_sentence(

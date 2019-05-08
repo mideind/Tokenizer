@@ -317,7 +317,7 @@ CE = frozenset(("e.Kr", "e.Kr."))  # !!! Add AD and CE here?
 BCE = frozenset(("f.Kr", "f.Kr."))  # !!! Add BCE here?
 CE_BCE = CE | BCE
 
-# Supported ISO currency codes
+# Supported ISO 4217 currency codes
 CURRENCY_ABBREV = frozenset(
     (
         "DKK",
@@ -330,12 +330,14 @@ CURRENCY_ABBREV = frozenset(
         "AUD",
         "CHF",
         "JPY",
-        "PLN",
-        "RUB",
+        "PLN",  # Polish złoty
+        "RUB",  # Russian ruble
+        "CZK",  # Czech koruna
         "INR",  # Indian rupee
         "IDR",  # Indonesian rupiah
-        "CNY",
-        "RMB",
+        "CNY",  # Chinese renminbi
+        "RMB",  # Chinese renminbi (alternate)
+        "MXN",  # Mexican peso
     )
 )
 
@@ -348,11 +350,20 @@ CURRENCY_SYMBOLS = {
     "₽": "RUB",  # Russian ruble
 }
 
+URL_PREFIXES = ("http://", "https://")
+
 # Top-level domains for recognising domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
-TOP_LEVEL_DOMAINS = frozenset(("is", "com", "net", "org", "eu", "edu", "gov", "int", "uk", "no", "dk"))
-PUNCT_REGEX = "[" + "|".join(re.escape(p) for p in PUNCTUATION) + "]"
-TLD_REGEX = re.compile("|".join([r"\w\." + d + PUNCT_REGEX + "*" for d in map(re.escape, TOP_LEVEL_DOMAINS)]))
+TOP_LEVEL_DOMAINS = frozenset(
+    ("is", "com", "net", "org", "eu", "edu", "gov", "int", "uk", "no", "dk")
+)
+PUNCTUATION_REGEX = "[" + "|".join(re.escape(p) for p in PUNCTUATION) + "]"
+TLD_REGEX = re.compile(
+    "|".join([r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)])
+    + PUNCTUATION_REGEX
+    + "*$",
+    re.UNICODE,
+)
 
 # Single-character vulgar fractions in Unicode
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
@@ -986,7 +997,7 @@ def parse_tokens(txt):
                     # so they won't be caught by the isalpha() check below)
                     yield TOK.Word(w, None)
                     w = ""
-            if w and (w.startswith("http://") or w.startswith("https://")):
+            if w and w.startswith(URL_PREFIXES):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
                 # the IETF RFC
@@ -999,8 +1010,7 @@ def parse_tokens(txt):
                 w = endp
             if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
                 # Handle hashtags. Eat all text up to next punctuation character
-                # so we can handle strings like "#MeToo-hreyfingin" as
-                # two words seperated by punctuation.
+                # so we can handle strings like "#MeToo-hreyfingin" as two words
                 tag = w[:1]
                 w = w[1:]
                 while w and w[0] not in PUNCTUATION:
@@ -1008,8 +1018,7 @@ def parse_tokens(txt):
                     w = w[1:]
                 if re.search(r"^#\d+$", tag):
                     # Hash is being used as a number sign, e.g. "#12"
-                    yield TOK.Punctuation(tag[0])
-                    yield TOK.Ordinal(tag[1:], int(tag[1:]))
+                    yield TOK.Ordinal(tag, int(tag[1:]))
                 else:
                     yield TOK.Hashtag(tag)
                 ate = True
