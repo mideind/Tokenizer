@@ -244,6 +244,7 @@ def test_single_tokens():
         ("mbl.is", TOK.DOMAIN),
         ("RÚV.is", TOK.DOMAIN),
         ("Eitthvað.org", TOK.DOMAIN),
+        ("9gag.com", TOK.DOMAIN),
         ("Sann_Leikurinn.com", TOK.DOMAIN),
         ("ílénumeruíslenskir.stafir-leyfilegir.net", TOK.DOMAIN),
         ("#MeToo", TOK.HASHTAG),
@@ -363,7 +364,11 @@ def test_sentences():
         for token, e in zip(s, exp):
             assert e in KIND
             ekind = KIND[e]
-            assert token.kind == ekind
+            assert token.kind == ekind, "%s should be %s, not %s" % (
+                token.txt,
+                TOK.descr[ekind],
+                TOK.descr[token.kind],
+            )
 
     test_sentence(
         "  Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
@@ -484,8 +489,8 @@ def test_sentences():
     )
 
     test_sentence(
-        "Mbl.is er fjölsóttari en www.visir.is, og Rúv.is... En greynir.is, hann er skemmtilegri.Far þú þangað!",
-        "B DM   W  W           W  DM          P W  DM    P   W  DM        P W    W  W        P E B W W W P E",
+        "Mbl.is er fjölsóttari en www.visir.is, og Rúv.is... En greynir.is, hann er skemmtilegri.Far þú þangað, ekki á 4chan.org!",
+        "B DM   W  W           W  DM          P W  DM    P   W  DM        P W    W  W        P E B W W W      P W    W DM     P E",
     )
 
     test_sentence(
