@@ -245,7 +245,7 @@ def test_single_tokens():
         ("RÚV.is", TOK.DOMAIN),
         ("Eitthvað.org", TOK.DOMAIN),
         ("9gag.com", TOK.DOMAIN),
-        ("Sann_Leikurinn.com", TOK.DOMAIN),
+        ("SannLeikurinn.com", TOK.DOMAIN),
         ("ílénumeruíslenskir.stafir-leyfilegir.net", TOK.DOMAIN),
         ("#MeToo", TOK.HASHTAG),
         ("#12stig12", TOK.HASHTAG),

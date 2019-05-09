@@ -50,6 +50,7 @@ import datetime
 import unicodedata
 
 from .abbrev import Abbreviations
+from .definitions import *
 
 # Mask away difference between Python 2 and 3
 if sys.version_info >= (3, 0):
@@ -109,7 +110,6 @@ UNICODE_REPLACEMENTS = {
 UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
 # Recognized punctuation
-
 LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
 RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–°"
 CENTER_PUNCTUATION = '"*&+=@©|'
@@ -117,6 +117,7 @@ NONE_PUNCTUATION = "—–-/±'´~\\"
 PUNCTUATION = (
     LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
 )
+PUNCTUATION_REGEX = "[{0}]".format("|".join(re.escape(p) for p in PUNCTUATION))
 
 # Punctuation that ends a sentence
 END_OF_SENTENCE = frozenset([".", "?", "!", "[…]"])
@@ -352,16 +353,13 @@ CURRENCY_SYMBOLS = {
 
 URL_PREFIXES = ("http://", "https://")
 
-# Top-level domains for recognising domain names
+# Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
-TOP_LEVEL_DOMAINS = frozenset(
-    ("is", "com", "net", "org", "eu", "edu", "gov", "int", "uk", "no", "dk")
-)
-PUNCTUATION_REGEX = "[" + "|".join(re.escape(p) for p in PUNCTUATION) + "]"
-TLD_REGEX = re.compile(
-    "|".join([r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)])
-    + PUNCTUATION_REGEX
-    + "*$",
+DOMAIN_REGEX = re.compile(
+    "({0})({1}*)$".format(
+        "|".join([r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)]),
+        PUNCTUATION_REGEX,
+    ),
     re.UNICODE,
 )
 
@@ -398,6 +396,7 @@ SI_UNITS = {
     "s": ("s", 1.0),
     "ms": ("s", 1.0e-3),
     "μs": ("s", 1.0e-6),
+    "Nm": ("Nm", 1.0),
     "klst": ("s", 3600.0),
     "mín": ("s", 60.0),
     "W": ("W", 1.0),
@@ -1007,10 +1006,10 @@ def parse_tokens(txt):
                 and len(w) >= MIN_DOMAIN_LENGTH
                 and w[0].isalnum()  # All domains start with an alphanumeric char
                 and "." in w[1:-2]  # Optimization, TLD is at least 2 chars
-                and (w.startswith("www.") or TLD_REGEX.search(w))
+                and (w.startswith("www.") or DOMAIN_REGEX.search(w))
             ):
                 endp = ""
-                while w and w[-1] in RIGHT_PUNCTUATION:
+                while w and w[-1] in PUNCTUATION:
                     endp = w[-1] + endp
                     w = w[:-1]
                 yield TOK.Domain(w)
