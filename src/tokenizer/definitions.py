@@ -29,6 +29,9 @@
 
 """
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import sys
 import re
 
@@ -446,6 +449,7 @@ def roman_to_int(s):
     assert i == len(s)
     return result
 
+
 # Recognize words that multiply numbers
 MULTIPLIERS = {
     # "núll": 0,
@@ -525,6 +529,9 @@ AMOUNT_ABBREV = {
     "mlja.kr.": 1e9,
     "mlja.kr": 1e9,
 }
+
+
+URL_PREFIXES = ("http://", "https://")
 
 
 TOP_LEVEL_DOMAINS = (
@@ -666,7 +673,7 @@ TOP_LEVEL_DOMAINS = (
     "km",
     "kn",
     "kp",
-    #"kr", # Gives us trouble with "kr."
+    # "kr", # Gives us trouble with "kr."
     "kw",
     "ky",
     "kz",
@@ -794,13 +801,11 @@ TOP_LEVEL_DOMAINS = (
     "zw",
 )
 
-URL_PREFIXES = ("http://", "https://")
-
 # Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
 DOMAIN_REGEX = re.compile(
-    "({0})({1}*)$".format(
-        "|".join([r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)]),
+    r"({0})({1}*)$".format(
+        r"|".join([r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)]),
         PUNCTUATION_REGEX,
     ),
     re.UNICODE,
