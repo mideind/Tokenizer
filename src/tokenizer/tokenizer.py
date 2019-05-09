@@ -44,7 +44,6 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 
-import sys
 import re
 import datetime
 import unicodedata
@@ -1111,7 +1110,6 @@ def parse_phrases_1(token_stream):
 
 
 def parse_date_and_time(token_stream):
-
     """ Handle dates and times, absolute and relative. """
 
     token = None
@@ -1284,7 +1282,6 @@ def parse_date_and_time(token_stream):
 
 
 def parse_phrases_2(token_stream):
-
     """ Handle numbers, amounts and composite words. """
 
     token = None
