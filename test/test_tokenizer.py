@@ -576,7 +576,7 @@ def test_correct_spaces():
 
 
 def test_abbrev():
-    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á vefnum."))
+    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á Mbl."))
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -594,7 +594,11 @@ def test_abbrev():
             val=[("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="á", val=None),
-        Tok(kind=TOK.WORD, txt="vefnum", val=None),
+        Tok(
+            kind=TOK.WORD,
+            txt="Mbl",
+            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl.", "-")],
+        ),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=3),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
