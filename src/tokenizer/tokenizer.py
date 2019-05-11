@@ -576,7 +576,7 @@ def parse_tokens(txt):
                 and len(w) >= MIN_DOMAIN_LENGTH
                 and w[0].isalnum()  # All domains start with an alphanumeric char
                 and "." in w[1:-2]  # Optimization, TLD is at least 2 chars
-                and (w.startswith("www.") or DOMAIN_REGEX.search(w))
+                and DOMAIN_REGEX.search(w)
             ):
                 endp = ""
                 while w and w[-1] in PUNCTUATION:
