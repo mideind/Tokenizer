@@ -125,6 +125,8 @@ DQUOTES = '"“„”«»'
 CLOCK_WORD = "klukkan"
 CLOCK_ABBREV = "kl"
 
+TELNO_PREFIXES = "45678"
+
 # Prefixes that can be applied to adjectives with an intervening hyphen
 ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
 

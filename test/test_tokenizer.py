@@ -234,6 +234,7 @@ def test_single_tokens():
         ),
         ("123-4444", TOK.TELNO),
         ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
+        ("699 2422", [Tok(TOK.TELNO, "699-2422", None)]),
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
@@ -406,9 +407,11 @@ def test_sentences():
 
     test_sentence(
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
-        "http://greynir.is og https://greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi.",
+        "http://greynir.is og https://greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi. "
+        "Það er hægt að ná í mig í s 623 7892, eða vinnusíma, 722-7979 eða eitthvað.",
         "B W W W    W   W               M            P W "
-        "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E",
+        "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E "
+        "B W W  W    W  W  W W   W W        TEL     P W   W        P  TEL     W   W P E"
     )
 
     test_sentence(

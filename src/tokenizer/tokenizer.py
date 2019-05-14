@@ -281,7 +281,6 @@ def is_valid_date(y, m, d):
 
 def parse_digits(w):
     """ Parse a raw token starting with a digit """
-
     s = re.match(r"\d{1,2}:\d\d:\d\d", w)
     if s:
         # Looks like a 24-hour clock, H:M:S
@@ -842,6 +841,19 @@ def parse_particles(token_stream):
                     if next_token.kind == TOK.YEAR
                     else next_token.val[0],
                 )
+                next_token = next(token_stream)
+
+            # Coalesece 3-digit number followed by 4-digit number into tel. no.
+            # NB: This will not catch phone numbers ending what has previously
+            # been identified as a year (e.g. 699 2018)
+            if (
+                token.kind == TOK.NUMBER
+                and token.txt[0] in TELNO_PREFIXES
+                and re.search(r"^\d\d\d$", token.txt)
+                and next_token.kind == TOK.NUMBER
+                and re.search(r"^\d\d\d\d$", next_token.txt)
+            ):
+                token = TOK.Telno(token.txt + "-" + next_token.txt)
                 next_token = next(token_stream)
 
             # Coalesce percentages into a single token
