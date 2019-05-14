@@ -415,6 +415,13 @@ def test_sentences():
     )
 
     test_sentence(
+        "Þetta voru 300 1000 kílóa pokar, og 4000 500 kílóa pokar. "
+        "Einnig 932 800 kílóa pokar, svo og 177 4455 millilítra skammtar.",
+        "B W   W    N   N    W     W    P W  N    N   W     W    P E "
+        "B W    N   N   W     W    P W   W  N   N    W          W       P"
+    )
+
+    test_sentence(
         "Hann starfaði við stofnunina árin 1944-50.",
         "B W  W        W   W          W    Y   P N P E",
     )
