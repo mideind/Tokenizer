@@ -383,11 +383,11 @@ def parse_digits(w):
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
     s = re.match(r"\d\d\d-\d\d\d\d", w)
-    if s:
+    if s and s.group()[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         return TOK.Telno(s.group()), s.end()
     s = re.match(r"\d\d\d\d\d\d\d", w)
-    if s:
+    if s and s.group()[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         return TOK.Telno(s.group()[:3] + "-" + s.group()[3:]), s.end()
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
@@ -848,9 +848,9 @@ def parse_particles(token_stream):
             # been identified as a year (e.g. 699 2018)
             if (
                 token.kind == TOK.NUMBER
+                and (next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR)
                 and token.txt[0] in TELNO_PREFIXES
                 and re.search(r"^\d\d\d$", token.txt)
-                and next_token.kind == TOK.NUMBER
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
                 token = TOK.Telno(token.txt + "-" + next_token.txt)
