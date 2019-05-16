@@ -274,6 +274,8 @@ def test_single_tokens():
         ("€3.472,64", TOK.AMOUNT),
         ("£1.922", TOK.AMOUNT),
         ("¥212,11", TOK.AMOUNT),
+        ("EUR 200", TOK.AMOUNT),
+        ("kr. 5.999", TOK.AMOUNT),
         ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
         ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
         ("£5,199.99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
@@ -389,7 +391,14 @@ def test_sentences():
 
     test_sentence(
         "Jæja, bjór í Bretlandi kominn upp í £4.29 (ISK 652).  Dýrt!     Í Japan er hann bara ¥600.",
-        "B W P W    W W         W      W   W A    P W N P P E  B W P E B W W     W  W    W    A   P E",
+        "B W P W    W W         W      W   W A    P A   P P E  B W P E B W W     W  W    W    A   P E",
+    )
+
+    test_sentence(
+        "Almennt verð er krónur 9.900,- en kr. 8.000,- fyrir félagsmenn. Maður borgar 99 kr. 10 sinnum. "
+        "USD900 fyrir Bandaríkjamenn en 700 EUR fyrir Þjóðverja. Ég hef spilað RISK 100 sinnum.",
+        "B W     W    W  A          P P W  A       P P W     W        P E B  W W      A      N  W   P E "
+        "B A    W     W              W  A       W     W      P E B W W  W      W    N   W    P E"
     )
 
     # '\u00AD': soft hyphen

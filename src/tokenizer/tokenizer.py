@@ -1369,6 +1369,16 @@ def parse_phrases_2(token_stream):
 
                 multiplier = None
 
+            # Check for [currency] [number] (e.g. kr. 9.900 or USD 50)
+            if next_token.kind == TOK.NUMBER and (
+                token.txt in ISK_AMOUNT_PRECEDING or token.txt in CURRENCY_ABBREV
+            ):
+                curr = "ISK" if token.txt in ISK_AMOUNT_PRECEDING else token.txt
+                token = TOK.Amount(
+                    token.txt + " " + next_token.txt, curr, next_token.val[0]
+                )
+                next_token = next(token_stream)
+
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
