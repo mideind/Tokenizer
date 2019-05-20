@@ -453,7 +453,7 @@ def test_sentences():
 
     test_sentence(
         "Ágúst bjó á hæð númer 13. Ágúst kunni vel við það, enda var 12. ágúst. ÞAÐ VAR 12. ÁGÚST!",
-        "B   W W   W W   W    N P E B W     W     W   W   W P  W    W   DR  P E B W W   DR      P E",
+        "B   W W   W W   W    N P E B W  W     W   W   W  P W    W   DR       P E B W W DR       P E",
     )
 
     test_sentence(
