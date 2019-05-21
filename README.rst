@@ -316,15 +316,15 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
-* Version 1.3.0: Added TOK.DOMAIN and TOK.HASHTAG token types;
-  improved handling of capitalized month name 'Ágúst', which is
+* Version 1.3.0: Added ``TOK.DOMAIN`` and ``TOK.HASHTAG`` token types;
+  improved handling of capitalized month name *Ágúst*, which is
   now recognized when following an ordinal number; improved recognition
   of telephone numbers; added abbreviations
 * Version 1.2.3: Added abbreviations; updated GitHub URLs
 * Version 1.2.2: Added support for composites with more than two parts, i.e.
   *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for
   ``±`` sign; added several abbreviations
-* Version 1.2.1: Fixed bug where the name 'Ágúst' was recognized as a month name;
+* Version 1.2.1: Fixed bug where the name *Ágúst* was recognized as a month name;
   Unicode nonbreaking and invisble space characters are now removed
   before tokenization
 * Version 1.2.0: Added support for Unicode fraction characters; enhanced handing
@@ -337,7 +337,7 @@ Changelog
 * Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers
 * Version 1.0.8: Bug fixes in ``DATEREL``, ``MEASUREMENT`` and ``NUMWLETTER``
   token handling; added 'kWst' and 'MWst' measurement units; blackened
-* Version 1.0.7: Added ``NUMWLETTER`` token type
+* Version 1.0.7: Added ``TOK.NUMWLETTER`` token type
 * Version 1.0.6: Automatic merging of Unicode ``COMBINING ACUTE ACCENT`` and
   ``COMBINING DIAERESIS`` code points with vowels
 * Version 1.0.5: Date/time and amount tokens coalesced to a further extent
