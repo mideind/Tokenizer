@@ -58,7 +58,7 @@ def test_single_tokens():
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
         ("3. maí", [Tok(TOK.DATEREL, "3. maí", (0, 5, 3))]),
-        ("Ágúst", TOK.WORD), # Not month name if capitalized
+        ("Ágúst", TOK.WORD),  # Not month name if capitalized
         ("13. ágúst", [Tok(TOK.DATEREL, "13. ágúst", (0, 8, 13))]),
         ("nóvember 1918", [Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0))]),
         ("sautjánda júní", [Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17))]),
@@ -198,7 +198,6 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
-        ("mbl.is", TOK.WORD),
         ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
         ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
         ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
@@ -233,13 +232,28 @@ def test_single_tokens():
                 Tok(TOK.NUMBER, "500", (500, None, None)),
             ],
         ),
-        ("123-4444", TOK.TELNO),
-        ("1234444", [Tok(TOK.TELNO, "123-4444", None)]),
+        ("9000000", TOK.NUMBER),
+        ("1234567", TOK.NUMBER),
+        ("525-4764", TOK.TELNO),
+        ("4204200", [Tok(TOK.TELNO, "420-4200", None)]),
+        ("699 2422", [Tok(TOK.TELNO, "699-2422", None)]),
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
-        ("https://www.greynir.is", TOK.URL),
-        ("www.greynir.is", TOK.URL),
+        ("https://greynir.is", TOK.URL),
+        ("https://pypi.org/project/tokenizer/", TOK.URL),
+        ("http://tiny.cc/28695y", TOK.URL),
+        ("www.greynir.is", TOK.DOMAIN),
+        ("mbl.is", TOK.DOMAIN),
+        ("RÚV.is", TOK.DOMAIN),
+        ("Eitthvað.org", TOK.DOMAIN),
+        ("9gag.com", TOK.DOMAIN),
+        ("SannLeikurinn.com", TOK.DOMAIN),
+        ("ílénumeruíslenskir.stafir-leyfilegir.net", TOK.DOMAIN),
+        ("#MeToo", TOK.HASHTAG),
+        ("#12stig12", TOK.HASHTAG),
+        ("#égermeðíslenskastafi", TOK.HASHTAG),
+        ("#", TOK.PUNCTUATION),
         (
             "19/3/1977 14:56:10",
             [Tok(TOK.TIMESTAMPABS, "19/3/1977 14:56:10", (1977, 3, 19, 14, 56, 10))],
@@ -260,6 +274,8 @@ def test_single_tokens():
         ("€3.472,64", TOK.AMOUNT),
         ("£1.922", TOK.AMOUNT),
         ("¥212,11", TOK.AMOUNT),
+        ("EUR 200", TOK.AMOUNT),
+        ("kr. 5.999", TOK.AMOUNT),
         ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
         ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
         ("£5,199.99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
@@ -340,6 +356,8 @@ def test_sentences():
         "A": TOK.AMOUNT,
         "M": TOK.EMAIL,
         "ME": TOK.MEASUREMENT,
+        "DM": TOK.DOMAIN,
+        "HT": TOK.HASHTAG,
         "X": TOK.UNKNOWN,
     }
 
@@ -351,7 +369,11 @@ def test_sentences():
         for token, e in zip(s, exp):
             assert e in KIND
             ekind = KIND[e]
-            assert token.kind == ekind
+            assert token.kind == ekind, "%s should be %s, not %s" % (
+                token.txt,
+                TOK.descr[ekind],
+                TOK.descr[token.kind],
+            )
 
     test_sentence(
         "  Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
@@ -369,7 +391,14 @@ def test_sentences():
 
     test_sentence(
         "Jæja, bjór í Bretlandi kominn upp í £4.29 (ISK 652).  Dýrt!     Í Japan er hann bara ¥600.",
-        "B W P W    W W         W      W   W A    P W N P P E  B W P E B W W     W  W    W    A   P E",
+        "B W P W    W W         W      W   W A    P A   P P E  B W P E B W W     W  W    W    A   P E",
+    )
+
+    test_sentence(
+        "Almennt verð er krónur 9.900,- en kr. 8.000,- fyrir félagsmenn. Maður borgar 99 kr. 10 sinnum. "
+        "USD900 fyrir Bandaríkjamenn en 700 EUR fyrir Þjóðverja. Ég hef spilað RISK 100 sinnum.",
+        "B W     W    W  A          P P W  A       P P W     W        P E B  W W      A      N  W   P E "
+        "B A    W     W              W  A       W     W      P E B W W  W      W    N   W    P E"
     )
 
     # '\u00AD': soft hyphen
@@ -377,7 +406,7 @@ def test_sentences():
     # '\uFEFF': zero-width non-breaking space
     test_sentence(
         "Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\uFEFFis\u00ADins.",
-        "B W                      W  W PC                       W          W        W                  P E"
+        "B W                      W  W PC                       W          W        W                  P E",
     )
 
     test_sentence(
@@ -389,9 +418,25 @@ def test_sentences():
 
     test_sentence(
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
-        "http://greynir.is og www.greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi.",
+        "http://greynir.is og https://greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi. "
+        "Það er hægt að ná í mig í s 623 7892, eða vinnusíma, 7227979 eða eitthvað.",
         "B W W W    W   W               M            P W "
-        "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E",
+        "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E "
+        "B W W  W    W  W  W W   W W        TEL     P W   W        P  TEL     W   W P E"
+    )
+
+    test_sentence(
+        "Þetta voru 300 1000 kílóa pokar, og 4000 500 kílóa pokar. "
+        "Einnig 932 800 kílóa pokar, svo og 177 4455 millilítra skammtar.",
+        "B W   W    N   N    W     W    P W  N    N   W     W    P E "
+        "B W    N   N   W     W    P W   W  N   N    W          W       P"
+    )
+
+    test_sentence(
+        "Skoðaðu vörunúmerin 000-1224 eða 121-2233. Hafðu síðan samband í síma 692 2073. "
+        "Þeir voru 313 2012 en 916 árið 2013.",
+        "B W     W           N  P N   W   N  P N P E B W  W     W       W W    TEL P E "
+        "B W  W    N   Y    W  N    Y P E"
     )
 
     test_sentence(
@@ -458,13 +503,29 @@ def test_sentences():
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W                                        W    DA           P E"
+        "B W    W       W         W           W   W      W                                        W    DA           P E",
     )
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W                                       W    DA           P E"
+        "B W    W       W         W           W   W      W                                                  W    DA         P E",
     )
+
+    test_sentence(
+        "#MeToo-byltingin er til staðar á Íslandsmóti #1. #12stig í Eurovision en #égerekkiaðfílaþað! #ruv50.",
+        "B HT  P W        W  W   W      W W         O P E B HT    W W          W  HT              P E B HT P E",
+    )
+
+    test_sentence(
+        "Mbl.is er fjölsóttari en www.visir.is, og Rúv.is... En greynir.is, hann er skemmtilegri.Far þú þangað, ekki á 4chan.org!",
+        "B DM   W  W           W  DM          P W  DM    P   W  DM        P W    W  W        P E B W W W      P W    W DM     P E",
+    )
+
+    test_sentence(
+        "Sjá nánar á NRK.no eða WhiteHouse.gov. Some.how.com er fínn vefur, skárri en dailymail.co.uk, eða Extrabladet.dk.",
+        "B W W     W DM     W   DM          P E B DM         W  W    W    P W      W  DM             P W   DM          P E",
+    )
+
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
@@ -543,7 +604,7 @@ def test_correct_spaces():
 
 
 def test_abbrev():
-    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á mbl.is."))
+    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á Mbl."))
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -563,8 +624,8 @@ def test_abbrev():
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(
             kind=TOK.WORD,
-            txt="mbl.is",
-            val=[("mbl.is", 0, "hk", "skst", "mbl.is", "-")],
+            txt="Mbl",
+            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl.", "-")],
         ),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=3),
         Tok(kind=TOK.S_END, txt=None, val=None),

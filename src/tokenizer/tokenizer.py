@@ -44,434 +44,18 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 
-import sys
 import re
 import datetime
 import unicodedata
 
 from .abbrev import Abbreviations
-
-# Mask away difference between Python 2 and 3
-if sys.version_info >= (3, 0):
-    items = lambda d: d.items()
-    keys = lambda d: d.keys()
-    make_str = lambda s: s
-    unicode_chr = lambda c: chr(c)
-else:
-    items = lambda d: d.iteritems()
-    keys = lambda d: d.iterkeys()
-
-    def make_str(s):
-        if isinstance(s, unicode):
-            return s
-        # Assume that incoming byte strings are UTF-8 encoded
-        return s.decode("utf-8")
-
-    unicode_chr = lambda c: unichr(c)
-
-ACCENT = unicode_chr(769)
-UMLAUT = unicode_chr(776)
-SOFT_HYPHEN = unicode_chr(173)
-ZEROWIDTH_SPACE = unicode_chr(8203)
-ZEROWIDTH_NBSP = unicode_chr(65279)
-
-# Preprocessing of unicode characters before tokenization
-UNICODE_REPLACEMENTS = {
-    # Translations of separate umlauts and accents to single glyphs.
-    # The strings to the left in each tuple are two Unicode code
-    # points: vowel + COMBINING ACUTE ACCENT (chr(769)) or
-    # vowel + COMBINING DIAERESIS (chr(776)).
-    "a" + ACCENT: "á",
-    "a" + UMLAUT: "ä",
-    "e" + ACCENT: "é",
-    "e" + UMLAUT: "ë",
-    "i" + ACCENT: "í",
-    "o" + ACCENT: "ó",
-    "u" + ACCENT: "ú",
-    "u" + UMLAUT: "ü",
-    "y" + ACCENT: "ý",
-    "o" + UMLAUT: "ö",
-    "A" + UMLAUT: "Ä",
-    "A" + ACCENT: "Á",
-    "E" + ACCENT: "É",
-    "E" + UMLAUT: "Ë",
-    "I" + ACCENT: "Í",
-    "O" + ACCENT: "Ó",
-    "U" + ACCENT: "Ú",
-    "U" + UMLAUT: "Ü",
-    "Y" + ACCENT: "Ý",
-    "O" + UMLAUT: "Ö",
-    # Also remove these unwanted characters
-    SOFT_HYPHEN: "",
-    ZEROWIDTH_SPACE: "",
-    ZEROWIDTH_NBSP: "",
-}
-UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
-
-# Recognized punctuation
-
-LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–°"
-CENTER_PUNCTUATION = '"*&+=@©|'
-NONE_PUNCTUATION = "—–-/±'´~\\"
-PUNCTUATION = (
-    LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
-)
-
-# Punctuation that ends a sentence
-END_OF_SENTENCE = frozenset([".", "?", "!", "[…]"])
-# Punctuation symbols that may additionally occur at the end of a sentence
-SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
-# Punctuation symbols that may occur inside words
-PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’"])  # Period and apostrophes
-
-# Hyphens that are cast to '-' for parsing and then re-cast
-# to normal hyphens, en or em dashes in final rendering
-HYPHENS = "—–-"
-HYPHEN = "-"  # Normal hyphen
-
-# Hyphens that may indicate composite words ('fjármála- og efnahagsráðuneyti')
-COMPOSITE_HYPHENS = "–-"
-COMPOSITE_HYPHEN = "–"  # en dash
-
-# Single and double quotes
-SQUOTES = "'‚‛‘´"
-DQUOTES = '"“„”«»'
-
-CLOCK_WORD = "klukkan"
-CLOCK_ABBREV = "kl"
-
-# Prefixes that can be applied to adjectives with an intervening hyphen
-ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
-
-# Words that can precede a year number; will be assimilated into the year token
-YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
-
-# Punctuation types: left, center or right of word
-
-TP_LEFT = 1  # Whitespace to the left
-TP_CENTER = 2  # Whitespace to the left and right
-TP_RIGHT = 3  # Whitespace to the right
-TP_NONE = 4  # No whitespace
-TP_WORD = 5  # Flexible whitespace depending on surroundings
-
-# Matrix indicating correct spacing between tokens
-
-TP_SPACE = (
-    # Next token is:
-
-    # LEFT  CENTER RIGHT   NONE   WORD
-
-    # Last token was TP_LEFT:
-    (False, True,  False,  False, False),
-    # Last token was TP_CENTER:
-    (True,  True,  True,   True,  True),
-    # Last token was TP_RIGHT:
-    (True,  True,  False,  False, True),
-    # Last token was TP_NONE:
-    (False, True,  False,  False, False),
-    # Last token was TP_WORD:
-    (True,  True,  False,  False, True),
-)
-
-# Numeric digits
-DIGITS = frozenset([d for d in "0123456789"])  # Set of digit characters
-
-# Month names and numbers
-MONTHS = {
-    "janúar": 1,
-    "febrúar": 2,
-    "mars": 3,
-    "apríl": 4,
-    "maí": 5,
-    "júní": 6,
-    "júlí": 7,
-    "ágúst": 8,
-    "september": 9,
-    "október": 10,
-    "nóvember": 11,
-    "desember": 12,
-    "jan.": 1,
-    "feb.": 2,
-    "mar.": 3,
-    "apr.": 4,
-    "jún.": 6,
-    "júl.": 7,
-    "ág.": 8,
-    "ágú.": 8,
-    "sep.": 9,
-    "sept.": 9,
-    "okt.": 10,
-    "nóv.": 11,
-    "des.": 12,
-    "jan": 1,
-    "feb": 2,
-    "mar": 3,
-    "apr": 4,
-    "jún": 6,
-    "júl": 7,
-    "ág": 8,
-    "ágú": 8,
-    "sep": 9,
-    "sept": 9,
-    "okt": 10,
-    "nóv": 11,
-    "des": 12,
-}
-
-# The masculine Icelandic name should not be identified as a month
-MONTH_BLACKLIST = frozenset(('Ágúst',))
-
-# Days of the month spelled out
-DAYS_OF_MONTH = {
-    "fyrsti": 1,
-    "fyrsta": 1,
-    "annar": 2,
-    "annan": 2,
-    "þriðji": 3,
-    "þriðja": 3,
-    "fjórði": 4,
-    "fjórða": 4,
-    "fimmti": 5,
-    "fimmta": 5,
-    "sjötti": 6,
-    "sjötta": 6,
-    "sjöundi": 7,
-    "sjöunda": 7,
-    "áttundi": 8,
-    "áttunda": 8,
-    "níundi": 9,
-    "níunda": 9,
-    "tíundi": 10,
-    "tíunda": 10,
-    "ellefti": 11,
-    "ellefta": 11,
-    "tólfti": 12,
-    "tólfta": 12,
-    "þrettándi": 13,
-    "þrettánda": 13,
-    "fjórtándi": 14,
-    "fjórtánda": 14,
-    "fimmtándi": 15,
-    "fimmtánda": 15,
-    "sextándi": 16,
-    "sextánda": 16,
-    "sautjándi": 17,
-    "sautjánda": 17,
-    "átjándi": 18,
-    "átjánda": 18,
-    "nítjándi": 19,
-    "nítjánda": 19,
-    "tuttugasti": 20,
-    "tuttugasta": 20,
-    "þrítugasti": 30,
-    "þrítugasta": 30,
-}
-
-# Time of day expressions spelled out
-CLOCK_NUMBERS = {
-    "eitt": [1, 0, 0],
-    "tvö": [2, 0, 0],
-    "þrjú": [3, 0, 0],
-    "fjögur": [4, 0, 0],
-    "fimm": [5, 0, 0],
-    "sex": [6, 0, 0],
-    "sjö": [7, 0, 0],
-    "átta": [8, 0, 0],
-    "níu": [9, 0, 0],
-    "tíu": [10, 0, 0],
-    "ellefu": [11, 0, 0],
-    "tólf": [12, 0, 0],
-    "hálfeitt": [12, 30, 0],
-    "hálftvö": [1, 30, 0],
-    "hálfþrjú": [2, 30, 0],
-    "hálffjögur": [3, 30, 0],
-    "hálffimm": [4, 30, 0],
-    "hálfsex": [5, 30, 0],
-    "hálfsjö": [6, 30, 0],
-    "hálfátta": [7, 30, 0],
-    "hálfníu": [8, 30, 0],
-    "hálftíu": [9, 30, 0],
-    "hálfellefu": [10, 30, 0],
-    "hálftólf": [11, 30, 0],
-}
-
-# Set of words only possible in temporal phrases
-CLOCK_HALF = frozenset(
-    [
-        "hálfeitt",
-        "hálftvö",
-        "hálfþrjú",
-        "hálffjögur",
-        "hálffimm",
-        "hálfsex",
-        "hálfsjö",
-        "hálfátta",
-        "hálfníu",
-        "hálftíu",
-        "hálfellefu",
-        "hálftólf",
-    ]
-)
-
-# 'Current Era', 'Before Current Era'
-CE = frozenset(("e.Kr", "e.Kr."))  # !!! Add AD and CE here?
-BCE = frozenset(("f.Kr", "f.Kr."))  # !!! Add BCE here?
-CE_BCE = CE | BCE
-
-# Supported ISO currency codes
-CURRENCY_ABBREV = frozenset(
-    (
-        "DKK",
-        "ISK",
-        "NOK",
-        "SEK",
-        "GBP",
-        "USD",
-        "CAD",
-        "AUD",
-        "CHF",
-        "JPY",
-        "PLN",
-        "RUB",
-        "INR",  # Indian rupee
-        "IDR",  # Indonesian rupiah
-        "CNY",
-        "RMB",
-    )
-)
-
-# Map symbols to currency abbreviations
-CURRENCY_SYMBOLS = {
-    "$": "USD",
-    "€": "EUR",
-    "£": "GBP",
-    "¥": "JPY",  # Also used for China's renminbi (yuan)
-    "₽": "RUB",  # Russian ruble
-}
-
-# Single-character vulgar fractions in Unicode
-SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
-
-# Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS = {
-    "m²": ("m²", 1.0),
-    "fm": ("m²", 1.0),
-    "cm²": ("m²", 1.0e-2),
-    "m³": ("m³", 1.0),
-    "cm³": ("m³", 1.0e-6),
-    "l": ("m³", 1.0e-3),
-    "ltr": ("m³", 1.0e-3),
-    "dl": ("m³", 1.0e-4),
-    "cl": ("m³", 1.0e-5),
-    "ml": ("m³", 1.0e-6),
-    "°C": ("K", lambda x: x + 273.15),
-    "°F": ("K", lambda x: (x + 459.67) * 5 / 9),
-    "K": ("K", 1.0),
-    "g": ("g", 1.0),
-    "gr": ("g", 1.0),
-    "kg": ("g", 1.0e3),
-    "t": ("g", 1.0e6),
-    "mg": ("g", 1.0e-3),
-    "μg": ("g", 1.0e-6),
-    "m": ("m", 1.0),
-    "km": ("m", 1.0e3),
-    "mm": ("m", 1.0e-3),
-    "μm": ("m", 1.0e-6),
-    "cm": ("m", 1.0e-2),
-    "sm": ("m", 1.0e-2),
-    "s": ("s", 1.0),
-    "ms": ("s", 1.0e-3),
-    "μs": ("s", 1.0e-6),
-    "klst": ("s", 3600.0),
-    "mín": ("s", 60.0),
-    "W": ("W", 1.0),
-    "mW": ("W", 1.0e-3),
-    "kW": ("W", 1.0e3),
-    "MW": ("W", 1.0e6),
-    "GW": ("W", 1.0e9),
-    "TW": ("W", 1.0e12),
-    "J": ("J", 1.0),
-    "kJ": ("J", 1.0e3),
-    "MJ": ("J", 1.0e6),
-    "GJ": ("J", 1.0e9),
-    "TJ": ("J", 1.0e12),
-    "kWh": ("J", 3.6e6),
-    "MWh": ("J", 3.6e9),
-    "kWst": ("J", 3.6e6),
-    "MWst": ("J", 3.6e9),
-    "kcal": ("J", 4184),
-    "cal": ("J", 4.184),
-    "N": ("N", 1.0),
-    "kN": ("N", 1.0e3),
-    "V": ("V", 1.0),
-    "mV": ("V", 1.0e-3),
-    "kV": ("V", 1.0e3),
-    "A": ("A", 1.0),
-    "mA": ("A", 1.0e-3),
-    "Hz": ("Hz", 1.0),
-    "kHz": ("Hz", 1.0e3),
-    "MHz": ("Hz", 1.0e6),
-    "GHz": ("Hz", 1.0e9),
-    "Pa": ("Pa", 1.0),
-    "hPa": ("Pa", 1.0e2),
-    "°": ("°", 1.0),  # Degree
-}
-
-# Incorrectly written ordinals
-ORDINAL_ERRORS = {
-    "1sti": "fyrsti",
-    "1sta": "fyrsta",
-    "1stu": "fyrstu",
-    "3ji": "þriðji",
-    "3ja": "þriðja",  # eða þriggja!
-    "3ju": "þriðju",
-    "4ði": "fjórði",
-    "4ða": "fjórða",
-    "4ðu": "fjórðu",
-    "5ti": "fimmti",
-    "5ta": "fimmta",
-    "5tu": "fimmtu",
-    "2svar": "tvisvar",
-    "3svar": "þrisvar",
-    "2ja": "tveggja",
-    # "3ja" : "þriggja",
-    "4ra": "fjögurra",
-}
-
-# Handling of Roman numerals
-
-RE_ROMAN_NUMERAL = re.compile(
-    r"^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$"
-)
-
-ROMAN_NUMERAL_MAP = tuple(
-    zip(
-        (1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1),
-        ("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"),
-    )
-)
-
-
-def roman_to_int(s):
-    """ Quick and dirty conversion of an already validated Roman numeral to integer """
-    # Adapted from http://code.activestate.com/recipes/81611-roman-numerals/
-    i = result = 0
-    for integer, numeral in ROMAN_NUMERAL_MAP:
-        while s[i : i + len(numeral)] == numeral:
-            result += integer
-            i += len(numeral)
-    assert i == len(s)
-    return result
+from .definitions import *
 
 
 # Named tuple for tokens
-
 Tok = namedtuple("Tok", ["kind", "txt", "val"])
 
 # Token types
-
-
 class TOK:
 
     PUNCTUATION = 1
@@ -497,6 +81,8 @@ class TOK:
     TIMESTAMPREL = 21
     MEASUREMENT = 22
     NUMWLETTER = 23
+    DOMAIN = 24
+    HASHTAG = 25
 
     P_BEGIN = 10001  # Paragraph begin
     P_END = 10002  # Paragraph end
@@ -533,6 +119,8 @@ class TOK:
         TELNO: "TELNO",
         PERCENT: "PERCENT",
         URL: "URL",
+        DOMAIN: "DOMAIN",
+        HASHTAG: "HASHTAG",
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
@@ -630,6 +218,14 @@ class TOK:
         return Tok(TOK.URL, w, None)
 
     @staticmethod
+    def Domain(w):
+        return Tok(TOK.DOMAIN, w, None)
+
+    @staticmethod
+    def Hashtag(w):
+        return Tok(TOK.HASHTAG, w, None)
+
+    @staticmethod
     def Measurement(w, unit, val):
         return Tok(TOK.MEASUREMENT, w, (unit, val))
 
@@ -685,7 +281,6 @@ def is_valid_date(y, m, d):
 
 def parse_digits(w):
     """ Parse a raw token starting with a digit """
-
     s = re.match(r"\d{1,2}:\d\d:\d\d", w)
     if s:
         # Looks like a 24-hour clock, H:M:S
@@ -788,11 +383,11 @@ def parse_digits(w):
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
     s = re.match(r"\d\d\d-\d\d\d\d", w)
-    if s:
+    if s and s.group()[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         return TOK.Telno(s.group()), s.end()
     s = re.match(r"\d\d\d\d\d\d\d", w)
-    if s:
+    if s and s.group()[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         return TOK.Telno(s.group()[:3] + "-" + s.group()[3:]), s.end()
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
@@ -925,6 +520,10 @@ def parse_tokens(txt):
                     yield TOK.Punctuation("‘")
                     w = ""
                     qmark = False
+                elif len(w) > 1 and w.startswith("#"):
+                    # Might be a hashtag, processed later
+                    ate = False
+                    break
                 else:
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
@@ -945,7 +544,46 @@ def parse_tokens(txt):
                 ate = True
                 yield TOK.Number(w[0], unicodedata.numeric(w[0]))
                 w = w[1:]
-
+            if w and w.startswith(URL_PREFIXES):
+                # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
+                # even though many of them are actually allowed according to
+                # the IETF RFC
+                endp = ""
+                while w and w[-1] in RIGHT_PUNCTUATION:
+                    endp = w[-1] + endp
+                    w = w[:-1]
+                yield TOK.Url(w)
+                ate = True
+                w = endp
+            if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
+                # Handle hashtags. Eat all text up to next punctuation character
+                # so we can handle strings like "#MeToo-hreyfingin" as two words
+                tag = w[:1]
+                w = w[1:]
+                while w and w[0] not in PUNCTUATION:
+                    tag += w[0]
+                    w = w[1:]
+                if re.search(r"^#\d+$", tag):
+                    # Hash is being used as a number sign, e.g. "#12"
+                    yield TOK.Ordinal(tag, int(tag[1:]))
+                else:
+                    yield TOK.Hashtag(tag)
+                ate = True
+            # Domain name (e.g. greynir.is)
+            if (
+                w
+                and len(w) >= MIN_DOMAIN_LENGTH
+                and w[0].isalnum()  # All domains start with an alphanumeric char
+                and "." in w[1:-2]  # Optimization, TLD is at least 2 chars
+                and DOMAIN_REGEX.search(w)
+            ):
+                endp = ""
+                while w and w[-1] in PUNCTUATION:
+                    endp = w[-1] + endp
+                    w = w[:-1]
+                yield TOK.Domain(w)
+                ate = True
+                w = endp
             # Numbers or other stuff starting with a digit
             if w and w[0] in DIGITS:
                 for key, val in items(ORDINAL_ERRORS):
@@ -966,21 +604,6 @@ def parse_tokens(txt):
                     # so they won't be caught by the isalpha() check below)
                     yield TOK.Word(w, None)
                     w = ""
-            if w and (
-                w.startswith("http://")
-                or w.startswith("https://")
-                or w.startswith("www.")
-            ):
-                # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
-                # even though many of them are actually allowed according to
-                # the IETF RFC
-                endp = ""
-                while w and w[-1] in RIGHT_PUNCTUATION:
-                    endp = w[-1] + endp
-                    w = w[:-1]
-                yield TOK.Url(w)
-                ate = True
-                w = endp
             # Alphabetic characters
             if w and w[0].isalpha():
                 ate = True
@@ -1220,6 +843,19 @@ def parse_particles(token_stream):
                 )
                 next_token = next(token_stream)
 
+            # Coalesece 3-digit number followed by 4-digit number into tel. no.
+            # NB: This will not catch phone numbers ending what has previously
+            # been identified as a year (e.g. 699 2018)
+            if (
+                token.kind == TOK.NUMBER
+                and (next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR)
+                and token.txt[0] in TELNO_PREFIXES
+                and re.search(r"^\d\d\d$", token.txt)
+                and re.search(r"^\d\d\d\d$", next_token.txt)
+            ):
+                token = TOK.Telno(token.txt + "-" + next_token.txt)
+                next_token = next(token_stream)
+
             # Coalesce percentages into a single token
             if next_token.kind == TOK.PUNCTUATION and next_token.txt == "%":
                 if token.kind == TOK.NUMBER:
@@ -1396,92 +1032,12 @@ def parse_sentences(token_stream):
         yield tok_end_sentence
 
 
-# Recognize words that multiply numbers
-MULTIPLIERS = {
-    # "núll": 0,
-    # "hálfur": 0.5,
-    # "helmingur": 0.5,
-    # "þriðjungur": 1.0 / 3,
-    # "fjórðungur": 1.0 / 4,
-    # "fimmtungur": 1.0 / 5,
-    "einn": 1,
-    "tveir": 2,
-    "þrír": 3,
-    "fjórir": 4,
-    "fimm": 5,
-    "sex": 6,
-    "sjö": 7,
-    "átta": 8,
-    "níu": 9,
-    "tíu": 10,
-    "ellefu": 11,
-    "tólf": 12,
-    "þrettán": 13,
-    "fjórtán": 14,
-    "fimmtán": 15,
-    "sextán": 16,
-    "sautján": 17,
-    "seytján": 17,
-    "átján": 18,
-    "nítján": 19,
-    "tuttugu": 20,
-    "þrjátíu": 30,
-    "fjörutíu": 40,
-    "fimmtíu": 50,
-    "sextíu": 60,
-    "sjötíu": 70,
-    "áttatíu": 80,
-    "níutíu": 90,
-    # "par": 2,
-    # "tugur": 10,
-    # "tylft": 12,
-    "hundrað": 100,
-    "þúsund": 1000,  # !!! Bæði hk og kvk!
-    "þús.": 1000,
-    "milljón": 1e6,
-    "milla": 1e6,
-    "millj.": 1e6,
-    "mljó.": 1e6,
-    "milljarður": 1e9,
-    "miljarður": 1e9,
-    "ma.": 1e9,
-    "mrð.": 1e9,
-}
-
-# Recognize words for percentages
-PERCENTAGES = {"prósent": 1, "prósenta": 1, "hundraðshluti": 1, "prósentustig": 1}
-
-# Amount abbreviations including 'kr' for the ISK
-# Corresponding abbreviations are found in Abbrev.conf
-AMOUNT_ABBREV = {
-    "kr": 1,
-    "kr.": 1,
-    "þ.kr.": 1e3,
-    "þ.kr": 1e3,
-    "þús.kr.": 1e3,
-    "þús.kr": 1e3,
-    "m.kr.": 1e6,
-    "m.kr": 1e6,
-    "mkr.": 1e6,
-    "mkr": 1e6,
-    "millj.kr.": 1e6,
-    "millj.kr": 1e6,
-    "mljó.kr.": 1e6,
-    "mljó.kr": 1e6,
-    "ma.kr.": 1e9,
-    "ma.kr": 1e9,
-    "mö.kr.": 1e9,
-    "mö.kr": 1e9,
-    "mlja.kr.": 1e9,
-    "mlja.kr": 1e9,
-}
-
-
 def match_stem_list(token, stems):
     """ Find the stem of a word token in given dict, or return None if not found """
     if token.kind != TOK.WORD:
         return None
     return stems.get(token.txt.lower(), None)
+
 
 def month_for_token(token, after_ordinal=False):
     """ Return a number, 1..12, corresponding to a month name,
@@ -1492,9 +1048,8 @@ def month_for_token(token, after_ordinal=False):
         return None
     return match_stem_list(token, MONTHS)
 
-
+  
 def parse_phrases_1(token_stream):
-
     """ Handle dates and times """
 
     token = None
@@ -1571,7 +1126,6 @@ def parse_phrases_1(token_stream):
 
 
 def parse_date_and_time(token_stream):
-
     """ Handle dates and times, absolute and relative. """
 
     token = None
@@ -1744,7 +1298,6 @@ def parse_date_and_time(token_stream):
 
 
 def parse_phrases_2(token_stream):
-
     """ Handle numbers, amounts and composite words. """
 
     token = None
@@ -1820,6 +1373,16 @@ def parse_phrases_2(token_stream):
 
                 multiplier = None
 
+            # Check for [currency] [number] (e.g. kr. 9.900 or USD 50)
+            if next_token.kind == TOK.NUMBER and (
+                token.txt in ISK_AMOUNT_PRECEDING or token.txt in CURRENCY_ABBREV
+            ):
+                curr = "ISK" if token.txt in ISK_AMOUNT_PRECEDING else token.txt
+                token = TOK.Amount(
+                    token.txt + " " + next_token.txt, curr, next_token.val[0]
+                )
+                next_token = next(token_stream)
+
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
@@ -1835,7 +1398,7 @@ def parse_phrases_2(token_stream):
                 tq.append(TOK.Punctuation(HYPHEN))
                 # Check for optional comma after the prefix
                 comma_token = next(token_stream)
-                if comma_token.kind == TOK.PUNCTUATION and comma_token.txt == ',':
+                if comma_token.kind == TOK.PUNCTUATION and comma_token.txt == ",":
                     # A comma is present: append it to the queue
                     # and skip to the next token
                     tq.append(comma_token)
@@ -1847,9 +1410,7 @@ def parse_phrases_2(token_stream):
             if tq:
                 # We have accumulated one or more prefixes
                 # ('dómsmála-, viðskipta-')
-                if token.kind == TOK.WORD and (
-                    token.txt == "og" or token.txt == "eða"
-                ):
+                if token.kind == TOK.WORD and (token.txt == "og" or token.txt == "eða"):
                     # We have 'viðskipta- og'
                     if next_token.kind != TOK.WORD:
                         # Incorrect: yield the accumulated token
@@ -1870,9 +1431,10 @@ def parse_phrases_2(token_stream):
                 else:
                     # Incorrect prediction: make amends and continue
                     if (
-                        token.kind == TOK.WORD and
-                        len(tq) == 2 and tq[1].txt == HYPHEN and
-                        tq[0].txt.lower() in ADJECTIVE_PREFIXES
+                        token.kind == TOK.WORD
+                        and len(tq) == 2
+                        and tq[1].txt == HYPHEN
+                        and tq[0].txt.lower() in ADJECTIVE_PREFIXES
                     ):
                         # hálf-opinberri, marg-ítrekaðri
                         token = TOK.Word(tq[0].txt + "-" + token.txt)
