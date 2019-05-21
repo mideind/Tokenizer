@@ -316,6 +316,10 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.3.0: Added TOK.DOMAIN and TOK.HASHTAG token types;
+  improved handling of capitalized month name 'Ágúst', which is
+  now recognized when following an ordinal number; improved recognition
+  of telephone numbers; added abbreviations
 * Version 1.2.3: Added abbreviations; updated GitHub URLs
 * Version 1.2.2: Added support for composites with more than two parts, i.e.
   *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for

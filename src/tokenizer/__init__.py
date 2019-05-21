@@ -34,4 +34,4 @@ from .tokenizer import parse_tokens, correct_spaces, mark_paragraphs, paragraphs
 from .tokenizer import TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD
 from .abbrev import Abbreviations, ConfigError
 
-__author__ = u"Vilhjálmur Þorsteinsson"
+__author__ = u"Miðeind ehf"
