@@ -881,7 +881,7 @@ def parse_particles(token_stream):
                         or (
                             follow_token.kind == TOK.WORD
                             and follow_token.txt[0].isupper()
-                            and month_for_token(follow_token) is None
+                            and month_for_token(follow_token, True) is None
                         )
                     ):
                         # Next token is a sentence or paragraph end, or opening quotes,
@@ -1039,12 +1039,16 @@ def match_stem_list(token, stems):
     return stems.get(token.txt.lower(), None)
 
 
-def month_for_token(token):
-    if token.txt in MONTH_BLACKLIST:
+def month_for_token(token, after_ordinal=False):
+    """ Return a number, 1..12, corresponding to a month name,
+        or None if the token does not contain a month name """
+    if not(after_ordinal) and token.txt in MONTH_BLACKLIST:
+        # Special case for 'Ágúst', which we do not recognize
+        # as a month name unless it follows an ordinal number
         return None
     return match_stem_list(token, MONTHS)
 
-
+  
 def parse_phrases_1(token_stream):
     """ Handle dates and times """
 
@@ -1072,7 +1076,7 @@ def parse_phrases_1(token_stream):
                 token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER
             ) and next_token.kind == TOK.WORD:
 
-                month = month_for_token(next_token)
+                month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
                         token.txt + " " + next_token.txt,
@@ -1140,7 +1144,7 @@ def parse_date_and_time(token_stream):
                 or (token.txt and token.txt.lower() in DAYS_OF_MONTH)
             ) and next_token.kind == TOK.WORD:
 
-                month = month_for_token(next_token)
+                month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
                         token.txt + " " + next_token.txt,
