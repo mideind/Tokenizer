@@ -306,17 +306,17 @@ CE_BCE = CE | BCE
 # Supported ISO 4217 currency codes
 CURRENCY_ABBREV = frozenset(
     (
-        "DKK",
-        "ISK",
-        "NOK",
-        "SEK",
-        "GBP",
-        "USD",
-        "EUR",
-        "CAD",
-        "AUD",
-        "CHF",
-        "JPY",
+        "ISK",  # Icelandic króna
+        "DKK",  # Danish krone
+        "NOK",  # Norwegian krone
+        "SEK",  # Swedish krona
+        "GBP",  # British pounds sterling
+        "USD",  # US dollar
+        "EUR",  # Euro
+        "CAD",  # Canadian dollar
+        "AUD",  # Australian dollar
+        "CHF",  # Swiss franc
+        "JPY",  # Japanese yen
         "PLN",  # Polish złoty
         "RUB",  # Russian ruble
         "CZK",  # Czech koruna
@@ -324,7 +324,11 @@ CURRENCY_ABBREV = frozenset(
         "IDR",  # Indonesian rupiah
         "CNY",  # Chinese renminbi
         "RMB",  # Chinese renminbi (alternate)
+        "HKD",  # Hong Kong dollar
+        "NZD",  # New Zealand dollar
+        "SGD",  # Singapore dollar
         "MXN",  # Mexican peso
+        "ZAR",  # South African rand
     )
 )
 
@@ -538,7 +542,7 @@ AMOUNT_ABBREV = {
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
 
-URL_PREFIXES = ("http://", "https://")
+URL_PREFIXES = ("http://", "https://",)
 
 
 TOP_LEVEL_DOMAINS = frozenset(
