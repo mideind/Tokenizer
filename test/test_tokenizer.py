@@ -526,6 +526,11 @@ def test_sentences():
         "B W W     W DM     W   DM          P E B DM         W  W    W    P W      W  DM             P W   DM          P E",
     )
 
+    test_sentence(
+        "Fyrri setningin var í þgf. en sú seinni í nf. Ég stóð í ef. en hann í þf. Hvað ef.",
+        "B W   W         W   W W    W  W  W      W W P E B W  W    W W   W  W    W W P E B W W P E",
+    )
+
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
