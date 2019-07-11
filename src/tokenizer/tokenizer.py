@@ -305,11 +305,11 @@ def parse_digits(w):
     )
     if s:
         # Looks like a date
-        w = s.group()
-        if "/" in w:
-            p = w.split("/")
+        g = s.group()
+        if "/" in g:
+            p = g.split("/")
         else:
-            p = w.split(".")
+            p = g.split(".")
         y = int(p[2])
         # noinspection PyAugmentAssignment
         if y <= 99:
@@ -320,18 +320,18 @@ def parse_digits(w):
             # Probably wrong way around
             m, d = d, m
         if is_valid_date(y, m, d):
-            return TOK.Date(w, y, m, d), s.end()
+            return TOK.Date(g, y, m, d), s.end()
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
     s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
     if s:
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
-        w = s.group()
-        l = w[-1:]
+        g = s.group()
+        l = g[-1:]
         # Only match if the single character is not a unit of measurement (e.g. 'A', 'l', 'V')
         if l not in SI_UNITS.keys():
-            n = int(w[:-1])
-            return TOK.NumberWithLetter(w, n, l), s.end()
+            n = int(g[:-1])
+            return TOK.NumberWithLetter(g, n, l), s.end()
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
@@ -343,22 +343,22 @@ def parse_digits(w):
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
-        w = s.group()
-        n = re.sub(r"\.", "", w)  # Eliminate thousands separators
+        g = s.group()
+        n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         n = re.sub(",", ".", n)  # Convert decimal comma to point
-        return TOK.Number(w, float(n)), s.end()
+        return TOK.Number(g, float(n)), s.end()
     s = re.match(r"\d+(\.\d\d\d)+", w)
     if s:
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
-        w = s.group()
-        n = re.sub(r"\.", "", w)  # Eliminate thousands separators
-        return TOK.Number(w, int(n)), s.end()
+        g = s.group()
+        n = re.sub(r"\.", "", g)  # Eliminate thousands separators
+        return TOK.Number(g, int(n)), s.end()
     s = re.match(r"\d{1,2}/\d{1,2}", w)
     if s and (s.end() >= len(w) or w[s.end()] not in DIGITS):
         # Looks like a date (and not something like 10/2007)
-        w = s.group()
-        p = w.split("/")
+        g = s.group()
+        p = g.split("/")
         m = int(p[1])
         d = int(p[0])
         if (
@@ -369,13 +369,13 @@ def parse_digits(w):
             # This is probably a fraction, not a date
             # (1/2, 1/3, 1/4, 1/5, 1/6, 2/3, 2/5, 5/6 etc.)
             # Return a number
-            return TOK.Number(w, float(d) / m), s.end()
+            return TOK.Number(g, float(d) / m), s.end()
         if m > 12 >= d:
             # Date is probably wrong way around
             m, d = d, m
         if (1 <= d <= 31) and (1 <= m <= 12):
             # Looks like a (roughly) valid date
-            return TOK.Date(w, 0, m, d), s.end()
+            return TOK.Date(g, 0, m, d), s.end()
     s = re.match(r"\d\d\d\d$", w) or re.match(r"\d\d\d\d[^\d]", w)
     if s:
         n = int(w[0:4])
@@ -389,30 +389,35 @@ def parse_digits(w):
     s = re.match(r"\d\d\d\d\d\d\d", w)
     if s and s.group()[0] in TELNO_PREFIXES:
         # Looks like a telephone number
-        return TOK.Telno(s.group()[:3] + "-" + s.group()[3:]), s.end()
+        telno = s.group()
+        if CONVERT_TELNOS:
+            telno = telno[:3] + "-" + telno[3:]
+        return TOK.Telno(telno), s.end()
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
     if s:
         # Some kind of ordinal chapter number: 2.5.1 etc.
         # (we need to check this before numbers with decimal points)
-        w = s.group()
-        n = re.sub(r"\.", "", w)  # Eliminate dots, 2.5.1 -> 251
-        return TOK.Ordinal(w, int(n)), s.end()
+        g = s.group()
+        n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
+        return TOK.Ordinal(g, int(n)), s.end()
     s = re.match(r"\d+(,\d\d\d)*\.\d+", w)
     if s:
         # Real number, possibly with a thousands separator and decimal comma/point
-        w = s.group()
-        n = re.sub(",", "", w)  # Eliminate thousands separators
-        w = re.sub(",", "x", w)  # Change thousands separator to 'x'
-        w = re.sub(r"\.", ",", w)  # Change decimal separator to ','
-        w = re.sub("x", ".", w)  # Change 'x' to '.'
-        return TOK.Number(w, float(n)), s.end()
+        g = s.group()
+        n = re.sub(",", "", g)  # Eliminate thousands separators
+        if CONVERT_NUMBERS:
+            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
+            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
+            g = re.sub("x", ".", g)  # Change 'x' to '.'
+        return TOK.Number(g, float(n)), s.end()
     s = re.match(r"\d+(,\d\d\d)*", w)
     if s:
         # Integer, possibly with a ',' thousands separator
-        w = s.group()
-        n = re.sub(",", "", w)  # Eliminate thousands separators
-        w = re.sub(",", ".", w)  # Change thousands separator to a dot
-        return TOK.Number(w, int(n)), s.end()
+        g = s.group()
+        n = re.sub(",", "", g)  # Eliminate thousands separators
+        if CONVERT_NUMBERS:
+            g = re.sub(",", ".", g)  # Change thousands separator to a dot
+        return TOK.Number(g, int(n)), s.end()
     # Strange thing
     return TOK.Unknown(w), len(w)
 
@@ -478,6 +483,7 @@ def parse_tokens(txt):
             ate = False
             while w and w[0] in PUNCTUATION:
                 ate = True
+                lw = len(w)
                 if w.startswith("[...]"):
                     yield TOK.Punctuation("[…]")
                     w = w[5:]
@@ -496,7 +502,7 @@ def parse_tokens(txt):
                     # Probably an idiot trying to type opening double quotes with commas
                     yield TOK.Punctuation("„")
                     w = w[2:]
-                elif len(w) == 2 and (w == "[[" or w == "]]"):
+                elif lw == 2 and (w == "[[" or w == "]]"):
                     # Begin or end paragraph marker
                     if w == "[[":
                         yield TOK.Begin_Paragraph()
@@ -510,17 +516,17 @@ def parse_tokens(txt):
                     # Any sequence of hyphens is treated as a single hyphen
                     while w and w[0] in HYPHENS:
                         w = w[1:]
-                elif len(w) == 1 and w in DQUOTES:
+                elif lw == 1 and w in DQUOTES:
                     # Convert to a proper closing double quote
                     yield TOK.Punctuation("“")
                     w = ""
                     qmark = False
-                elif len(w) == 1 and w in SQUOTES:
+                elif lw == 1 and w in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
                     yield TOK.Punctuation("‘")
                     w = ""
                     qmark = False
-                elif len(w) > 1 and w.startswith("#"):
+                elif lw > 1 and w.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
                     break
@@ -802,9 +808,12 @@ def parse_particles(token_stream):
                     # Match: coalesce and step to next token
                     txt = CLOCK_ABBREV + "." if clock else token.txt
                     if next_token.kind == TOK.NUMBER:
-                        token = TOK.Time(
-                            txt + " " + next_token.txt, next_token.val[0], 0, 0
-                        )
+                        # next_token.txt may be a real number, i.e. 13,40,
+                        # which may have been converted from 13.40
+                        # If we now have hh.mm, parse it as such
+                        a = "{0:.2f}".format(next_token.val[0]).split(".")
+                        h, m = int(a[0]), int(a[1])
+                        token = TOK.Time(txt + " " + next_token.txt, h, m, 0)
                     else:
                         # next_token.kind is TOK.TIME
                         token = TOK.Time(
@@ -853,7 +862,11 @@ def parse_particles(token_stream):
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                token = TOK.Telno(token.txt + "-" + next_token.txt)
+                if CONVERT_TELNOS:
+                    telno = token.txt + "-" + next_token.txt
+                else:
+                    telno = token.txt + " " + next_token.txt
+                token = TOK.Telno(telno)
                 next_token = next(token_stream)
 
             # Coalesce percentages into a single token

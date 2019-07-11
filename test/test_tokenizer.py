@@ -98,7 +98,7 @@ def test_single_tokens():
         ("2.013", [Tok(TOK.NUMBER, "2.013", (2013, None, None))]),
         ("2,013", [Tok(TOK.NUMBER, "2,013", (2.013, None, None))]),
         ("2.013,45", [Tok(TOK.NUMBER, "2.013,45", (2013.45, None, None))]),
-        ("2,013.45", [Tok(TOK.NUMBER, "2.013,45", (2013.45, None, None))]),
+        ("2,013.45", [Tok(TOK.NUMBER, "2,013.45", (2013.45, None, None))]),
         ("1/2", [Tok(TOK.NUMBER, "1/2", (0.5, None, None))]),
         ("1/4", [Tok(TOK.NUMBER, "1/4", (0.25, None, None))]),
         ("¼", [Tok(TOK.NUMBER, "¼", (0.25, None, None))]),
@@ -235,8 +235,8 @@ def test_single_tokens():
         ("9000000", TOK.NUMBER),
         ("1234567", TOK.NUMBER),
         ("525-4764", TOK.TELNO),
-        ("4204200", [Tok(TOK.TELNO, "420-4200", None)]),
-        ("699 2422", [Tok(TOK.TELNO, "699-2422", None)]),
+        ("4204200", [Tok(TOK.TELNO, "4204200", None)]),
+        ("699 2422", [Tok(TOK.TELNO, "699 2422", None)]),
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
@@ -276,9 +276,9 @@ def test_single_tokens():
         ("¥212,11", TOK.AMOUNT),
         ("EUR 200", TOK.AMOUNT),
         ("kr. 5.999", TOK.AMOUNT),
-        ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
-        ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
-        ("£5,199.99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
+        ("$1,472.64", [Tok(TOK.AMOUNT, "$1,472.64", (1472.64, "USD", None, None))]),
+        ("€3,472.64", [Tok(TOK.AMOUNT, "€3,472.64", (3472.64, "EUR", None, None))]),
+        ("£5,199.99", [Tok(TOK.AMOUNT, "£5,199.99", (5199.99, "GBP", None, None))]),
         ("fake@news.is", TOK.EMAIL),
         ("jon.jonsson.99@netfang.is", TOK.EMAIL),
         ("valid@my-domain.reallylongtld", TOK.EMAIL),
@@ -531,6 +531,11 @@ def test_sentences():
         "B W   W         W   W W    W  W  W      W W P E B W  W    W W   W  W    W W P E B W W P E",
     )
 
+    test_sentence(
+        "Ég vildi [...] fara út. [...] Hann sá mig.",
+        "B W W    P     W    W P P     E B W W W  P E",
+    )
+
 
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
@@ -572,7 +577,9 @@ def test_correction():
         ),
         (
             """Hann sagði: Þú ert ´fífl´! Hringdu í 7771234.""",
-            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234.""",
+            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234."""
+            if t.CONVERT_TELNOS else
+            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 7771234."""
         ),
         (
             """Hann sagði: Þú ert (´fífl´)! Ég mótmælti því.""",
@@ -580,7 +587,9 @@ def test_correction():
         ),
         (
             """Hann "gaf" mér 10,780.65 dollara.""",
-            """Hann „gaf“ mér 10.780,65 dollara.""",
+            """Hann „gaf“ mér 10.780,65 dollara."""
+            if t.CONVERT_NUMBERS else
+            """Hann „gaf“ mér 10,780.65 dollara."""
         ),
     ]
     for sent, correct in SENT:

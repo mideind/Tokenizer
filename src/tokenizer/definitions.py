@@ -35,6 +35,7 @@ from __future__ import unicode_literals
 import sys
 import re
 
+
 # Mask away difference between Python 2 and 3
 if sys.version_info >= (3, 0):
     items = lambda d: d.items()
@@ -52,6 +53,13 @@ else:
         return s.decode("utf-8")
 
     unicode_chr = lambda c: unichr(c)
+
+
+# TODO: These options will become settable configuration switches
+# Auto-convert numbers to Icelandic format (1,234.56 -> 1.234,56)?
+CONVERT_NUMBERS = False
+# Auto-convert telephone numbers (8881234 -> 888-1234)?
+CONVERT_TELNOS = False
 
 ACCENT = unicode_chr(769)
 UMLAUT = unicode_chr(776)
@@ -103,7 +111,7 @@ PUNCTUATION = (
 PUNCTUATION_REGEX = "[{0}]".format("|".join(re.escape(p) for p in PUNCTUATION))
 
 # Punctuation that ends a sentence
-END_OF_SENTENCE = frozenset([".", "?", "!", "[…]"])
+END_OF_SENTENCE = frozenset([".", "?", "!"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words

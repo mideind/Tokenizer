@@ -32,6 +32,7 @@ from __future__ import absolute_import
 from .tokenizer import TOK, Tok, tokenize, tokenize_without_annotation
 from .tokenizer import parse_tokens, correct_spaces, mark_paragraphs, paragraphs
 from .tokenizer import TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD
+from .tokenizer import CONVERT_NUMBERS, CONVERT_TELNOS
 from .abbrev import Abbreviations, ConfigError
 
 __author__ = u"Miðeind ehf"
