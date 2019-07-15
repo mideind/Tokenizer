@@ -646,6 +646,16 @@ def test_abbrev():
     ]
 
 
+def test_overlap():
+    # Make sure that there is no overlap between the punctuation sets
+    assert not(
+        set(t.definitions.LEFT_PUNCTUATION)
+        & set(t.definitions.RIGHT_PUNCTUATION)
+        & set(t.definitions.CENTER_PUNCTUATION)
+        & set(t.definitions.NONE_PUNCTUATION)
+    )
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
@@ -653,3 +663,4 @@ if __name__ == "__main__":
     test_correct_spaces()
     test_correction()
     test_abbrev()
+    test_overlap()

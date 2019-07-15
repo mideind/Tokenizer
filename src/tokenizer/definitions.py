@@ -100,46 +100,27 @@ UNICODE_REPLACEMENTS = {
 }
 UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
 
+# Hyphens that are cast to '-' for parsing and then re-cast
+# to normal hyphens, en or em dashes in final rendering
+HYPHEN = "-"  # Normal hyphen
+EN_DASH = "–"
+EM_DASH = "—"
+
+HYPHENS = HYPHEN + EN_DASH + EM_DASH
+
+# Hyphens that may indicate composite words ('fjármála- og efnahagsráðuneyti')
+COMPOSITE_HYPHENS = HYPHEN + EN_DASH
+COMPOSITE_HYPHEN = EN_DASH
+
 # Recognized punctuation
 LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>–°"
+RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>°"
 CENTER_PUNCTUATION = '"*&+=@©|'
-NONE_PUNCTUATION = "—–-/±'´~\\"
+NONE_PUNCTUATION = "/±'´~\\" + HYPHEN + EN_DASH + EM_DASH
 PUNCTUATION = (
     LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
 )
 PUNCTUATION_REGEX = "[{0}]".format("|".join(re.escape(p) for p in PUNCTUATION))
-
-# Punctuation that ends a sentence
-END_OF_SENTENCE = frozenset([".", "?", "!"])  # Removed […]
-# Punctuation symbols that may additionally occur at the end of a sentence
-SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
-# Punctuation symbols that may occur inside words
-PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’"])  # Period and apostrophes
-
-# Hyphens that are cast to '-' for parsing and then re-cast
-# to normal hyphens, en or em dashes in final rendering
-HYPHENS = "—–-"
-HYPHEN = "-"  # Normal hyphen
-
-# Hyphens that may indicate composite words ('fjármála- og efnahagsráðuneyti')
-COMPOSITE_HYPHENS = "–-"
-COMPOSITE_HYPHEN = "–"  # en dash
-
-# Single and double quotes
-SQUOTES = "'‚‛‘´"
-DQUOTES = '"“„”«»'
-
-CLOCK_WORD = "klukkan"
-CLOCK_ABBREV = "kl"
-
-TELNO_PREFIXES = "45678"
-
-# Prefixes that can be applied to adjectives with an intervening hyphen
-ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
-
-# Words that can precede a year number; will be assimilated into the year token
-YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
 
 # Punctuation types: left, center or right of word
 
@@ -165,6 +146,28 @@ TP_SPACE = (
     # Last token was TP_WORD:
     (True, True, False, False, True),
 )
+
+# Punctuation that ends a sentence
+END_OF_SENTENCE = frozenset([".", "?", "!"])  # Removed […]
+# Punctuation symbols that may additionally occur at the end of a sentence
+SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
+# Punctuation symbols that may occur inside words
+PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’"])  # Period and apostrophes
+
+# Single and double quotes
+SQUOTES = "'‚‛‘´"
+DQUOTES = '"“„”«»'
+
+CLOCK_WORD = "klukkan"
+CLOCK_ABBREV = "kl"
+
+TELNO_PREFIXES = "45678"
+
+# Prefixes that can be applied to adjectives with an intervening hyphen
+ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
+
+# Words that can precede a year number; will be assimilated into the year token
+YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
 
 # Numeric digits
 DIGITS = frozenset([d for d in "0123456789"])  # Set of digit characters
