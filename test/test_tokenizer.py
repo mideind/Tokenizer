@@ -104,9 +104,11 @@ def test_single_tokens():
         ("¼", [Tok(TOK.NUMBER, "¼", (0.25, None, None))]),
         ("2⅞", [Tok(TOK.NUMBER, "2⅞", (2.875, None, None))]),
         ("33⅗", [Tok(TOK.NUMBER, "33⅗", (33.6, None, None))]),
-        ("1sti", [Tok(TOK.WORD, "fyrsti", None)]),
-        ("4ðu", [Tok(TOK.WORD, "fjórðu", None)]),
-        ("2svar", [Tok(TOK.WORD, "tvisvar", None)]),
+        ("1sti", [Tok(TOK.WORD, "1sti", None)]),
+        ("4ðu", [Tok(TOK.WORD, "4ðu", None)]),
+        ("2svar", [Tok(TOK.WORD, "2svar", None)]),
+        ("4ra", [Tok(TOK.WORD, "4ra", None)]),
+        ("2ja", [Tok(TOK.WORD, "2ja", None)]),
         ("þjóðhátíð", TOK.WORD),
         ("Þjóðhátíð", TOK.WORD),
         ("marg-ítrekað", TOK.WORD),
@@ -268,17 +270,34 @@ def test_single_tokens():
                 )
             ],
         ),
-        ("$472,64", TOK.AMOUNT),
-        ("€472,64", TOK.AMOUNT),
-        ("$1.472,64", TOK.AMOUNT),
-        ("€3.472,64", TOK.AMOUNT),
-        ("£1.922", TOK.AMOUNT),
         ("¥212,11", TOK.AMOUNT),
         ("EUR 200", TOK.AMOUNT),
         ("kr. 5.999", TOK.AMOUNT),
+
+        ("$472,64", [Tok(TOK.AMOUNT, "$472,64", (472.64, "USD", None, None))]),
+        ("€472,64", [Tok(TOK.AMOUNT, "€472,64", (472.64, "EUR", None, None))]),
+        ("£199,99", [Tok(TOK.AMOUNT, "£199,99", (199.99, "GBP", None, None))]),
+
+        ("$472.64", [Tok(TOK.AMOUNT, "$472.64", (472.64, "USD", None, None))]),
+        ("€472.64", [Tok(TOK.AMOUNT, "€472.64", (472.64, "EUR", None, None))]),
+        ("£199.99", [Tok(TOK.AMOUNT, "£199.99", (199.99, "GBP", None, None))]),
+
         ("$1,472.64", [Tok(TOK.AMOUNT, "$1,472.64", (1472.64, "USD", None, None))]),
         ("€3,472.64", [Tok(TOK.AMOUNT, "€3,472.64", (3472.64, "EUR", None, None))]),
         ("£5,199.99", [Tok(TOK.AMOUNT, "£5,199.99", (5199.99, "GBP", None, None))]),
+
+        ("$1.472,64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
+        ("€3.472,64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
+        ("£5.199,99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
+
+        ("$1,472", [Tok(TOK.AMOUNT, "$1,472", (1.472, "USD", None, None))]),
+        ("€3,472", [Tok(TOK.AMOUNT, "€3,472", (3.472, "EUR", None, None))]),
+        ("£5,199", [Tok(TOK.AMOUNT, "£5,199", (5.199, "GBP", None, None))]),
+
+        ("$1.472", [Tok(TOK.AMOUNT, "$1.472", (1472, "USD", None, None))]),
+        ("€3.472", [Tok(TOK.AMOUNT, "€3.472", (3472, "EUR", None, None))]),
+        ("£5.199", [Tok(TOK.AMOUNT, "£5.199", (5199, "GBP", None, None))]),
+
         ("fake@news.is", TOK.EMAIL),
         ("jon.jonsson.99@netfang.is", TOK.EMAIL),
         ("valid@my-domain.reallylongtld", TOK.EMAIL),
@@ -307,31 +326,96 @@ def test_single_tokens():
         ("1976kWst", [Tok(TOK.MEASUREMENT, "1976 kWst", ("J", 7113.6e6))]),
     ]
 
-    for test_case in TEST_CASES:
-        if len(test_case) == 3:
-            txt, kind, val = test_case
-            c = [Tok(kind, txt, val)]
-        elif isinstance(test_case[1], list):
-            txt = test_case[0]
-            c = test_case[1]
-        else:
-            txt, kind = test_case
-            c = [Tok(kind, txt, None)]
-        l = list(t.tokenize(txt))
-        assert len(l) == len(c) + 2, repr(l)
-        assert l[0].kind == TOK.S_BEGIN, repr(l[0])
-        assert l[-1].kind == TOK.S_END, repr(l[-1])
-        for tok, check in zip(l[1:-1], c):
-            assert tok.kind == check.kind, (
-                tok.txt
-                + ": "
-                + repr(TOK.descr[tok.kind])
-                + " "
-                + repr(TOK.descr[check.kind])
-            )
-            assert tok.txt == check.txt, tok.txt + ": " + check.txt
-            if check.val is not None:
-                assert tok.val == check.val, repr(tok.val) + ": " + repr(check.val)
+    TEST_CASES_KLUDGY_MODIFY = [
+        ("1sti", [Tok(TOK.WORD, "fyrsti", None)]),
+        ("4ðu", [Tok(TOK.WORD, "fjórðu", None)]),
+        ("2svar", [Tok(TOK.WORD, "tvisvar", None)]),
+        ("4ra", [Tok(TOK.WORD, "fjögurra", None)]),
+    ]
+
+    TEST_CASES_KLUDGY_TRANSLATE = [
+        ("1sti", [Tok(TOK.ORDINAL, "1sti", 1)]),
+        ("4ðu", [Tok(TOK.ORDINAL, "4ðu", 4)]),
+        ("2svar", [Tok(TOK.WORD, "2svar", None)]),
+        ("4ra", [Tok(TOK.WORD, "4ra", None)]),
+    ]
+
+    TEST_CASES_CONVERT_TELNOS = [
+        ("525-4764", TOK.TELNO),
+        ("4204200", [Tok(TOK.TELNO, "420-4200", None)]),
+        ("699 2422", [Tok(TOK.TELNO, "699-2422", None)]),
+    ]
+
+    TEST_CASES_CONVERT_NUMBERS = [
+        ("$472,64", [Tok(TOK.AMOUNT, "$472,64", (472.64, "USD", None, None))]),
+        ("€472,64", [Tok(TOK.AMOUNT, "€472,64", (472.64, "EUR", None, None))]),
+        ("£199,99", [Tok(TOK.AMOUNT, "£199,99", (199.99, "GBP", None, None))]),
+
+        ("$472.64", [Tok(TOK.AMOUNT, "$472,64", (472.64, "USD", None, None))]),
+        ("€472.64", [Tok(TOK.AMOUNT, "€472,64", (472.64, "EUR", None, None))]),
+        ("£199.99", [Tok(TOK.AMOUNT, "£199,99", (199.99, "GBP", None, None))]),
+
+        ("$1,472.64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
+        ("€3,472.64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
+        ("£5,199.99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
+
+        ("$1.472,64", [Tok(TOK.AMOUNT, "$1.472,64", (1472.64, "USD", None, None))]),
+        ("€3.472,64", [Tok(TOK.AMOUNT, "€3.472,64", (3472.64, "EUR", None, None))]),
+        ("£5.199,99", [Tok(TOK.AMOUNT, "£5.199,99", (5199.99, "GBP", None, None))]),
+
+        ("$1,472", [Tok(TOK.AMOUNT, "$1,472", (1.472, "USD", None, None))]),
+        ("€3,472", [Tok(TOK.AMOUNT, "€3,472", (3.472, "EUR", None, None))]),
+        ("£5,199", [Tok(TOK.AMOUNT, "£5,199", (5.199, "GBP", None, None))]),
+
+        ("$1.472", [Tok(TOK.AMOUNT, "$1.472", (1472, "USD", None, None))]),
+        ("€3.472", [Tok(TOK.AMOUNT, "€3.472", (3472, "EUR", None, None))]),
+        ("£5.199", [Tok(TOK.AMOUNT, "£5.199", (5199, "GBP", None, None))]),
+    ]
+
+    def run_test(test_cases, **options):
+        for test_case in test_cases:
+            if len(test_case) == 3:
+                txt, kind, val = test_case
+                c = [Tok(kind, txt, val)]
+            elif isinstance(test_case[1], list):
+                txt = test_case[0]
+                c = test_case[1]
+            else:
+                txt, kind = test_case
+                c = [Tok(kind, txt, None)]
+            l = list(t.tokenize(txt, **options))
+            assert len(l) == len(c) + 2, repr(l)
+            assert l[0].kind == TOK.S_BEGIN, repr(l[0])
+            assert l[-1].kind == TOK.S_END, repr(l[-1])
+            for tok, check in zip(l[1:-1], c):
+                assert tok.kind == check.kind, (
+                    tok.txt
+                    + ": "
+                    + repr(TOK.descr[tok.kind])
+                    + " "
+                    + repr(TOK.descr[check.kind])
+                )
+                assert tok.txt == check.txt, tok.txt + ": " + check.txt
+                if check.val is not None:
+                    assert tok.val == check.val, repr(tok.val) + ": " + repr(check.val)
+
+    run_test(TEST_CASES)
+    run_test(
+        TEST_CASES_KLUDGY_MODIFY,
+        handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY
+    )
+    run_test(
+        TEST_CASES_KLUDGY_TRANSLATE,
+        handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE
+    )
+    run_test(
+        TEST_CASES_CONVERT_TELNOS,
+        convert_telnos=True
+    )
+    run_test(
+        TEST_CASES_CONVERT_NUMBERS,
+        convert_numbers=True
+    )
 
 
 def test_sentences():
@@ -573,12 +657,22 @@ def test_correction():
         ),
         (
             """Hann sagði: ´Þú ert fífl´! Farðu í 3ja sinn.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu í þriðja sinn.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í 3ja sinn.""",
+        ),
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu í 1sta sinn.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í 1sta sinn.""",
+        ),
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu 2svar í bað.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu 2svar í bað.""",
+        ),
+        (
+            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
+            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
         ),
         (
             """Hann sagði: Þú ert ´fífl´! Hringdu í 7771234.""",
-            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234."""
-            if t.CONVERT_TELNOS else
             """Hann sagði: Þú ert ‚fífl‘! Hringdu í 7771234."""
         ),
         (
@@ -587,13 +681,95 @@ def test_correction():
         ),
         (
             """Hann "gaf" mér 10,780.65 dollara.""",
-            """Hann „gaf“ mér 10.780,65 dollara."""
-            if t.CONVERT_NUMBERS else
             """Hann „gaf“ mér 10,780.65 dollara."""
+        ),
+        (
+            """Hann "gaf" mér €10,780.65.""",
+            """Hann „gaf“ mér €10,780.65.""",
+        ),
+        (
+            """Hann "gaf" mér €10.780,65.""",
+            """Hann „gaf“ mér €10.780,65.""",
+        ),
+    ]
+    SENT_KLUDGY_ORDINALS_MODIFY = [
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu í 3ja sinn.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í þriðja sinn.""",
+        ),
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu í 1sta sinn.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í fyrsta sinn.""",
+        ),
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu 2svar í bað.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu tvisvar í bað.""",
+        ),
+        (
+            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
+            """Ég keypti fjögurra herbergja íbúð á verði tveggja herbergja.""",
+        ),
+    ]
+    SENT_KLUDGY_ORDINALS_TRANSLATE = [
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu í 3ja sinn.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í 3ja sinn.""",
+        ),
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu í 1sta sinn.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í 1sta sinn.""",
+        ),
+        (
+            """Hann sagði: ´Þú ert fífl´! Farðu 2svar í bað.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu 2svar í bað.""",
+        ),
+        (
+            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
+            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
+        ),
+    ]
+    SENT_CONVERT_TELNOS = [
+        (
+            """Hann sagði: Þú ert ´fífl´! Hringdu í 7771234.""",
+            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234."""
+        ),
+        (
+            """Hann sagði: Þú ert ´fífl´! Hringdu í 777 1234.""",
+            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234."""
+        ),
+    ]
+    SENT_CONVERT_NUMBERS = [
+        (
+            """Hann "gaf" mér 10,780.65 dollara.""",
+            """Hann „gaf“ mér 10.780,65 dollara."""
+        ),
+        (
+            """Hann "gaf" mér €10,780.65.""",
+            """Hann „gaf“ mér €10.780,65."""
+        ),
+        (
+            """Hann "gaf" mér €10.780,65.""",
+            """Hann „gaf“ mér €10.780,65.""",
         ),
     ]
     for sent, correct in SENT:
         s = t.tokenize(sent)
+        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        assert txt == correct
+    for sent, correct in SENT_KLUDGY_ORDINALS_MODIFY:
+        s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY)
+        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        assert txt == correct
+    for sent, correct in SENT_KLUDGY_ORDINALS_TRANSLATE:
+        s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE)
+        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        assert txt == correct
+    for sent, correct in SENT_CONVERT_TELNOS:
+        s = t.tokenize(sent, convert_telnos=True)
+        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        assert txt == correct
+    for sent, correct in SENT_CONVERT_NUMBERS:
+        s = t.tokenize(sent, convert_numbers=True)
         txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
         assert txt == correct
 

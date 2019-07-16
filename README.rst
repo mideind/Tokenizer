@@ -5,25 +5,29 @@ Tokenizer: A tokenizer for Icelandic text
 .. image:: https://travis-ci.com/mideind/Tokenizer.svg?branch=master
    :target: https://travis-ci.com/mideind/Tokenizer
 
+
 Overview
 --------
 
-Tokenization is a necessary first step in many natural language processing tasks,
-such as word counting, parsing, spell checking, corpus generation, and
+Tokenization is a necessary first step in many natural language processing
+tasks, such as word counting, parsing, spell checking, corpus generation, and
 statistical analysis of text.
 
-**Tokenizer** is a compact pure-Python (2 and 3) module for tokenizing Icelandic text. It converts
-Python text strings to streams of token objects, where each token object is a separate
-word, punctuation sign, number/amount, date, e-mail, URL/URI, etc. It also segments
-the token stream into sentences, considering corner cases such as abbreviations
-and dates in the middle of sentences.
+**Tokenizer** is a compact pure-Python (2 and 3) module for tokenizing
+Icelandic text. It converts
+Python text strings to streams of token objects, where each token object
+is a separate word, punctuation sign, number/amount, date,
+e-mail, URL/URI, etc.
+It also segments the token stream into sentences, considering corner cases
+such as abbreviations and dates in the middle of sentences.
 
-The package contains a dictionary of common Icelandic abbreviations, in the file
-``src/tokenizer/Abbrev.conf``.
+The package contains a dictionary of common Icelandic abbreviations,
+in the file ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/mideind/Reynir>`_), by the same authors.
-Note that Tokenizer is licensed under the MIT license while Greynir is licensed under GPLv3.
+Note that Tokenizer is licensed under the MIT license while Greynir is licensed
+under GPLv3.
 
 You might also find the
 `Reynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
@@ -31,99 +35,161 @@ interesting. The Reynir parser uses Tokenizer on its input.
 
 To install::
 
-	$ pip install tokenizer
+    $ pip install tokenizer
 
 To use (for Python 3, you can omit the ``u""`` string prefix)::
 
-	from tokenizer import tokenize, TOK
+    from tokenizer import tokenize, TOK
 
-	text = (u"Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
-		u"skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.")
+    text = (u"Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
+        u"skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.")
 
-	for token in tokenize(text):
+    for token in tokenize(text):
 
-		print(u"{0}: '{1}' {2}".format(
-			TOK.descr[token.kind],
-			token.txt or "-",
-			token.val or ""))
+        print(u"{0}: '{1}' {2}".format(
+            TOK.descr[token.kind],
+            token.txt or "-",
+            token.val or ""))
 
 Output::
 
-	BEGIN SENT: '-' (0, None)
-	WORD: 'Málinu'
-	WORD: 'var'
-	WORD: 'vísað'
-	WORD: 'til'
-	WORD: 'stjórnskipunar- og eftirlitsnefndar'
-	WORD: 'skv.' [('samkvæmt', 0, 'fs', 'skst', 'skv.', '-')]
-	ORDINAL: '3.' 3
-	WORD: 'gr.' [('grein', 0, 'kvk', 'skst', 'gr.', '-')]
-	ORDINAL: 'XVII.' 17
-	WORD: 'kafla'
-	WORD: 'laga'
-	WORD: 'nr.' [('númer', 0, 'hk', 'skst', 'nr.', '-')]
-	NUMBER: '10' (10, None, None)
-	PUNCTUATION: '/' 4
-	YEAR: '2007' 2007
-	WORD: 'þann'
-	DATEABS: '3. janúar 2010' (2010, 1, 3)
-	PUNCTUATION: '.' 3
-	END SENT: '-'
+    BEGIN SENT: '-' (0, None)
+    WORD: 'Málinu'
+    WORD: 'var'
+    WORD: 'vísað'
+    WORD: 'til'
+    WORD: 'stjórnskipunar- og eftirlitsnefndar'
+    WORD: 'skv.' [('samkvæmt', 0, 'fs', 'skst', 'skv.', '-')]
+    ORDINAL: '3.' 3
+    WORD: 'gr.' [('grein', 0, 'kvk', 'skst', 'gr.', '-')]
+    ORDINAL: 'XVII.' 17
+    WORD: 'kafla'
+    WORD: 'laga'
+    WORD: 'nr.' [('númer', 0, 'hk', 'skst', 'nr.', '-')]
+    NUMBER: '10' (10, None, None)
+    PUNCTUATION: '/' 4
+    YEAR: '2007' 2007
+    WORD: 'þann'
+    DATEABS: '3. janúar 2010' (2010, 1, 3)
+    PUNCTUATION: '.' 3
+    END SENT: '-'
 
 Note the following:
 
-	- Sentences are delimited by ``TOK.S_BEGIN`` and ``TOK.S_END`` tokens.
-	- Composite words, such as *stjórnskipunar- og eftirlitsnefndar*, are coalesced into one token.
-	- Well-known abbreviations are recognized and their full expansion is available
-	  in the ``token.val`` field.
-	- Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*) is available
-	  in the ``token.val``  field.
-	- Dates, years and times, both absolute and relative, are recognized and
-	  the respective year, month, day, hour, minute and second
-	  values are included as a tuple in ``token.val``.
-	- Numbers, both integer and real, are recognized and their value is available
-	  in the ``token.val`` field.
-	- Further details of how Tokenizer processes text can be inferred from the
-	  `test module <https://github.com/mideind/Tokenizer/blob/master/test/test_tokenizer.py>`_
-	  in the project's `GitHub repository <https://github.com/mideind/Tokenizer>`_.
+    - Sentences are delimited by ``TOK.S_BEGIN`` and ``TOK.S_END`` tokens.
+    - Composite words, such as *stjórnskipunar- og eftirlitsnefndar*,
+      are coalesced into one token.
+    - Well-known abbreviations are recognized and their full expansion
+      is available in the ``token.val`` field.
+    - Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*)
+      is available in the ``token.val``  field.
+    - Dates, years and times, both absolute and relative, are recognized and
+      the respective year, month, day, hour, minute and second
+      values are included as a tuple in ``token.val``.
+    - Numbers, both integer and real, are recognized and their value
+      is available in the ``token.val`` field.
+    - Further details of how Tokenizer processes text can be inferred from the
+      `test module <https://github.com/mideind/Tokenizer/blob/master/test/test_tokenizer.py>`_
+      in the project's `GitHub repository <https://github.com/mideind/Tokenizer>`_.
 
 
 The ``tokenize()`` function
 ---------------------------
 
-To tokenize a text string, call ``tokenizer.tokenize(text)``. This function returns a
-Python *generator* of token objects. Each token object is a simple ``namedtuple`` with three
+To tokenize a text string, call ``tokenizer.tokenize(text, **options)``.
+This function returns a Python *generator* of token objects.
+Each token object is a simple ``namedtuple`` with three
 fields: ``(kind, txt, val)`` (see below).
 
 The ``tokenizer.tokenize()`` function is typically called in a ``for`` loop::
 
-	for token in tokenizer.tokenize(mystring):
-		kind, txt, val = token
-		if kind == tokenizer.TOK.WORD:
-			# Do something with word tokens
-			pass
-		else:
-			# Do something else
-			pass
+    for token in tokenizer.tokenize(mystring):
+        kind, txt, val = token
+        if kind == tokenizer.TOK.WORD:
+            # Do something with word tokens
+            pass
+        else:
+            # Do something else
+            pass
 
 Alternatively, create a token list from the returned generator::
 
-	token_list = list(tokenizer.tokenize(mystring))
+    token_list = list(tokenizer.tokenize(mystring))
 
-In Python 2.7, you can pass either ``unicode`` strings or ``str`` byte strings to
-``tokenizer.tokenize()``. In the latter case, the byte string is assumed to be
-encoded in UTF-8.
+In Python 2.7, you can pass either ``unicode`` strings or ``str``
+byte strings to ``tokenizer.tokenize()``. In the latter case, the
+byte string is assumed to be encoded in UTF-8.
+
+
+Tokenization options
+--------------------
+
+You can optionally pass one or more of the following options
+to the ``tokenizer.tokenize()`` function:
+
+* ``tokenizer.tokenize(text, convert_numbers=True)``
+
+  This option causes the tokenizer to convert numbers and amounts with
+  English-style decimal points (``.``) and thousands separators (``,``)
+  to Icelandic format, where the decimal separator is a comma (``,``)
+  and the thousands separator is a period (``.``). ``$1,234.56`` is thus
+  converted to a token whose text is ``$1.234,56``.
+
+  The default value for the ``convert_numbers`` option is ``False``.
+
+  Note that in versions of Tokenizer prior to 1.4, ``convert_numbers``
+  was ``True``.
+
+* ``tokenizer.tokenize(text, convert_telnos=True)``
+
+  This option causes the tokenizer to convert telephone numbers to a standard
+  format with the template ``888-9999``, i.e. three digits followed by
+  a hyphen and then four digits. ``1234567`` and ``123 4567`` are
+  thus converted to a token whose text is ``123-4567``.
+
+  The default value for the ``convert_telnos`` option is ``False``.
+
+  Note that in versions of Tokenizer prior to 1.4, ``convert_telnos``
+  was ``True``.
+
+* ``tokenizer.tokenize(text, handle_kludgy_ordinals=[value])``
+
+  This options controls the way Tokenizer handles 'kludgy' ordinals, such as
+  *1sti*, *4ðu*, or *2ja*. By default, such ordinals are returned unmodified
+  ('passed through') as word tokens (``TOK.WORD``).
+  However, this can be modified as follows:
+
+  * ``tokenizer.KLUDGY_ORDINALS_MODIFY``: Kludgy ordinals are corrected
+    to become 'proper' word tokens, i.e. *1sti* becomes *fyrsti* and
+    *2ja* becomes *tveggja*.
+
+  * ``tokenizer.KLUDGY_ORDINALS_TRANSLATE``: Kludgy ordinals that represent
+    proper ordinal numbers are translated to ordinal tokens (``TOK.ORDINAL``),
+    with their original text and their ordinal value. *1sti* thus
+    becomes a ``TOK.ORDINAL`` token with a value of 1, and *3ja* becomes
+    a ``TOK.ORDINAL`` with a value of 3.
+
+  * ``tokenizer.KLUDGY_ORDINALS_PASS_THROUGH`` is the default value of
+    the option. It causes kludgy ordinals to be returned unmodified as
+    word tokens.
+
+  Note that versions of Tokenizer prior to 1.4 behaved as if
+  ``handle_kludgy_ordinals`` were set to
+  ``tokenizer.KLUDGY_ORDINALS_TRANSLATE``.
+
 
 The token object
 ----------------
 
-Each token is represented by a ``namedtuple`` with three fields: ``(kind, txt, val)``.
+Each token is represented by a ``namedtuple`` with three fields:
+``(kind, txt, val)``.
+
 
 The ``kind`` field
 ==================
 
-The ``kind`` field contains one of the following integer constants, defined within the ``TOK``
-class:
+The ``kind`` field contains one of the following integer constants,
+defined within the ``TOK`` class:
 
 +---------------+---------+---------------------+---------------------------+
 | Constant      |  Value  | Explanation         | Examples                  |
@@ -214,41 +280,53 @@ class:
 (*) The token types marked with an asterisk are reserved for the Reynir package
 and not currently returned by the tokenizer.
 
-To obtain a descriptive text for a token kind, use ``TOK.descr[token.kind]`` (see example above).
+To obtain a descriptive text for a token kind, use
+``TOK.descr[token.kind]`` (see example above).
+
 
 The ``txt`` field
 ==================
 
-The ``txt`` field contains the original source text for the token. However, in a few cases,
-the tokenizer auto-corrects the original source text:
+The ``txt`` field contains the original source text for the token.
+However, in a few cases, the tokenizer auto-corrects the original
+source text:
 
-* It converts single and double quotes to the correct Icelandic ones (i.e. „these“ or ‚these‘).
+* If the appropriate options are specified (see above), it converts
+  kludgy ordinals (*3ja*) to proper ones (*þriðja*), English-style
+  thousand and decimal separators to Icelandic ones
+  (*10,345.67* becomes *10.345,67*), and telephone numbers
+  to a canonical format (*123-4567*).
 
-* It converts kludgy ordinals (*3ja*) to proper ones (*þriðja*), and English-style
-  thousand and decimal separators to Icelandic ones (*10,345.67* becomes *10.345,67*).
+* It converts single and double quotes to the correct Icelandic
+  ones (i.e. „these“ or ‚these‘).
 
-* Tokenizer automatically merges Unicode ``COMBINING ACUTE ACCENT`` (code point 769)
-  and ``COMBINING DIAERESIS`` (code point 776) with vowels to form single code points
-  for the Icelandic letters á, é, í, ó, ú, ý and ö, in both lower and upper case.
+* Tokenizer automatically merges Unicode ``COMBINING ACUTE ACCENT``
+  (code point 769) and ``COMBINING DIAERESIS`` (code point 776)
+  with vowels to form single code points for the Icelandic letters
+  á, é, í, ó, ú, ý and ö, in both lower and upper case.
 
-In the case of abbreviations that end a sentence, the final period '.' is a separate token,
-and it is consequently omitted from the abbreviation token's ``txt`` field. A sentence ending
-in *o.s.frv.* will thus end with two tokens, the next-to-last one being the tuple
-``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted period in the ``txt`` field -
-and the last one being ``(TOK.PUNCTUATION, ".", 3)`` (the 3 is explained below).
+In the case of abbreviations that end a sentence, the final period
+'.' is a separate token, and it is consequently omitted from the
+abbreviation token's ``txt`` field. A sentence ending in *o.s.frv.*
+will thus end with two tokens, the next-to-last one being the tuple
+``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted
+period in the ``txt`` field - and the last one being
+``(TOK.PUNCTUATION, ".", 3)`` (the 3 is explained below).
+
 
 The ``val`` field
 ==================
 
-The ``val`` field contains auxiliary information, corresponding to the token kind, as follows:
+The ``val`` field contains auxiliary information, corresponding to
+the token kind, as follows:
 
-- For ``TOK.PUNCTUATION``, the ``val`` field specifies the whitespace normally found around
-  the symbol in question::
+- For ``TOK.PUNCTUATION``, the ``val`` field specifies the whitespace
+  normally found around the symbol in question::
 
-	TP_LEFT = 1   # Whitespace to the left
-	TP_CENTER = 2 # Whitespace to the left and right
-	TP_RIGHT = 3  # Whitespace to the right
-	TP_NONE = 4   # No whitespace
+    TP_LEFT = 1   # Whitespace to the left
+    TP_CENTER = 2 # Whitespace to the left and right
+    TP_RIGHT = 3  # Whitespace to the right
+    TP_NONE = 4   # No whitespace
 
 - For ``TOK.TIME``, the ``val`` field contains an ``(hour, minute, second)`` tuple.
 - For ``TOK.DATEABS``, the ``val`` field contains a ``(year, month, day)`` tuple (all 1-based).
@@ -279,33 +357,34 @@ The ``val`` field contains auxiliary information, corresponding to the token kin
 The ``correct_spaces()`` function
 ---------------------------------
 
-Tokenizer also contains the utility function ``tokenizer.correct_spaces(text)``. This
-function returns a string after splitting it up and re-joining
+Tokenizer also contains the utility function
+``tokenizer.correct_spaces(text)``.
+This function returns a string after splitting it up and re-joining
 it with correct whitespace around punctuation tokens. Example::
 
-	>>> tokenizer.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50")
-	'Frétt dagsins: Jón, Friðgeir og Páll! 100/2 = 50'
+    >>> tokenizer.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50")
+    'Frétt dagsins: Jón, Friðgeir og Páll! 100/2 = 50'
 
 
 The ``Abbrev.conf`` file
 ------------------------
 
-Abbreviations recognized by Tokenizer are defined in the ``Abbrev.conf`` file, found in the
-``src/tokenizer/`` directory. This is a text file with abbreviations, their definitions and
-explanatory comments. The file is loaded into memory during the first call to
-``tokenizer.tokenize()`` within a process.
+Abbreviations recognized by Tokenizer are defined in the ``Abbrev.conf``
+file, found in the ``src/tokenizer/`` directory. This is a text file with
+abbreviations, their definitions and explanatory comments. The file is loaded
+into memory during the first call to ``tokenizer.tokenize()`` within a process.
 
 
 Development installation
 ------------------------
 
-To install Tokenizer in development mode, where you can easily modify the source files
-(assuming you have ``git`` available)::
+To install Tokenizer in development mode, where you can easily
+modify the source files (assuming you have ``git`` available)::
 
-	$ git clone https://github.com/mideind/Tokenizer
-	$ cd Tokenizer
-	$ # [ Activate your virtualenv here, if you have one ]
-	$ python setup.py develop
+    $ git clone https://github.com/mideind/Tokenizer
+    $ cd Tokenizer
+    $ # [ Activate your virtualenv here, if you have one ]
+    $ python setup.py develop
 
 To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`_, ``cd`` to your
 ``Tokenizer`` subdirectory (and optionally activate your virtualenv), then run::
@@ -316,6 +395,9 @@ To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`
 Changelog
 ---------
 
+* Version 1.4.0: Added the ``**options`` parameter to the
+  ``tokenize()`` function, giving control over the handling of numbers,
+  telephone numbers, and 'kludgy' ordinals
 * Version 1.3.0: Added ``TOK.DOMAIN`` and ``TOK.HASHTAG`` token types;
   improved handling of capitalized month name *Ágúst*, which is
   now recognized when following an ordinal number; improved recognition
@@ -324,16 +406,17 @@ Changelog
 * Version 1.2.2: Added support for composites with more than two parts, i.e.
   *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for
   ``±`` sign; added several abbreviations
-* Version 1.2.1: Fixed bug where the name *Ágúst* was recognized as a month name;
-  Unicode nonbreaking and invisble space characters are now removed
-  before tokenization
-* Version 1.2.0: Added support for Unicode fraction characters; enhanced handing
-  of degrees (°, °C, °F); fixed bug in cubic meter measurement unit;
-  more abbreviations
+* Version 1.2.1: Fixed bug where the name *Ágúst* was recognized
+  as a month name; Unicode nonbreaking and invisble space characters
+  are now removed before tokenization
+* Version 1.2.0: Added support for Unicode fraction characters;
+  enhanced handing of degrees (°, °C, °F); fixed bug in cubic meter
+  measurement unit; more abbreviations
 * Version 1.1.2: Fixed bug in liter (``l`` and ``ltr``) measurement units
 * Version 1.1.1: Added ``mark_paragraphs()`` function
-* Version 1.1.0: All abbreviations in ``Abbrev.conf`` are now returned with their
-  meaning in a tuple in ``token.val``; handling of 'mbl.is' fixed
+* Version 1.1.0: All abbreviations in ``Abbrev.conf`` are now
+  returned with their meaning in a tuple in ``token.val``;
+  handling of 'mbl.is' fixed
 * Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers
 * Version 1.0.8: Bug fixes in ``DATEREL``, ``MEASUREMENT`` and ``NUMWLETTER``
   token handling; added 'kWst' and 'MWst' measurement units; blackened
@@ -341,5 +424,6 @@ Changelog
 * Version 1.0.6: Automatic merging of Unicode ``COMBINING ACUTE ACCENT`` and
   ``COMBINING DIAERESIS`` code points with vowels
 * Version 1.0.5: Date/time and amount tokens coalesced to a further extent
-* Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``, ``TOK.MEASUREMENT``
+* Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``,
+  ``TOK.MEASUREMENT``
 

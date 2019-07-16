@@ -279,7 +279,7 @@ def is_valid_date(y, m, d):
     return False
 
 
-def parse_digits(w):
+def parse_digits(w, convert_numbers, convert_telnos):
     """ Parse a raw token starting with a digit """
     s = re.match(r"\d{1,2}:\d\d:\d\d", w)
     if s:
@@ -390,7 +390,7 @@ def parse_digits(w):
     if s and s.group()[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = s.group()
-        if CONVERT_TELNOS:
+        if convert_telnos:
             telno = telno[:3] + "-" + telno[3:]
         return TOK.Telno(telno), s.end()
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
@@ -405,7 +405,7 @@ def parse_digits(w):
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
-        if CONVERT_NUMBERS:
+        if convert_numbers:
             g = re.sub(",", "x", g)  # Change thousands separator to 'x'
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
             g = re.sub("x", ".", g)  # Change 'x' to '.'
@@ -415,7 +415,7 @@ def parse_digits(w):
         # Integer, possibly with a ',' thousands separator
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
-        if CONVERT_NUMBERS:
+        if convert_numbers:
             g = re.sub(",", ".", g)  # Change thousands separator to a dot
         return TOK.Number(g, int(n)), s.end()
     # Strange thing
@@ -430,8 +430,16 @@ def prepare(txt):
     )
 
 
-def parse_tokens(txt):
+def parse_tokens(txt, options):
     """ Generator that parses contiguous text into a stream of tokens """
+
+    convert_numbers = options.get("convert_numbers", False)
+    convert_telnos = options.get("convert_telnos", False)
+    # The default behavior for kludgy ordinals is to pass them
+    # through as word tokens
+    handle_kludgy_ordinals = options.get(
+        "handle_kludgy_ordinals", KLUDGY_ORDINALS_PASS_THROUGH
+    )
 
     rough = prepare(txt).split()
 
@@ -592,13 +600,32 @@ def parse_tokens(txt):
                 w = endp
             # Numbers or other stuff starting with a digit
             if w and w[0] in DIGITS:
+                # Handle kludgy ordinals: '3ji', '5ti', etc.
                 for key, val in items(ORDINAL_ERRORS):
                     if w.startswith(key):
-                        yield TOK.Word(val)
+                        # This is a kludgy ordinal
+                        if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
+                            # Convert ordinals to corresponding word tokens:
+                            # '1sti' -> 'fyrsti', '3ji' -> 'þriðji', etc.
+                            yield TOK.Word(val)
+                        elif (
+                            handle_kludgy_ordinals == KLUDGY_ORDINALS_TRANSLATE
+                            and key in ORDINAL_NUMBERS
+                        ):
+                            # Convert word-form ordinals into ordinal tokens,
+                            # i.e. '1sti' -> TOK.Ordinal('1sti', 1),
+                            # but leave other kludgy constructs ('2ja')
+                            # as word tokens
+                            yield TOK.Ordinal(key, ORDINAL_NUMBERS[key])
+                        else:
+                            # No special handling of kludgy ordinals:
+                            # yield them unchanged as word tokens
+                            yield TOK.Word(key)
                         eaten = len(key)
-                        break  # This skips the else
+                        break  # This skips the for loop 'else'
                 else:
-                    t, eaten = parse_digits(w)
+                    # Not a kludgy ordinal: eat tokens starting with a digit
+                    t, eaten = parse_digits(w, convert_numbers, convert_telnos)
                     yield t
                 # Continue where the digits parser left off
                 ate = True
@@ -680,9 +707,11 @@ def parse_tokens(txt):
     yield TOK.End_Sentinel()
 
 
-def parse_particles(token_stream):
+def parse_particles(token_stream, options):
     """ Parse a stream of tokens looking for 'particles'
         (simple token pairs and abbreviations) and making substitutions """
+
+    convert_telnos = options.get("convert_telnos", False)
 
     def is_abbr_with_period(txt):
         """ Return True if the given token text is an abbreviation when followed by a period """
@@ -862,7 +891,7 @@ def parse_particles(token_stream):
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                if CONVERT_TELNOS:
+                if convert_telnos:
                     telno = token.txt + "-" + next_token.txt
                 else:
                     telno = token.txt + " " + next_token.txt
@@ -1467,7 +1496,7 @@ def parse_phrases_2(token_stream):
         yield token
 
 
-def tokenize(text):
+def tokenize(text, **options):
     """ Tokenize text in several phases, returning a generator (iterable sequence) of tokens
         that processes tokens on-demand. """
 
@@ -1475,8 +1504,8 @@ def tokenize(text):
 
     Abbreviations.initialize()  # Make sure that the abbreviation config file has been read
 
-    token_stream = parse_tokens(text)
-    token_stream = parse_particles(token_stream)
+    token_stream = parse_tokens(text, options)
+    token_stream = parse_particles(token_stream, options)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
     token_stream = parse_date_and_time(token_stream)
@@ -1485,14 +1514,14 @@ def tokenize(text):
     return (t for t in token_stream if t.kind != TOK.X_END)
 
 
-def tokenize_without_annotation(text):
+def tokenize_without_annotation(text, **options):
     """ Tokenize without the last pass which can be done more thoroughly if BÍN
         annotation is available, for instance in ReynirPackage. """
 
     Abbreviations.initialize()  # Make sure that the abbreviation config file has been read
 
-    token_stream = parse_tokens(text)
-    token_stream = parse_particles(token_stream)
+    token_stream = parse_tokens(text, options)
+    token_stream = parse_particles(token_stream, options)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
     token_stream = parse_date_and_time(token_stream)
