@@ -694,8 +694,8 @@ def test_correction():
     ]
     SENT_KLUDGY_ORDINALS_MODIFY = [
         (
-            """Hann sagði: ´Þú ert fífl´! Farðu í 3ja sinn.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu í þriðja sinn.""",
+            """Hann sagði: ´Þú ert fífl´! Farðu í 3ja herbergja íbúð.""",
+            """Hann sagði: ‚Þú ert fífl‘! Farðu í þriggja herbergja íbúð.""",
         ),
         (
             """Hann sagði: ´Þú ert fífl´! Farðu í 1sta sinn.""",
