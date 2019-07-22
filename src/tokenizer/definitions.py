@@ -440,7 +440,7 @@ ORDINAL_ERRORS = {
     "1sta": "fyrsta",
     "1stu": "fyrstu",
     "3ji": "þriðji",
-    "3ja": "þriðja",  # eða þriggja!
+    # "3ja": "þriðja",  # þriggja
     "3ju": "þriðju",
     "4ði": "fjórði",
     "4ða": "fjórða",
@@ -451,7 +451,7 @@ ORDINAL_ERRORS = {
     "2svar": "tvisvar",
     "3svar": "þrisvar",
     "2ja": "tveggja",
-    # "3ja" : "þriggja",
+    "3ja": "þriggja",
     "4ra": "fjögurra",
 }
 
