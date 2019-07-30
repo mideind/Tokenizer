@@ -407,7 +407,7 @@ Changelog
   *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for
   ``±`` sign; added several abbreviations
 * Version 1.2.1: Fixed bug where the name *Ágúst* was recognized
-  as a month name; Unicode nonbreaking and invisble space characters
+  as a month name; Unicode nonbreaking and invisible space characters
   are now removed before tokenization
 * Version 1.2.0: Added support for Unicode fraction characters;
   enhanced handing of degrees (°, °C, °F); fixed bug in cubic meter

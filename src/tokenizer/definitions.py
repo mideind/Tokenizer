@@ -582,7 +582,7 @@ AMOUNT_ABBREV = {
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
 
-URL_PREFIXES = ("http://", "https://",)
+URL_PREFIXES = ("http://", "https://", "file://")
 
 
 TOP_LEVEL_DOMAINS = frozenset(
