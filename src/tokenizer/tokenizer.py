@@ -829,6 +829,10 @@ def parse_particles(token_stream, options):
                     else:
                         test_set = TOK.TEXT
 
+                    # TODO STILLING í MONTHS eru einhverjar villur eins og "septembers",
+                    # þær þarf að vera hægt að sameina í þessa flóknari tóka en viljum geta merkt
+                    # það sem villu. Ætti líklega að setja í sérlista, WRONG_MONTHS, og sérif-lykkju
+                    # og setja inn villu í tókann.
                     finish = (follow_token.kind in TOK.END) or (
                         follow_token.kind in test_set
                         and follow_token.txt[0].isupper()
