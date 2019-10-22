@@ -592,9 +592,7 @@ AMOUNT_ABBREV = {
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
-
 URL_PREFIXES = ("http://", "https://", "file://")
-
 
 TOP_LEVEL_DOMAINS = frozenset(
     (
