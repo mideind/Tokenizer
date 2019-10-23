@@ -443,12 +443,31 @@ def parse_digits(w, convert_numbers, convert_telnos):
     return TOK.Unknown(w), len(w)
 
 
-def prepare(txt):
-    """ Convert txt to Unicode (on Python 2.7) and replace composite glyphs
-        with single code points """
-    return UNICODE_REGEX.sub(
-        lambda match: UNICODE_REPLACEMENTS[match.group(0)], make_str(txt)
-    )
+def gen_from_string(txt, replace_composite_glyphs=True):
+    """ Generate rough tokens from a string """
+    # Convert txt to Unicode (on Python 2.7)
+    if not txt:
+        return
+    txt = make_str(txt)
+    if replace_composite_glyphs:
+        # Replace composite glyphs with single code points
+        txt = UNICODE_REGEX.sub(
+            lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
+        )
+    # Do a simple split on whitespace and yield the rough tokens
+    for w in txt.split():
+        yield w
+
+
+def gen(txt_or_gen, replace_composite_glyphs=True):
+    """ Generate rough tokens from a string or a generator """
+    if txt_or_gen is None:
+        return
+    if is_str(txt_or_gen):
+        txt_or_gen = [txt_or_gen]
+    for txt in txt_or_gen:
+        for s in gen_from_string(txt, replace_composite_glyphs):
+            yield s
 
 
 def parse_tokens(txt, options):
@@ -457,6 +476,7 @@ def parse_tokens(txt, options):
     # Obtain individual flags from the options dict
     convert_numbers = options.get("convert_numbers", False)
     convert_telnos = options.get("convert_telnos", False)
+    replace_composite_glyphs = options.get("replace_composite_glyphs", True)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
@@ -464,9 +484,7 @@ def parse_tokens(txt, options):
         "handle_kludgy_ordinals", KLUDGY_ORDINALS_PASS_THROUGH
     )
 
-    rough = prepare(txt).split()
-
-    for w in rough:
+    for w in gen(txt, replace_composite_glyphs):
         # Handle each sequence of non-whitespace characters
 
         qmark = False
@@ -578,7 +596,7 @@ def parse_tokens(txt, options):
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
                 # even though they're technically allowed according to the RFCs
-                s = re.match(r"^[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"”]+)+", w)
+                s = re.match(r"^[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", w)
                 if s:
                     ate = True
                     yield TOK.Email(s.group())
@@ -1608,13 +1626,17 @@ def tokenize(text, **options):
 
     # Make sure that the abbreviation config file has been read
     Abbreviations.initialize()
+    with_annotation = options.pop("with_annotation", True)
 
     token_stream = parse_tokens(text, options)
     token_stream = parse_particles(token_stream, options)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
     token_stream = parse_date_and_time(token_stream)
-    token_stream = parse_phrases_2(token_stream)
+
+    # Skip the parse_phrases_2 pass if the with_annotation option is False
+    if with_annotation:
+        token_stream = parse_phrases_2(token_stream)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
 
@@ -1622,17 +1644,7 @@ def tokenize(text, **options):
 def tokenize_without_annotation(text, **options):
     """ Tokenize without the last pass which can be done more thoroughly if BÍN
         annotation is available, for instance in ReynirPackage. """
-
-    # Make sure that the abbreviation config file has been read
-    Abbreviations.initialize()
-
-    token_stream = parse_tokens(text, options)
-    token_stream = parse_particles(token_stream, options)
-    token_stream = parse_sentences(token_stream)
-    token_stream = parse_phrases_1(token_stream)
-    token_stream = parse_date_and_time(token_stream)
-
-    return (t for t in token_stream if t.kind != TOK.X_END)
+    return tokenize(text, with_annotation=False, **options)
 
 
 def mark_paragraphs(txt):

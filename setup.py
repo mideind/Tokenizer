@@ -100,4 +100,11 @@ setup(
     ],
     keywords=["nlp", "tokenizer", "icelandic"],
     install_requires=[],
+    # Set up a tokenize command (tokenize.exe on Windows),
+    # which calls main() in src/tokenizer/main.py
+    entry_points={
+        'console_scripts': [
+            'tokenize=tokenizer.main:main',
+        ],
+    },
 )

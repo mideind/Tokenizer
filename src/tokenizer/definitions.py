@@ -42,6 +42,7 @@ if sys.version_info >= (3, 0):
     keys = lambda d: d.keys()
     make_str = lambda s: s
     unicode_chr = lambda c: chr(c)
+    is_str = lambda s: isinstance(s, str)
 else:
     items = lambda d: d.iteritems()
     keys = lambda d: d.iterkeys()
@@ -53,6 +54,7 @@ else:
         return s.decode("utf-8")
 
     unicode_chr = lambda c: unichr(c)
+    is_str = lambda s: isinstance(s, (unicode, str))
 
 
 # TODO: These options will become settable configuration switches
