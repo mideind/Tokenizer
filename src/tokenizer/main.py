@@ -32,7 +32,8 @@
 
     This is an executable program wrapper (main module) for the Tokenizer
     package. It can be used to invoke the Tokenizer from the command line,
-    or via fork() or exec().
+    or via fork() or exec(), with the command 'tokenize'. The main() function
+    of this module is registered as a console_script entry point in setup.py.
 
 """
 
@@ -52,14 +53,14 @@ parser = argparse.ArgumentParser(description="Tokenizes Icelandic text")
 parser.add_argument(
     'infile',
     nargs='?',
-    type=argparse.FileType('r'),
+    type=argparse.FileType('r', encoding="utf-8"),
     default=sys.stdin,
     help="UTF-8 text file to tokenize",
 )
 parser.add_argument(
     'outfile',
     nargs='?',
-    type=argparse.FileType('w'),
+    type=argparse.FileType('w', encoding="utf-8"),
     default=sys.stdout,
     help="UTF-8 output text file"
 )
