@@ -86,6 +86,8 @@ class TOK:
     DOMAIN = 24
     HASHTAG = 25
 
+    EMPTY_LINE = 10000  # Empty line placeholder
+
     P_BEGIN = 10001  # Paragraph begin
     P_END = 10002  # Paragraph end
 
@@ -126,6 +128,7 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
+        EMPTY_LINE: "EMPTY LINE",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
         S_BEGIN: "BEGIN SENT",
@@ -179,8 +182,10 @@ class TOK:
         return Tok(TOK.YEAR, w, n)
 
     @staticmethod
-    def Telno(w):
-        return Tok(TOK.TELNO, w, None)
+    def Telno(w, telno):
+        # The w parameter is the original token text,
+        # while telno has the standard form 'DDD-DDDD' (with hyphen)
+        return Tok(TOK.TELNO, w, telno)
 
     @staticmethod
     def Email(w):
@@ -272,6 +277,10 @@ class TOK:
     def End_Sentinel():
         return Tok(TOK.X_END, None, None)
 
+    @staticmethod
+    def Empty_Line():
+        return Tok(TOK.EMPTY_LINE, None, None)
+
 
 def is_valid_date(y, m, d):
     """ Returns True if y, m, d is a valid date """
@@ -284,32 +293,46 @@ def is_valid_date(y, m, d):
     return False
 
 
-def parse_digits(w, convert_numbers, convert_telnos):
+def parse_digits(w, convert_numbers):
     """ Parse a raw token starting with a digit """
-    s = re.match(r"\d{1,2}:\d\d:\d\d", w)
-    # TODO STILLING Klukka sameinuð
+    s = re.match(r"^\d{1,2}:\d\d:\d\d(?!\d)", w)
     if s:
         # Looks like a 24-hour clock, H:M:S
-        w = s.group()
-        p = w.split(":")
+        g = s.group()
+        p = g.split(":")
         h = int(p[0])
         m = int(p[1])
         sec = int(p[2])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
-            return TOK.Time(w, h, m, sec), s.end()
-    s = re.match(r"\d{1,2}:\d\d", w)
+            return TOK.Time(g, h, m, sec), s.end()
+    s = re.match(r"^\d{1,2}:\d\d(?!\d)", w)
     if s:
         # Looks like a 24-hour clock, H:M
-        w = s.group()
-        p = w.split(":")
+        g = s.group()
+        p = g.split(":")
         h = int(p[0])
         m = int(p[1])
         if (0 <= h < 24) and (0 <= m < 60):
-            return TOK.Time(w, h, m, 0), s.end()
-    s = re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}", w) or re.match(
-        r"\d{1,2}/\d{1,2}/\d{2,4}", w
+            return TOK.Time(g, h, m, 0), s.end()
+    s = (
+            re.match(r"^\d{4}-\d\d-\d\d(?!\d)", w) or
+            re.match(r"^\d{4}/\d\d/\d\d(?!\d)", w)
     )
-    # TODO STILLING Sameina í dagsetningu, bara fara í ef stilling er valin?
+    if s:
+        # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
+        g = s.group()
+        if "-" in g:
+            p = g.split("-")
+        else:
+            p = g.split("/")
+        y = int(p[0])
+        m = int(p[1])
+        d = int(p[2])
+        if is_valid_date(y, m, d):
+            return TOK.Date(g, y, m, d), s.end()
+    s = re.match(r"^\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or re.match(
+        r"^\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w
+    )
     if s:
         # Looks like a date
         g = s.group()
@@ -318,9 +341,8 @@ def parse_digits(w, convert_numbers, convert_telnos):
         else:
             p = g.split(".")
         y = int(p[2])
-        # noinspection PyAugmentAssignment
         if y <= 99:
-            y = 2000 + y
+            y += 2000
         m = int(p[1])
         d = int(p[0])
         # TODO STILLING Þarf líka sérstillingu fyrir að snúa þessu ekki við,
@@ -332,26 +354,26 @@ def parse_digits(w, convert_numbers, convert_telnos):
             return TOK.Date(g, y, m, d), s.end()
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
-    s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
+    s = re.match(r"^\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
     if s:
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
         g = s.group()
         l = g[-1:]
-        # TODO STILLING Ætti að klippa þetta í sundur?
         # Only match if the single character is not a
         # unit of measurement (e.g. 'A', 'l', 'V')
         if l not in SI_UNITS.keys():
             n = int(g[:-1])
             return TOK.NumberWithLetter(g, n, l), s.end()
-    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
+    s = re.match(r"^(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
         # TODO STILLING Ætti að klippa þetta í sundur?
+        g = s.group()
         ln = s.group(1)
         vf = s.group(2)
         val = float(ln) + unicodedata.numeric(vf)
-        return TOK.Number(w, val), s.end()
-    s = re.match(r"\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
+        return TOK.Number(g, val), s.end()
+    s = re.match(r"^\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
@@ -359,15 +381,15 @@ def parse_digits(w, convert_numbers, convert_telnos):
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         n = re.sub(",", ".", n)  # Convert decimal comma to point
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"\d+(\.\d\d\d)+", w)
+    s = re.match(r"^\d+(\.\d\d\d)+(?!\d)", w)
     if s:
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
         g = s.group()
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         return TOK.Number(g, int(n)), s.end()
-    s = re.match(r"\d{1,2}/\d{1,2}", w)
-    if s and (s.end() >= len(w) or w[s.end()] not in DIGITS):
+    s = re.match(r"^\d{1,2}/\d{1,2}(?!\d)", w)
+    if s:
         # Looks like a date (and not something like 10/2007)
         g = s.group()
         p = g.split("/")
@@ -390,34 +412,31 @@ def parse_digits(w, convert_numbers, convert_telnos):
         if (1 <= d <= 31) and (1 <= m <= 12):
             # Looks like a (roughly) valid date
             return TOK.Date(g, 0, m, d), s.end()
-    s = re.match(r"\d\d\d\d$", w) or re.match(r"\d\d\d\d[^\d]", w)
+    s = re.match(r"^\d\d\d\d(?!\d)", w)
     if s:
-        n = int(w[0:4])
+        n = int(s.group())
         if 1776 <= n <= 2100:
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
-    s = re.match(r"\d\d\d-\d\d\d\d", w)
-    if s and s.group()[0] in TELNO_PREFIXES:
-        # Looks like a telephone number
-        # TODO STILLING Hér þarf að vera hægt að velja um
-        # að hafa bandstrikið í númerinu - convert_telnos?
-        return TOK.Telno(s.group()), s.end()
-    s = re.match(r"\d\d\d\d\d\d\d", w)
-    if s and s.group()[0] in TELNO_PREFIXES:
+    s = re.match(r"^\d\d\d\-\d\d\d\d(?!\d)", w)
+    if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = s.group()
-        # TODO STILLING  Hér er stillingin convert_telnos notuð
-        if convert_telnos:
-            telno = telno[:3] + "-" + telno[3:]
-        return TOK.Telno(telno), s.end()
-    s = re.match(r"\d+\.\d+(\.\d+)+", w)
+        return TOK.Telno(telno, telno), 8
+    s = re.match(r"^\d\d\d\d\d\d\d(?!\d)", w)
+    if s and w[0] in TELNO_PREFIXES:
+        # Looks like a telephone number
+        telno = w[0:3] + "-" + w[3:7]
+        return TOK.Telno(w[0:7], telno), 7
+    s = re.match(r"^\d+\.\d+(\.\d+)+", w)
     if s:
         # Some kind of ordinal chapter number: 2.5.1 etc.
         # (we need to check this before numbers with decimal points)
         g = s.group()
+        # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
         n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
         return TOK.Ordinal(g, int(n)), s.end()
-    s = re.match(r"\d+(,\d\d\d)*\.\d+", w)
+    s = re.match(r"^\d+(,\d\d\d)*\.\d+", w)
     if s:
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
@@ -428,7 +447,7 @@ def parse_digits(w, convert_numbers, convert_telnos):
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
             g = re.sub("x", ".", g)  # Change 'x' to '.'
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"\d+(,\d\d\d)*", w)
+    s = re.match(r"^\d+(,\d\d\d)*(?!\d)", w)
     if s:
         # Integer, possibly with a ',' thousands separator
         g = s.group()
@@ -446,9 +465,6 @@ def parse_digits(w, convert_numbers, convert_telnos):
 def gen_from_string(txt, replace_composite_glyphs=True):
     """ Generate rough tokens from a string """
     # Convert txt to Unicode (on Python 2.7)
-    if not txt:
-        return
-    txt = make_str(txt)
     if replace_composite_glyphs:
         # Replace composite glyphs with single code points
         txt = UNICODE_REGEX.sub(
@@ -466,8 +482,16 @@ def gen(txt_or_gen, replace_composite_glyphs=True):
     if is_str(txt_or_gen):
         txt_or_gen = [txt_or_gen]
     for txt in txt_or_gen:
-        for s in gen_from_string(txt, replace_composite_glyphs):
-            yield s
+        txt = txt.strip()
+        if not txt:
+            # Empty line: signal this to the consumer of the generator
+            yield ""
+        else:
+            # Convert to a Unicode string (if Python 2.7)
+            txt = make_str(txt)
+            # Yield the contained rough tokens
+            for w in gen_from_string(txt, replace_composite_glyphs):
+                yield w
 
 
 def parse_tokens(txt, options):
@@ -475,7 +499,6 @@ def parse_tokens(txt, options):
 
     # Obtain individual flags from the options dict
     convert_numbers = options.get("convert_numbers", False)
-    convert_telnos = options.get("convert_telnos", False)
     replace_composite_glyphs = options.get("replace_composite_glyphs", True)
 
     # The default behavior for kludgy ordinals is to pass them
@@ -488,6 +511,11 @@ def parse_tokens(txt, options):
         # Handle each sequence of non-whitespace characters
 
         qmark = False
+
+        if not w:
+            # Signal the presence of an empty line
+            yield TOK.Empty_Line()
+            continue
 
         if w.isalpha() or w in SI_UNITS:
             # Shortcut for most common case: pure word
@@ -591,7 +619,6 @@ def parse_tokens(txt, options):
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
 
-            # TODO STILLING viljum við pikka netföng í sundur?
             if w and "@" in w:
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
@@ -612,7 +639,6 @@ def parse_tokens(txt, options):
                 yield TOK.Number(w[0], unicodedata.numeric(w[0]))
                 w = w[1:]
 
-            # TODO STILLING Eitthvað hér í sambandi við URL?
             if w and w.startswith(URL_PREFIXES):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
@@ -625,7 +651,6 @@ def parse_tokens(txt, options):
                 ate = True
                 w = endp
 
-            # TODO STILLING myllumerki og samsett orð með myllumerki klippt.
             if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
                 # Handle hashtags. Eat all text up to next punctuation character
                 # so we can handle strings like "#MeToo-hreyfingin" as two words
@@ -634,8 +659,6 @@ def parse_tokens(txt, options):
                 while w and w[0] not in PUNCTUATION:
                     tag += w[0]
                     w = w[1:]
-                # TODO STILLING myllumerkið sameinað tölu á eftir;
-                # ætti þetta að vera tveir tókar?
                 if re.search(r"^#\d+$", tag):
                     # Hash is being used as a number sign, e.g. "#12"
                     yield TOK.Ordinal(tag, int(tag[1:]))
@@ -691,7 +714,7 @@ def parse_tokens(txt, options):
                 else:
                     # Not a kludgy ordinal: eat tokens starting with a digit
                     # TODO STILLING skoða hvað er gert hér.
-                    t, eaten = parse_digits(w, convert_numbers, convert_telnos)
+                    t, eaten = parse_digits(w, convert_numbers)
                     yield t
                 # Continue where the digits parser left off
                 ate = True
@@ -794,8 +817,6 @@ def parse_tokens(txt, options):
 def parse_particles(token_stream, options):
     """ Parse a stream of tokens looking for 'particles'
         (simple token pairs and abbreviations) and making substitutions """
-
-    convert_telnos = options.get("convert_telnos", False)
 
     def is_abbr_with_period(txt):
         """ Return True if the given token text is an abbreviation
@@ -983,10 +1004,6 @@ def parse_particles(token_stream, options):
                 next_token = next(token_stream)
 
             # Coalesece 3-digit number followed by 4-digit number into tel. no.
-            # NB: This will not catch phone numbers ending what has previously
-            # been identified as a year (e.g. 699 2018)
-            # TODO JAÐAR Skoða hvað verður um þannig símanúmer.
-            # TODO STILLING convert_telnos er notað hér.
             if (
                 token.kind == TOK.NUMBER
                 and (next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR)
@@ -994,14 +1011,11 @@ def parse_particles(token_stream, options):
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                if convert_telnos:
-                    telno = token.txt + "-" + next_token.txt
-                else:
-                    telno = token.txt + " " + next_token.txt
-                token = TOK.Telno(telno)
+                w = token.txt + " " + next_token.txt
+                telno = token.txt + "-" + next_token.txt
+                token = TOK.Telno(w, telno)
                 next_token = next(token_stream)
 
-            # TODO STILLING Er einhver ástæða til að sameina þetta ekki?
             # Coalesce percentages into a single token
             if next_token.kind == TOK.PUNCTUATION and next_token.txt == "%":
                 if token.kind == TOK.NUMBER:
@@ -1010,13 +1024,18 @@ def parse_particles(token_stream, options):
                     token = TOK.Percent(token.txt + "%", token.val[0])
                     next_token = next(token_stream)
 
-            # TODO STILLING Er einhver ástæða til að sameina þetta ekki?
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
             if next_token.kind == TOK.PUNCTUATION and next_token.txt == ".":
                 if (
                     token.kind == TOK.NUMBER
                     and not ("." in token.txt or "," in token.txt)
-                ) or (token.kind == TOK.WORD and RE_ROMAN_NUMERAL.match(token.txt)):
+                ) or (
+                    token.kind == TOK.WORD
+                    and RE_ROMAN_NUMERAL.match(token.txt)
+                    # Don't interpret a known abbreviation as a Roman numeral,
+                    # for instance the newspaper 'DV'
+                    and token.txt not in Abbreviations.DICT
+                ):
                     # Ordinal, i.e. whole number or Roman numeral followed by period:
                     # convert to an ordinal token
                     follow_token = next(token_stream)
@@ -1051,11 +1070,10 @@ def parse_particles(token_stream, options):
                         # Continue with the following word
                         next_token = follow_token
 
-            # TODO STILLING Sleppa því að sameina eða slíta í sundur síðar?
             if (
                 token.kind == TOK.NUMBER or token.kind == TOK.YEAR
             ) and next_token.txt in SI_UNITS:
-                # Convert "1800 mm" or "30 °C" to a single measurement token
+                # Convert "1920 mm" or "30 °C" to a single measurement token
                 value = token.val[0] if token.kind == TOK.NUMBER else token.val
                 unit, factor = SI_UNITS[next_token.txt]
                 if callable(factor):
@@ -1073,7 +1091,6 @@ def parse_particles(token_stream, options):
                     )
                 next_token = next(token_stream)
 
-            # TODO STILLING Sleppa því að sameina eða slíta í sundur síðar?
             if (
                 token.kind == TOK.MEASUREMENT
                 and token.val[0] == "°"
@@ -1092,10 +1109,8 @@ def parse_particles(token_stream, options):
                 )
                 next_token = next(token_stream)
 
-            # Replace straight abbreviations (i.e. those that don't end with
-            # a period)
-            # TODO STILLING Fyrir hvað er þessu skipt út?
-            # Ætti að vera kostur á að sleppa því?
+            # Replace straight abbreviations
+            # (i.e. those that don't end with a period)
             if token.kind == TOK.WORD and token.val is None:
                 if token.txt in Abbreviations.DICT:
                     # Add a meaning to the token
@@ -1142,6 +1157,16 @@ def parse_sentences(token_stream):
                     continue
             elif token.kind == TOK.X_END:
                 assert not in_sentence
+            elif token.kind == TOK.EMPTY_LINE:
+                # Empty line in input: make sure to finish the current
+                # sentence, if any, even if no ending punctuation has
+                # been encountered
+                if in_sentence:
+                    yield tok_end_sentence
+                in_sentence = False
+                # Swallow the EMPTY_LINE token
+                token = next_token
+                continue
             else:
                 if not in_sentence:
                     # This token starts a new sentence
@@ -1169,7 +1194,7 @@ def parse_sentences(token_stream):
         pass
 
     # Final token (previous lookahead)
-    if token is not None:
+    if token is not None and token.kind != TOK.EMPTY_LINE:
         if not in_sentence and token.kind not in TOK.END:
             # Starting something here
             yield tok_begin_sentence

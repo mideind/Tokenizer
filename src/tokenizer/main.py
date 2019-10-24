@@ -44,23 +44,36 @@ from __future__ import print_function
 import sys
 import argparse
 import json
+from functools import partial
 
-from . import TOK, tokenize_without_annotation
+from .tokenizer import TOK, tokenize_without_annotation
+from .definitions import make_str
 
+
+if sys.version_info >= (3, 0):
+    # Python 3: read and write strings from and to UTF-8 encoded files
+    ReadFile = argparse.FileType('r', encoding="utf-8")
+    WriteFile = argparse.FileType('w', encoding="utf-8")
+else:
+    # Python 2: read and write bytes, which are decoded from UTF-8 in the gen() function
+    ReadFile = argparse.FileType('r')
+    WriteFile = argparse.FileType('w')
+
+# Define the command line arguments
 
 parser = argparse.ArgumentParser(description="Tokenizes Icelandic text")
 
 parser.add_argument(
     'infile',
     nargs='?',
-    type=argparse.FileType('r', encoding="utf-8"),
+    type=ReadFile,
     default=sys.stdin,
     help="UTF-8 text file to tokenize",
 )
 parser.add_argument(
     'outfile',
     nargs='?',
-    type=argparse.FileType('w', encoding="utf-8"),
+    type=WriteFile,
     default=sys.stdout,
     help="UTF-8 output text file"
 )
@@ -81,22 +94,24 @@ group.add_argument(
 )
 
 
-def quote(s):
-    """ Return the string s within double quotes, and with any contained
-        backslashes and double quotes escaped with a backslash """
-    return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-
-
 def main():
+    """ Main function, called when the tokenize command is invoked """
 
     args = parser.parse_args()
     options = dict()
 
+    def quote(s):
+        """ Return the string s within double quotes, and with any contained
+            backslashes and double quotes escaped with a backslash """
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
     def gen(f):
+        """ Generate the lines of text in the input file """
         for line in f:
-            yield line
+            yield make_str(line)
 
     def val(t, quote_word=False):
+        """ Return the value part of the token t """
         if t.val is None:
             return None
         if t.kind == TOK.WORD:
@@ -110,10 +125,12 @@ def main():
             return None
         return t.val
 
+    json_dumps = partial(json.dumps, ensure_ascii=False, separators=(',', ':'))
     curr_line = []
 
     for t in tokenize_without_annotation(gen(args.infile), **options):
         if args.csv:
+            # Output the tokens in CSV format, one line per token
             if t.txt:
                 print(
                     "{0},{1},{2}"
@@ -121,18 +138,14 @@ def main():
                     file=args.outfile
                 )
         elif args.json:
-            d = dict(k=t.kind)
+            # Output the tokens in JSON format, one line per token
+            d = dict(k=TOK.descr[t.kind])
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)
             if v is not None:
                 d["v"] = v
-            print(
-                json.dumps(
-                    d, ensure_ascii=False, separators=(',', ':')
-                ),
-                file=args.outfile
-            )
+            print(json_dumps(d), file=args.outfile)
         else:
             if t.kind in TOK.END:
                 print(" ".join(curr_line), file=args.outfile)

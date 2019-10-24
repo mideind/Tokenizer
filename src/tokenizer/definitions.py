@@ -150,7 +150,7 @@ TP_SPACE = (
 )
 
 # Punctuation that ends a sentence
-END_OF_SENTENCE = frozenset([".", "?", "!"])  # Removed […]
+END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
