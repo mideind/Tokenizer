@@ -78,11 +78,6 @@ parser.add_argument(
     help="UTF-8 output text file"
 )
 
-parser.add_argument(
-    "--moses",
-    help="Use Moses-compatible token splitting", action="store_true"
-)
-
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
     "--csv",
