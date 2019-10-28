@@ -892,6 +892,42 @@ def test_overlap():
     )
 
 
+def test_split_sentences():
+    """ Test shallow tokenization """
+    s = (
+        "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000.  \n"
+        "200.000 manns mótmæltu.\n"
+        "Hér byrjar ný setning"
+    )
+    g = t.split_into_sentences(s)
+    sents = list(g)
+    assert len(sents) == 4
+    assert sents[0] == "3. janúar sl. keypti ég 64 kWst rafbíl ."
+    assert sents[1] == "Hann kostaði €30.000 ."
+    assert sents[2] == "200.000 manns mótmæltu ."
+    assert sents[3] == "Hér byrjar ný setning"
+
+    # Test using a generator as input into split_into_sentences()
+    s = (
+        "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000.  \n",
+        "200.000 manns mótmæltu\n",
+        "\n",
+        "Hér byrjar ný setning\n",
+    )
+
+    def gen(s):
+        for line in s:
+            yield line
+
+    g = t.split_into_sentences(gen(s))
+    sents = list(g)
+    assert len(sents) == 4
+    assert sents[0] == "3. janúar sl. keypti ég 64 kWst rafbíl ."
+    assert sents[1] == "Hann kostaði €30.000 ."
+    assert sents[2] == "200.000 manns mótmæltu"
+    assert sents[3] == "Hér byrjar ný setning"
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
