@@ -936,3 +936,4 @@ if __name__ == "__main__":
     test_correction()
     test_abbrev()
     test_overlap()
+    test_split_sentences()
