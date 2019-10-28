@@ -29,12 +29,12 @@
 
 from __future__ import absolute_import
 
-from .tokenizer import TOK, Tok, tokenize, tokenize_without_annotation
-from .tokenizer import parse_tokens, correct_spaces, mark_paragraphs, paragraphs
 from .tokenizer import (
+    TOK, Tok, tokenize, tokenize_without_annotation, split_into_sentences,
+    parse_tokens, correct_spaces, mark_paragraphs, paragraphs,
     TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD,
     EN_DASH, EM_DASH,
-    CONVERT_NUMBERS, CONVERT_TELNOS,
+    CONVERT_NUMBERS,
     KLUDGY_ORDINALS_PASS_THROUGH, KLUDGY_ORDINALS_MODIFY, KLUDGY_ORDINALS_TRANSLATE
 )
 from .abbrev import Abbreviations, ConfigError

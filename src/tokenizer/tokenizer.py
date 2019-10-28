@@ -475,13 +475,15 @@ def gen_from_string(txt, replace_composite_glyphs=True):
         yield w
 
 
-def gen(txt_or_gen, replace_composite_glyphs=True):
+def gen(text_or_gen, replace_composite_glyphs=True):
     """ Generate rough tokens from a string or a generator """
-    if txt_or_gen is None:
+    if text_or_gen is None:
         return
-    if is_str(txt_or_gen):
-        txt_or_gen = [txt_or_gen]
-    for txt in txt_or_gen:
+    if is_str(text_or_gen):
+        # The parameter is a single string: wrap it in an iterable
+        text_or_gen = [text_or_gen]
+    # Iterate through text_or_gen, which is assumed to yield strings
+    for txt in text_or_gen:
         txt = txt.strip()
         if not txt:
             # Empty line: signal this to the consumer of the generator
@@ -1670,6 +1672,24 @@ def tokenize_without_annotation(text, **options):
     """ Tokenize without the last pass which can be done more thoroughly if BÍN
         annotation is available, for instance in ReynirPackage. """
     return tokenize(text, with_annotation=False, **options)
+
+
+def split_into_sentences(text_or_gen, **options):
+    """ Shallow tokenization of the input text, which can be either
+        a text string or a generator of lines of text (such as a file).
+        This function returns a generator of strings, where each string
+        is a sentence, and tokens are separated by spaces. """
+    curr_sent = []
+    for t in tokenize_without_annotation(text_or_gen, **options):
+        if t.kind in TOK.END:
+            # End of sentence/paragraph
+            if curr_sent:
+                yield " ".join(curr_sent)
+                curr_sent = []
+        elif t.txt:
+            curr_sent.append(t.txt)
+    if curr_sent:
+        yield " ".join(curr_sent)
 
 
 def mark_paragraphs(txt):

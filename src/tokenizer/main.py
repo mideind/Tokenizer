@@ -120,8 +120,9 @@ def main():
             return None
         return t.val
 
+    # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(',', ':'))
-    curr_line = []
+    curr_sent = []
 
     for t in tokenize_without_annotation(gen(args.infile), **options):
         if args.csv:
@@ -142,14 +143,18 @@ def main():
                 d["v"] = v
             print(json_dumps(d), file=args.outfile)
         else:
+            # Normal shallow parse, one line per sentence,
+            # tokens separated by spaces
             if t.kind in TOK.END:
-                print(" ".join(curr_line), file=args.outfile)
-                curr_line = []
+                # End of sentence/paragraph
+                if curr_sent:
+                    print(" ".join(curr_sent), file=args.outfile)
+                    curr_sent = []
             elif t.txt:
-                curr_line.append(t.txt)
+                curr_sent.append(t.txt)
 
-    if curr_line:
-        print(" ".join(curr_line), file=args.outfile)
+    if curr_sent:
+        print(" ".join(curr_sent), file=args.outfile)
 
 
 if __name__ == "__main__":

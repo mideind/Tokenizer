@@ -60,8 +60,6 @@ else:
 # TODO: These options will become settable configuration switches
 # Auto-convert numbers to Icelandic format (1,234.56 -> 1.234,56)?
 CONVERT_NUMBERS = False
-# Auto-convert telephone numbers (8881234 -> 888-1234)?
-CONVERT_TELNOS = False
 
 ACCENT = unicode_chr(769)
 UMLAUT = unicode_chr(776)

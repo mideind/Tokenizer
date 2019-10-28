@@ -33,6 +33,36 @@ You might also find the
 interesting. The Reynir parser uses Tokenizer on its input.
 
 
+Deep vs. shallow tokenization
+-----------------------------
+
+Tokenizer can do both *deep* and *shallow* tokenization.
+
+*Shallow* tokenization simply returns each sentence as a string (or as a line
+of text in an output file), where the individual tokens are separated
+by spaces.
+
+*Deep* tokenization returns token objects that have been annotated with
+the token type and further information extracted from the token, for example
+a *(year, month, day)* tuple in the case of date tokens.
+
+In shallow tokenization, tokens are maximally split. The strings
+"800 MW", "21. janúar" and "800 7000" (as well as the coalesced versions
+"800MW" and "21.janúar") are thus two tokens each.
+
+In deep tokenization, the same strings are represented by single token objects,
+of type ``TOK.MEASUREMENT``, ``TOK.DATEREL`` and ``TOK.TELNO``, respectively.
+The text associated with a single token object may contain one or more spaces.
+
+By default, the command line tool performs shallow tokenization. If you
+want deep tokenization with the command line tool, use the ``--json`` or
+``--csv`` switches.
+
+From Python code, call ``split_into_sentences()`` for shallow tokenization,
+or ``tokenize()`` for deep tokenization. These functions are documented with
+examples below.
+
+
 Installation
 ------------
 
@@ -60,18 +90,17 @@ respectively.
 Empty lines in the input are treated as sentence boundaries.
 
 By default, the output consists of one sentence per line, where each
-line ends with a single newline character (ASCII LF, ``chr(10)``, ``\n``).
+line ends with a single newline character (ASCII LF, ``chr(10)``, ``"\n"``).
 Within each line, tokens are separated by spaces.
 
 The following (mutually exclusive) options can be specified
-on the command line, causing the tokenizer to do *deep tokenization*
-(see below):
+on the command line, causing the tokenizer to do deep tokenization:
 
-+---------------+--------------------------------------------+
-| ``--csv``     | Output tokens in CSV format, one per line  |
-+---------------+--------------------------------------------+
-| ``--json``    | Output tokens in JSON format, one per line |
-+---------------+--------------------------------------------+
++---------------+---------------------------------------------------+
+| ``--csv``     | Output token objects in CSV format, one per line  |
++---------------+---------------------------------------------------+
+| ``--json``    | Output token objects in JSON format, one per line |
++---------------+---------------------------------------------------+
 
 Type ``tokenize -h`` or ``tokenize --help`` to get a short help message.
 
@@ -88,9 +117,47 @@ Example
 Python module
 -------------
 
-To use the tokenizer from within Python code::
+Shallow tokenization example
+============================
 
-    # The following import is convenient under Python 2.7 but not necessary
+An example of shallow tokenization from Python code goes something like this:
+
+.. code-block:: python
+
+    from __future__ import print_function
+    # The following import is optional but convenient under Python 2.7
+    from __future__ import unicode_literals
+
+    from tokenizer import split_into_sentences
+
+    # A string to be tokenized, containing two sentences
+    s = "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000."
+
+    # Obtain a generator of sentence strings
+    g = split_into_sentences(s)
+
+    # Loop through the sentences
+    for sentence in g:
+
+        # Obtain the individual token strings
+        tokens = sentence.split()
+
+        # Print the tokens, comma-separated
+        print(", ".join(tokens))
+
+The program outputs::
+
+    3., janúar, sl., keypti, ég, 64, kWst, rafbíl, .
+    Hann, kostaði, €30.000, .
+
+Deep tokenization example
+=========================
+
+To do deep tokenization from within Python code:
+
+.. code-block:: python
+
+    # The following import is optional but convenient under Python 2.7
     from __future__ import unicode_literals
     from tokenizer import tokenize, TOK
 
@@ -129,59 +196,39 @@ Output::
 
 Note the following:
 
-    - Sentences are delimited by ``TOK.S_BEGIN`` and ``TOK.S_END`` tokens.
-    - Composite words, such as *stjórnskipunar- og eftirlitsnefndar*,
-      are coalesced into one token.
-    - Well-known abbreviations are recognized and their full expansion
-      is available in the ``token.val`` field.
-    - Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*)
-      is available in the ``token.val``  field.
-    - Dates, years and times, both absolute and relative, are recognized and
-      the respective year, month, day, hour, minute and second
-      values are included as a tuple in ``token.val``.
-    - Numbers, both integer and real, are recognized and their value
-      is available in the ``token.val`` field.
-    - Further details of how Tokenizer processes text can be inferred from the
-      `test module <https://github.com/mideind/Tokenizer/blob/master/test/test_tokenizer.py>`_
-      in the project's `GitHub repository <https://github.com/mideind/Tokenizer>`_.
-
-
-Deep and shallow tokenization
------------------------------
-
-Tokenizer can do both *deep* and *shallow* tokenization.
-
-*Shallow* tokenization simply returns each sentence as token strings separated by
-spaces.
-
-*Deep* tokenization returns token objects that have been annotated with
-the token type and further information extracted from the token, for instance
-year, month and day in the case of date tokens.
-
-In shallow tokenization, tokens are maximally split. The strings
-"800 MW", "21. janúar" and "800 7000" (as well as the coalesced versions "800MW"
-and "21.janúar") are thus two tokens each.
-
-In *deep* tokenization, the same strings are represented by single token objects,
-i.e. a ``TOK.MEASUREMENT``, ``TOK.DATEREL`` and ``TOK.TELNO``, respectively.
-The text associated with a token object may contain one or more spaces.
-
-By default, the command line tool performs shallow tokenization, while the ``tokenize()``
-function does deep tokenization. If you want deep tokenization with the command line
-tool, use the ``--json`` or ``--csv`` switches. If you want shallow tokenization
-from Python, call ``split_into_sentences()`` instead of ``tokenize()``.
+- Sentences are delimited by ``TOK.S_BEGIN`` and ``TOK.S_END`` tokens.
+- Composite words, such as *stjórnskipunar- og eftirlitsnefndar*,
+  are coalesced into one token.
+- Well-known abbreviations are recognized and their full expansion
+  is available in the ``token.val`` field.
+- Ordinal numbers (*3., XVII.*) are recognized and their value (*3, 17*)
+  is available in the ``token.val``  field.
+- Dates, years and times, both absolute and relative, are recognized and
+  the respective year, month, day, hour, minute and second
+  values are included as a tuple in ``token.val``.
+- Numbers, both integer and real, are recognized and their value
+  is available in the ``token.val`` field.
+- Further details of how Tokenizer processes text can be inferred from the
+  `test module <https://github.com/mideind/Tokenizer/blob/master/test/test_tokenizer.py>`_
+  in the project's `GitHub repository <https://github.com/mideind/Tokenizer>`_.
 
 
 The ``tokenize()`` function
 ---------------------------
 
 To deep-tokenize a text string, call ``tokenizer.tokenize(text, **options)``.
-This function returns a Python *generator* of token objects.
+The ``text`` parameter can be a string, or an iterable that yields strings
+(such as a text file object).
+
+The function returns a Python *generator* of token objects.
 Each token object is a simple ``namedtuple`` with three
-fields: ``(kind, txt, val)`` (see below).
+fields: ``(kind, txt, val)`` (further documented below).
 
-The ``tokenizer.tokenize()`` function is typically called in a ``for`` loop::
+The ``tokenizer.tokenize()`` function is typically called in a ``for`` loop:
 
+.. code-block:: python
+
+    import tokenizer
     for token in tokenizer.tokenize(mystring):
         kind, txt, val = token
         if kind == tokenizer.TOK.WORD:
@@ -200,15 +247,61 @@ byte strings to ``tokenizer.tokenize()``. In the latter case, the
 byte string is assumed to be encoded in UTF-8.
 
 
+The ``split_into_sentences()`` function
+---------------------------------------
+
+To shallow-tokenize a text string, call
+``tokenizer.split_into_sentences(text_or_gen, **options)``.
+The ``text_or_gen`` parameter can be a string, or an iterable that yields
+strings (such as a text file object).
+
+This function returns a Python *generator* of strings, yielding a string
+for each sentence in the input. Within a sentence, the tokens are
+separated by spaces.
+
+The ``tokenizer.split_into_sentences()`` function is typically called
+in a ``for`` loop:
+
+.. code-block:: python
+
+    import tokenizer
+    with open("example.txt", "r", encoding="utf-8") as f:
+        # You can pass a file object directly to split_into_sentences()
+        for sentence in tokenizer.split_into_sentences(f):
+            # sentence is a string of space-separated tokens
+            tokens = sentence.split()
+            # Now, tokens is a list of strings, one for each token
+            for t in tokens:
+                # Do something with the token t
+                pass
+
+
+The ``correct_spaces()`` function
+---------------------------------
+
+Tokenizer also contains the utility function
+``tokenizer.correct_spaces(text)``.
+This function returns a string after splitting it up and re-joining
+it with correct whitespace around punctuation tokens. Example::
+
+    >>> tokenizer.correct_spaces(
+    ... "Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50"
+    ... )
+    'Frétt dagsins: Jón, Friðgeir og Páll! 100/2 = 50'
+
+
 Tokenization options
 --------------------
 
-You can optionally pass one or more of the following options
-to the ``tokenizer.tokenize()`` function:
+You can optionally pass one or more of the following options as
+keyword parameters to the ``tokenize()`` and ``split_into_sentences()``
+functions:
 
-* ``tokenizer.tokenize(text, convert_numbers=True)``
 
-  This option causes the tokenizer to convert numbers and amounts with
+* ``convert_numbers=[bool]``
+
+  Setting this option to ``True`` causes the tokenizer to convert numbers
+  and amounts with
   English-style decimal points (``.``) and thousands separators (``,``)
   to Icelandic format, where the decimal separator is a comma (``,``)
   and the thousands separator is a period (``.``). ``$1,234.56`` is thus
@@ -219,7 +312,8 @@ to the ``tokenizer.tokenize()`` function:
   Note that in versions of Tokenizer prior to 1.4, ``convert_numbers``
   was ``True``.
 
-* ``tokenizer.tokenize(text, handle_kludgy_ordinals=[value])``
+
+* ``handle_kludgy_ordinals=[value]``
 
   This options controls the way Tokenizer handles 'kludgy' ordinals, such as
   *1sti*, *4ðu*, or *2ja*. By default, such ordinals are returned unmodified
@@ -432,18 +526,6 @@ the token kind, as follows:
 - For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)``
   tuple, where ``unit`` is a base SI unit (such as ``g``, ``m``,
   ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature in Kelvin).
-
-
-The ``correct_spaces()`` function
----------------------------------
-
-Tokenizer also contains the utility function
-``tokenizer.correct_spaces(text)``.
-This function returns a string after splitting it up and re-joining
-it with correct whitespace around punctuation tokens. Example::
-
-    >>> tokenizer.correct_spaces("Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50")
-    'Frétt dagsins: Jón, Friðgeir og Páll! 100/2 = 50'
 
 
 The ``Abbrev.conf`` file
