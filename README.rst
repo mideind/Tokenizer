@@ -355,11 +355,11 @@ defined within the ``TOK`` class:
 +---------------+---------+---------------------+---------------------------+
 | Constant      |  Value  | Explanation         | Examples                  |
 +===============+=========+=====================+===========================+
-| PUNCTUATION   |    1    | Punctuation         | .                         |
+| PUNCTUATION   |    1    | Punctuation         | . ! ; % &                 |
 +---------------+---------+---------------------+---------------------------+
-| TIME          |    2    | Time (h, m, s)      | 11:35:40                  |
-|               |         |                     | kl. 7:05                  |
-|               |         |                     | klukkan 23:35             |
+| TIME          |    2    | Time (h, m, s)      | | 11:35:40                |
+|               |         |                     | | kl. 7:05                |
+|               |         |                     | | klukkan 23:35           |
 +---------------+---------+---------------------+---------------------------+
 | DATE *        |    3    | Date (y, m, d)      | [Unused, see DATEABS and  |
 |               |         |                     | DATEREL]                  |
@@ -526,6 +526,8 @@ the token kind, as follows:
 - For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)``
   tuple, where ``unit`` is a base SI unit (such as ``g``, ``m``,
   ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature in Kelvin).
+- For ``TOK.TELNO``, the ``val`` field contains the phone number
+  in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen.
 
 
 The ``Abbrev.conf`` file
