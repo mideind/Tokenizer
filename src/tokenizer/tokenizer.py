@@ -86,7 +86,7 @@ class TOK:
     DOMAIN = 24
     HASHTAG = 25
 
-    EMPTY_LINE = 10000  # Empty line placeholder
+    S_SPLIT = 10000  # Sentence split token
 
     P_BEGIN = 10001  # Paragraph begin
     P_END = 10002  # Paragraph end
@@ -128,7 +128,7 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
-        EMPTY_LINE: "EMPTY LINE",
+        S_SPLIT: "SPLIT SENT",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
         S_BEGIN: "BEGIN SENT",
@@ -278,8 +278,8 @@ class TOK:
         return Tok(TOK.X_END, None, None)
 
     @staticmethod
-    def Empty_Line():
-        return Tok(TOK.EMPTY_LINE, None, None)
+    def Split_Sentence():
+        return Tok(TOK.S_SPLIT, None, None)
 
 
 def is_valid_date(y, m, d):
@@ -334,7 +334,7 @@ def parse_digits(w, convert_numbers):
         r"^\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w
     )
     if s:
-        # Looks like a date
+        # Looks like a date with day, month and year parts
         g = s.group()
         if "/" in g:
             p = g.split("/")
@@ -352,6 +352,14 @@ def parse_digits(w, convert_numbers):
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
+    s = re.match(r"^(\d{1,2})\.(\d{1,2})\.(?!\d)", w)
+    if s:
+        # A date in the form dd.mm.
+        g = s.group()
+        d = int(s.group(1))
+        m = int(s.group(2))
+        if 1 <= d <= 31 and 1 <= m <= 12:
+            return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
     s = re.match(r"^\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
@@ -411,7 +419,7 @@ def parse_digits(w, convert_numbers):
             m, d = d, m
         if (1 <= d <= 31) and (1 <= m <= 12):
             # Looks like a (roughly) valid date
-            return TOK.Date(g, 0, m, d), s.end()
+            return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     s = re.match(r"^\d\d\d\d(?!\d)", w)
     if s:
         n = int(s.group())
@@ -495,6 +503,24 @@ def gen(text_or_gen, replace_composite_glyphs=True):
             for w in gen_from_string(txt, replace_composite_glyphs):
                 yield w
 
+def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
+    """ Return True if next_token could be ending the current sentence or
+        starting the next one """
+    return (
+        next_token.kind in TOK.END
+        or (
+            # Check whether the next token is an uppercase word, except if
+            # it is a month name (frequently misspelled in uppercase) or
+            # roman numeral, or a currency abbreviation if preceded by a
+            # multiplier (for example þ. USD for thousands of USD)
+            next_token.kind in test_set
+            and next_token.txt[0].isupper()
+            and next_token.txt.lower() not in MONTHS
+            and not RE_ROMAN_NUMERAL.match(next_token.txt)
+            and not (next_token.txt in CURRENCY_ABBREV and multiplier)
+        )
+    )
+
 
 def parse_tokens(txt, options):
     """ Generator that parses contiguous text into a stream of tokens """
@@ -515,8 +541,8 @@ def parse_tokens(txt, options):
         qmark = False
 
         if not w:
-            # Signal the presence of an empty line
-            yield TOK.Empty_Line()
+            # Signal the presence of an empty line, which splits sentences
+            yield TOK.Split_Sentence()
             continue
 
         if w.isalpha() or w in SI_UNITS:
@@ -875,6 +901,17 @@ def parse_particles(token_stream, options):
                         next_token = next(token_stream)
                         break
 
+            # Special case for a DATEREL token of the form "25.10.",
+            # i.e. with a trailing period: It can end a sentence
+            if token.kind == TOK.DATEREL and token.txt[-1] == ".":
+                if could_be_end_of_sentence(next_token):
+                    # Assume that this ends a sentence: cut the
+                    # period off the DATEREL token and yield it
+                    # separately
+                    y, m, d = token.val
+                    yield TOK.Daterel(token.txt[:-1], y, m, d)
+                    token = TOK.Punctuation(".")
+
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
             if next_token.kind == TOK.PUNCTUATION and next_token.txt == ".":
@@ -909,15 +946,8 @@ def parse_particles(token_stream, options):
                     # þær þarf að vera hægt að sameina í þessa flóknari tóka en viljum
                     # geta merkt það sem villu. Ætti líklega að setja í sérlista,
                     # WRONG_MONTHS, og sérif-lykkju og setja inn villu í tókann.
-                    finish = (follow_token.kind in TOK.END) or (
-                        follow_token.kind in test_set
-                        and follow_token.txt[0].isupper()
-                        and follow_token.txt.lower() not in MONTHS
-                        and not RE_ROMAN_NUMERAL.match(follow_token.txt)
-                        and not (
-                            abbrev in MULTIPLIERS
-                            and follow_token.txt in CURRENCY_ABBREV
-                        )
+                    finish = could_be_end_of_sentence(
+                        follow_token, test_set, abbrev in MULTIPLIERS
                     )
 
                     if finish:
@@ -1159,14 +1189,14 @@ def parse_sentences(token_stream):
                     continue
             elif token.kind == TOK.X_END:
                 assert not in_sentence
-            elif token.kind == TOK.EMPTY_LINE:
+            elif token.kind == TOK.S_SPLIT:
                 # Empty line in input: make sure to finish the current
                 # sentence, if any, even if no ending punctuation has
                 # been encountered
                 if in_sentence:
                     yield tok_end_sentence
                 in_sentence = False
-                # Swallow the EMPTY_LINE token
+                # Swallow the S_SPLIT token
                 token = next_token
                 continue
             else:
@@ -1196,7 +1226,7 @@ def parse_sentences(token_stream):
         pass
 
     # Final token (previous lookahead)
-    if token is not None and token.kind != TOK.EMPTY_LINE:
+    if token is not None and token.kind != TOK.S_SPLIT:
         if not in_sentence and token.kind not in TOK.END:
             # Starting something here
             yield tok_begin_sentence
@@ -1387,10 +1417,6 @@ def parse_date_and_time(token_stream):
                         )
                         # Eat the year token
                         next_token = next(token_stream)
-
-            # Check for a single YEAR, change to DATEREL -- changed to keep distinction
-            # if token.kind == TOK.YEAR:
-            #     token = TOK.Daterel(token.txt, y = token.val, m = 0, d = 0)
 
             # TODO STILLING sleppa að sameina eða slíta í sundur síðar?
             # Check for a single month, change to DATEREL

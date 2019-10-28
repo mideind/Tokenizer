@@ -66,6 +66,20 @@ def test_single_tokens():
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
         (
+            "17.6.",
+            [
+                Tok(TOK.DATEREL, "17.6", (0, 6, 17)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
+            "17.16.",
+            [
+                Tok(TOK.NUMBER, "17.16", (17.16, None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
             "17/60",
             [
                 Tok(TOK.NUMBER, "17", (17, None, None)),
@@ -692,6 +706,16 @@ def test_sentences():
     test_sentence(
         "Ég vildi [...] fara út. [...] Hann sá mig.",
         "B W W    P     W    W P P     E B W W W  P E",
+    )
+
+    test_sentence(
+        "Ég fæddist 15.10. í Skaftárhreppi en systir mín 25.9. Hún var eldri en ég.",
+        "B W W      DR     W W             W  W      W   DR  P E B W W W     W  W P E",
+    )
+
+    test_sentence(
+        "Jón fæddist 15.10. MCMXCVII í Skaftárhreppi.",
+        "B W W       DR     W        W W            P E",
     )
 
 
