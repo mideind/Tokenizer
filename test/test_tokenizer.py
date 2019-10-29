@@ -80,6 +80,20 @@ def test_single_tokens():
             ]
         ),
         (
+            "30.9.",
+            [
+                Tok(TOK.DATEREL, "30.9", (0, 9, 30)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
+            "31.9.",
+            [
+                Tok(TOK.NUMBER, "31.9", (31.9, None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
             "17/60",
             [
                 Tok(TOK.NUMBER, "17", (17, None, None)),
