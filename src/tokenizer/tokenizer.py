@@ -284,7 +284,7 @@ class TOK:
 
 def is_valid_date(y, m, d):
     """ Returns True if y, m, d is a valid date """
-    if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= 31):
+    if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
         try:
             datetime.datetime(year=y, month=m, day=d)
             return True
@@ -358,7 +358,7 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         d = int(s.group(1))
         m = int(s.group(2))
-        if 1 <= d <= 31 and 1 <= m <= 12:
+        if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
@@ -417,7 +417,7 @@ def parse_digits(w, convert_numbers):
         if m > 12 >= d:
             # Date is probably wrong way around
             m, d = d, m
-        if (1 <= d <= 31) and (1 <= m <= 12):
+        if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             # Looks like a (roughly) valid date
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     s = re.match(r"^\d\d\d\d(?!\d)", w)
@@ -1424,17 +1424,7 @@ def parse_date_and_time(token_stream):
                 month = month_for_token(token)
                 # Don't automatically interpret "mar", etc. as month names,
                 # since they are ambiguous
-                if month is not None and token.txt not in {
-                    "jan",
-                    "Jan",
-                    "mar",
-                    "Mar",
-                    "júl",
-                    "Júl",
-                    "des",
-                    "Des",
-                    "Ágúst",
-                }:
+                if month is not None and token.txt not in AMBIGUOUS_MONTH_NAMES:
                     token = TOK.Daterel(token.txt, y=0, m=month, d=0)
 
             # Split DATE into DATEABS and DATEREL
@@ -1481,7 +1471,8 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestampabs(
-                        token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.txt + " " + next_token.txt,
+                        y=y, mo=mo, d=d, h=h, m=m, s=s
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -1494,7 +1485,8 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestamprel(
-                        token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.txt + " " + next_token.txt,
+                        y=y, mo=mo, d=d, h=h, m=m, s=s
                     )
                     # Eat the time token
                     next_token = next(token_stream)

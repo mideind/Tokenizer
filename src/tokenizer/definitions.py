@@ -228,6 +228,14 @@ MONTHS = {
 # The masculine Icelandic name should not be identified as a month
 MONTH_BLACKLIST = frozenset(("Ágúst",))
 
+# Word forms that are not unambiguous as month names
+AMBIGUOUS_MONTH_NAMES = frozenset(
+    ("jan", "Jan", "mar", "Mar", "júl", "Júl", "des", "Des", "Ágúst")
+)
+
+# Max number of days in each month, indexed so that 1=January
+DAYS_IN_MONTH = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+
 # Days of the month spelled out
 DAYS_OF_MONTH = {
     "fyrsti": 1,
