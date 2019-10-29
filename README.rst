@@ -453,25 +453,29 @@ To obtain a descriptive text for a token kind, use
 The ``txt`` field
 ==================
 
-The ``txt`` field contains the original source text for the token.
-However, in a few cases, the tokenizer auto-corrects the original
-source text:
+The ``txt`` field contains the original source text for the token,
+with the following exceptions:
+
+* All contiguous whitespace (spaces, tabs, newlines) is coalesced
+  into single spaces (``" "``) within the ``txt`` field. A date
+  token that is parsed from a source text of ``"29.  \n   janúar"``
+  thus has a ``txt`` of ``"29. janúar"``.
 
 * Tokenizer automatically merges Unicode ``COMBINING ACUTE ACCENT``
   (code point 769) and ``COMBINING DIAERESIS`` (code point 776)
   with vowels to form single code points for the Icelandic letters
   á, é, í, ó, ú, ý and ö, in both lower and upper case.
 
+* It converts single and double quotes to the correct Icelandic
+  ones (i.e. „these“ or ‚these‘).
+
 * If the appropriate options are specified (see above), it converts
   kludgy ordinals (*3ja*) to proper ones (*þriðja*), and English-style
   thousand and decimal separators to Icelandic ones
   (*10,345.67* becomes *10.345,67*).
 
-* It converts single and double quotes to the correct Icelandic
-  ones (i.e. „these“ or ‚these‘).
-
 In the case of abbreviations that end a sentence, the final period
-'.' is a separate token, and it is consequently omitted from the
+``"."`` is a separate token, and it is consequently omitted from the
 abbreviation token's ``txt`` field. A sentence ending in *o.s.frv.*
 will thus end with two tokens, the next-to-last one being the tuple
 ``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted
@@ -531,13 +535,24 @@ the token kind, as follows:
   in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen.
 
 
-The ``Abbrev.conf`` file
-------------------------
+Abbreviations
+-------------
 
 Abbreviations recognized by Tokenizer are defined in the ``Abbrev.conf``
 file, found in the ``src/tokenizer/`` directory. This is a text file with
-abbreviations, their definitions and explanatory comments. The file is loaded
-into memory during the first call to ``tokenizer.tokenize()`` within a process.
+abbreviations, their definitions and explanatory comments.
+
+When an abbreviation is encountered, it is recognized as a word token
+(i.e. having its ``kind`` field equal to ``TOK.WORD``).
+Its expansion is included in the token's
+``val`` field as a list containing a single tuple of the format
+``(ordmynd, utg, ordfl, fl, stofn, beyging)``.
+An example is *o.s.frv.*, which results in a ``val`` field equal to
+``[('og svo framvegis', 0, 'ao', 'frasi', 'o.s.frv.', '-')]``.
+
+The tuple format is designed to be compatible with the
+*Database of Modern Icelandic Inflection* (*DMII*),
+*Beygingarlýsing íslensks nútímamáls*.
 
 
 Development installation
