@@ -961,7 +961,7 @@ def test_abbrev():
         Tok(
             kind=TOK.WORD,
             txt="Mbl",
-            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl.", "-")],
+            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl", "-")],
         ),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=3),
         Tok(kind=TOK.S_END, txt=None, val=None),
