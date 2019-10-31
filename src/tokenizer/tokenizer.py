@@ -85,6 +85,8 @@ class TOK:
     NUMWLETTER = 23
     DOMAIN = 24
     HASHTAG = 25
+    MOLECULE = 26  # Chemical compound ('H2SO4')
+    SSN = 27  # Social security number ('kennitala')
 
     S_SPLIT = 10000  # Sentence split token
 
@@ -97,8 +99,8 @@ class TOK:
     X_END = 12001  # End sentinel
 
     END = frozenset((P_END, S_END, X_END))
-    TEXT = frozenset((WORD, PERSON, ENTITY))
-    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY))
+    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
+    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE))
 
     # Token descriptive names
 
@@ -128,6 +130,8 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
+        MOLECULE: "MOLECULE",
+        SSN: "SSN",
         S_SPLIT: "SPLIT SENT",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
@@ -234,6 +238,14 @@ class TOK:
         return Tok(TOK.HASHTAG, w, None)
 
     @staticmethod
+    def Ssn(w):
+        return Tok(TOK.SSN, w, None)
+
+    @staticmethod
+    def Molecule(w):
+        return Tok(TOK.MOLECULE, w, None)
+
+    @staticmethod
     def Measurement(w, unit, val):
         return Tok(TOK.MEASUREMENT, w, (unit, val))
 
@@ -295,7 +307,7 @@ def is_valid_date(y, m, d):
 
 def parse_digits(w, convert_numbers):
     """ Parse a raw token starting with a digit """
-    s = re.match(r"^\d{1,2}:\d\d:\d\d(?!\d)", w)
+    s = re.match(r"\d{1,2}:\d\d:\d\d(?!\d)", w)
     if s:
         # Looks like a 24-hour clock, H:M:S
         g = s.group()
@@ -305,7 +317,7 @@ def parse_digits(w, convert_numbers):
         sec = int(p[2])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
             return TOK.Time(g, h, m, sec), s.end()
-    s = re.match(r"^\d{1,2}:\d\d(?!\d)", w)
+    s = re.match(r"\d{1,2}:\d\d(?!\d)", w)
     if s:
         # Looks like a 24-hour clock, H:M
         g = s.group()
@@ -315,8 +327,8 @@ def parse_digits(w, convert_numbers):
         if (0 <= h < 24) and (0 <= m < 60):
             return TOK.Time(g, h, m, 0), s.end()
     s = (
-            re.match(r"^\d{4}-\d\d-\d\d(?!\d)", w) or
-            re.match(r"^\d{4}/\d\d/\d\d(?!\d)", w)
+            re.match(r"\d{4}-\d\d-\d\d(?!\d)", w) or
+            re.match(r"\d{4}/\d\d/\d\d(?!\d)", w)
     )
     if s:
         # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
@@ -330,8 +342,8 @@ def parse_digits(w, convert_numbers):
         d = int(p[2])
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
-    s = re.match(r"^\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or re.match(
-        r"^\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w
+    s = re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or re.match(
+        r"\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w
     )
     if s:
         # Looks like a date with day, month and year parts
@@ -352,7 +364,7 @@ def parse_digits(w, convert_numbers):
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
-    s = re.match(r"^(\d{1,2})\.(\d{1,2})\.(?!\d)", w)
+    s = re.match(r"(\d{1,2})\.(\d{1,2})\.(?!\d)", w)
     if s:
         # A date in the form dd.mm.
         g = s.group()
@@ -362,7 +374,7 @@ def parse_digits(w, convert_numbers):
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
-    s = re.match(r"^\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
+    s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
     if s:
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
         g = s.group()
@@ -372,7 +384,7 @@ def parse_digits(w, convert_numbers):
         if l not in SI_UNITS.keys():
             n = int(g[:-1])
             return TOK.NumberWithLetter(g, n, l), s.end()
-    s = re.match(r"^(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
+    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
         # TODO STILLING Ætti að klippa þetta í sundur?
@@ -381,7 +393,7 @@ def parse_digits(w, convert_numbers):
         vf = s.group(2)
         val = float(ln) + unicodedata.numeric(vf)
         return TOK.Number(g, val), s.end()
-    s = re.match(r"^\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
+    s = re.match(r"\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
@@ -389,14 +401,14 @@ def parse_digits(w, convert_numbers):
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         n = re.sub(",", ".", n)  # Convert decimal comma to point
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"^\d+(\.\d\d\d)+(?!\d)", w)
+    s = re.match(r"\d+(\.\d\d\d)+(?!\d)", w)
     if s:
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
         g = s.group()
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         return TOK.Number(g, int(n)), s.end()
-    s = re.match(r"^\d{1,2}/\d{1,2}(?!\d)", w)
+    s = re.match(r"\d{1,2}/\d{1,2}(?!\d)", w)
     if s:
         # Looks like a date (and not something like 10/2007)
         g = s.group()
@@ -420,23 +432,29 @@ def parse_digits(w, convert_numbers):
         if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             # Looks like a (roughly) valid date
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
-    s = re.match(r"^\d\d\d\d(?!\d)", w)
+    s = re.match(r"\d\d\d\d(?!\d)", w)
     if s:
         n = int(s.group())
         if 1776 <= n <= 2100:
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
-    s = re.match(r"^\d\d\d\-\d\d\d\d(?!\d)", w)
+    s = re.match(r"\d{6}\-\d{4}(?!\d)", w)
+    if s:
+        # Looks like a social security number
+        g = s.group()
+        if valid_ssn(g):
+            return TOK.Ssn(w[0:11]), 11
+    s = re.match(r"\d\d\d\-\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = s.group()
         return TOK.Telno(telno, telno), 8
-    s = re.match(r"^\d\d\d\d\d\d\d(?!\d)", w)
+    s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = w[0:3] + "-" + w[3:7]
         return TOK.Telno(w[0:7], telno), 7
-    s = re.match(r"^\d+\.\d+(\.\d+)+", w)
+    s = re.match(r"\d+\.\d+(\.\d+)+", w)
     if s:
         # Some kind of ordinal chapter number: 2.5.1 etc.
         # (we need to check this before numbers with decimal points)
@@ -444,7 +462,7 @@ def parse_digits(w, convert_numbers):
         # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
         n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
         return TOK.Ordinal(g, int(n)), s.end()
-    s = re.match(r"^\d+(,\d\d\d)*\.\d+", w)
+    s = re.match(r"\d+(,\d\d\d)*\.\d+", w)
     if s:
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
@@ -455,7 +473,7 @@ def parse_digits(w, convert_numbers):
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
             g = re.sub("x", ".", g)  # Change 'x' to '.'
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"^\d+(,\d\d\d)*(?!\d)", w)
+    s = re.match(r"\d+(,\d\d\d)*(?!\d)", w)
     if s:
         # Integer, possibly with a ',' thousands separator
         g = s.group()
@@ -502,6 +520,7 @@ def gen(text_or_gen, replace_composite_glyphs=True):
             # Yield the contained rough tokens
             for w in gen_from_string(txt, replace_composite_glyphs):
                 yield w
+
 
 def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
     """ Return True if next_token could be ending the current sentence or
@@ -651,7 +670,7 @@ def parse_tokens(txt, options):
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
                 # even though they're technically allowed according to the RFCs
-                s = re.match(r"^[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", w)
+                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", w)
                 if s:
                     ate = True
                     yield TOK.Email(s.group())
@@ -755,6 +774,19 @@ def parse_tokens(txt, options):
                     # so they won't be caught by the isalpha() check below)
                     yield TOK.Word(w, None)
                     w = ""
+
+            # Check for molecular formula ('H2SO4')
+            if w:
+                r = MOLECULE_REGEX.match(w)
+                if r is not None:
+                    g = r.group()
+                    if g not in Abbreviations.DICT and MOLECULE_FILTER.search(g):
+                        # Correct format, containing at least one digit
+                        # and not separately defined as an abbreviation:
+                        # We assume that this is a molecular formula
+                        yield TOK.Molecule(g)
+                        ate = True
+                        w = w[r.end():]
 
             # Alphabetic characters
             if w and w[0].isalpha():

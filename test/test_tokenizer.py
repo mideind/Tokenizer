@@ -338,6 +338,23 @@ def test_single_tokens():
                 Tok(TOK.NUMBER, "500", (500, None, None)),
             ],
         ),
+        ("591213-1480", TOK.SSN),
+        (
+            "591214-1480",
+            [
+                Tok(TOK.NUMBER, "591214", (591214, None, None)),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.NUMBER, "1480", (1480, None, None)),
+            ],
+        ),
+        (
+            "591213-14803",
+            [
+                Tok(TOK.NUMBER, "591213", (591213, None, None)),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.NUMBER, "14803", (14803, None, None)),
+            ],
+        ),
         ("9000000", TOK.NUMBER),
         ("1234567", TOK.NUMBER),
         ("525-4764", [Tok(TOK.TELNO, "525-4764", "525-4764")]),
@@ -405,9 +422,11 @@ def test_single_tokens():
         ("fake@news.is", TOK.EMAIL),
         ("jon.jonsson.99@netfang.is", TOK.EMAIL),
         ("valid@my-domain.reallylongtld", TOK.EMAIL),
+
         ("7a", [Tok(TOK.NUMWLETTER, "7a", (7, "a"))]),
         ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, "B"))]),
         ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, "c"))]),
+
         ("7l", [Tok(TOK.MEASUREMENT, "7 l", ("m³", 0.007))]),
         ("17 ltr", [Tok(TOK.MEASUREMENT, "17 ltr", ("m³", 17.0e-3))]),
         ("150m", [Tok(TOK.MEASUREMENT, "150 m", ("m", 150))]),
@@ -428,6 +447,13 @@ def test_single_tokens():
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
         ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
         ("1976kWst", [Tok(TOK.MEASUREMENT, "1976 kWst", ("J", 7113.6e6))]),
+
+        ("CO2", TOK.MOLECULE),
+        ("CO", TOK.WORD),
+        ("H2O", TOK.MOLECULE),
+        ("B5", TOK.MOLECULE),
+        ("H2SO4", TOK.MOLECULE),
+
     ]
 
     TEST_CASES_KLUDGY_MODIFY = [
@@ -544,6 +570,8 @@ def test_sentences():
         "ME": TOK.MEASUREMENT,
         "DM": TOK.DOMAIN,
         "HT": TOK.HASHTAG,
+        "K": TOK.SSN,
+        "MO": TOK.MOLECULE,
         "X": TOK.UNKNOWN,
     }
 
@@ -730,6 +758,26 @@ def test_sentences():
     test_sentence(
         "Jón fæddist 15.10. MCMXCVII í Skaftárhreppi.",
         "B W W       DR     W        W W            P E",
+    )
+
+    test_sentence(
+        "Ég þvoði hárið með H2SO4, og notaði efni (Ag2FeSi) við það, en það hjálpaði ekki.",
+        "B W W    W     W   MO   P W  W      W    P MO    P W   W  P W  W   W        W   P E",
+    )
+
+    test_sentence(
+        "Ég þvoði hárið með H2SO4, og notaði efni (AgFeSi) við það, en það hjálpaði ekki.",
+        "B W W    W     W   MO   P W  W      W    P W    P W   W  P W  W   W        W   P E",
+    )
+
+    test_sentence(
+        "Kennitala fyrirtækisins er 591213-1480, en ekki 591214-1480.",
+        "B W       W             W  K          P W  W    N     P N  P E",
+    )
+
+    test_sentence(
+        "Jón, kt. 301265-5309, vann 301265-53090 kr. H2O var drukkið.",
+        "B W P W  K          P W    N     P A      P E B MO W W     P E",
     )
 
 

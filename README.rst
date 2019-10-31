@@ -421,7 +421,7 @@ defined within the ``TOK`` class:
 | TIMESTAMPABS  |    20   | Absolute timestamp  | | 30. desember 1965 11:34 |
 |               |         |                     | | 1965-12-30 kl. 13:00    |
 +---------------+---------+---------------------+---------------------------+
-| TIMESTAMPREL  |    21   | Relative timestamp  | 30. desember kl. 13:00    |
+| TIMESTAMPREL  |    21   | Relative timestamp  | | 30. desember kl. 13:00  |
 +---------------+---------+---------------------+---------------------------+
 | MEASUREMENT   |    22   | Value with a        | | 690 MW                  |
 |               |         | measurement unit    | | 1.010 hPa               |
@@ -437,6 +437,12 @@ defined within the ``TOK`` class:
 +---------------+---------+---------------------+---------------------------+
 | HASHTAG       |    25   | Hashtag             | | #MeToo                  |
 |               |         |                     | | #12stig                 |
++---------------+---------+---------------------+---------------------------+
+| MOLECULE      |    26   | Molecular formula   | | H2SO4                   |
+|               |         |                     | | CO2                     |
++---------------+---------+---------------------+---------------------------+
+| SSN           |    27   | Social security     | | 591213-1480             |
+|               |         | number (*kennitala*)|                           |
 +---------------+---------+---------------------+---------------------------+
 | S_BEGIN       |  11001  | Start of sentence   |                           |
 +---------------+---------+---------------------+---------------------------+
@@ -582,7 +588,7 @@ Changelog
 
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
   function; removed ``convert_telno`` option; splitting of coalesced tokens
-  made more robust
+  made more robust; added ``TOK.SSN`` and ``TOK.MOLECULE``
 * Version 1.4.0: Added the ``**options`` parameter to the
   ``tokenize()`` function, giving control over the handling of numbers,
   telephone numbers, and 'kludgy' ordinals
