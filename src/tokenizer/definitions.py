@@ -98,7 +98,9 @@ UNICODE_REPLACEMENTS = {
     ZEROWIDTH_SPACE: "",
     ZEROWIDTH_NBSP: "",
 }
-UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
+UNICODE_REGEX = re.compile(
+    r"|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))), re.UNICODE
+)
 
 # Hyphens that are cast to '-' for parsing and then re-cast
 # to normal hyphens, en or em dashes in final rendering
@@ -169,8 +171,9 @@ ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
 
-# Numeric digits
-DIGITS = frozenset([d for d in "0123456789"])  # Set of digit characters
+# Characters that can start a numeric token
+DIGITS_PREFIX = frozenset([d for d in "0123456789"])
+SIGN_PREFIX = frozenset(("+", "-"))
 
 # Month names and numbers
 MONTHS = {
@@ -376,43 +379,49 @@ SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
 SI_UNITS = {
+    # Distance
+    "m": ("m", 1.0),
+    "mm": ("m", 1.0e-3),
+    "μm": ("m", 1.0e-6),
+    "cm": ("m", 1.0e-2),
+    "sm": ("m", 1.0e-2),
+    "km": ("m", 1.0e3),
+    # Area
     "m²": ("m²", 1.0),
     "fm": ("m²", 1.0),
+    "km²": ("m²", 1.0e6),
     "cm²": ("m²", 1.0e-2),
+    # Volume
     "m³": ("m³", 1.0),
     "cm³": ("m³", 1.0e-6),
+    "km³": ("m³", 1.0e9),
     "l": ("m³", 1.0e-3),
     "ltr": ("m³", 1.0e-3),
     "dl": ("m³", 1.0e-4),
     "cl": ("m³", 1.0e-5),
     "ml": ("m³", 1.0e-6),
+    # Temperature
     "°C": ("K", lambda x: x + 273.15),
     "°F": ("K", lambda x: (x + 459.67) * 5 / 9),
     "K": ("K", 1.0),
+    # Mass
     "g": ("g", 1.0),
     "gr": ("g", 1.0),
     "kg": ("g", 1.0e3),
     "t": ("g", 1.0e6),
     "mg": ("g", 1.0e-3),
     "μg": ("g", 1.0e-6),
-    "m": ("m", 1.0),
-    "km": ("m", 1.0e3),
-    "mm": ("m", 1.0e-3),
-    "μm": ("m", 1.0e-6),
-    "cm": ("m", 1.0e-2),
-    "sm": ("m", 1.0e-2),
+    # Duration
     "s": ("s", 1.0),
     "ms": ("s", 1.0e-3),
     "μs": ("s", 1.0e-6),
-    "Nm": ("J", 1.0),
     "klst": ("s", 3600.0),
     "mín": ("s", 60.0),
-    "W": ("W", 1.0),
-    "mW": ("W", 1.0e-3),
-    "kW": ("W", 1.0e3),
-    "MW": ("W", 1.0e6),
-    "GW": ("W", 1.0e9),
-    "TW": ("W", 1.0e12),
+    # Force
+    "N": ("N", 1.0),
+    "kN": ("N", 1.0e3),
+    # Energy
+    "Nm": ("J", 1.0),
     "J": ("J", 1.0),
     "kJ": ("J", 1.0e3),
     "MJ": ("J", 1.0e6),
@@ -424,21 +433,38 @@ SI_UNITS = {
     "MWst": ("J", 3.6e9),
     "kcal": ("J", 4184),
     "cal": ("J", 4.184),
-    "N": ("N", 1.0),
-    "kN": ("N", 1.0e3),
+    # Power
+    "W": ("W", 1.0),
+    "mW": ("W", 1.0e-3),
+    "kW": ("W", 1.0e3),
+    "MW": ("W", 1.0e6),
+    "GW": ("W", 1.0e9),
+    "TW": ("W", 1.0e12),
+    # Electric potential
     "V": ("V", 1.0),
     "mV": ("V", 1.0e-3),
     "kV": ("V", 1.0e3),
+    # Electric current
     "A": ("A", 1.0),
     "mA": ("A", 1.0e-3),
+    # Frequency
     "Hz": ("Hz", 1.0),
     "kHz": ("Hz", 1.0e3),
     "MHz": ("Hz", 1.0e6),
     "GHz": ("Hz", 1.0e9),
+    # Pressure
     "Pa": ("Pa", 1.0),
     "hPa": ("Pa", 1.0e2),
+    # Angle
     "°": ("°", 1.0),  # Degree
 }
+
+SI_UNITS_SET = frozenset(keys(SI_UNITS))
+
+SI_UNITS_REGEX = re.compile(
+    r"({0})".format(r"|".join(map(re.escape, keys(SI_UNITS)))),
+    re.UNICODE,
+)
 
 # If the handle_kludgy_ordinals option is set to
 # KLUDGY_ORDINALS_PASS_THROUGH, we do not convert

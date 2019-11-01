@@ -98,7 +98,7 @@ class TOK:
 
     X_END = 12001  # End sentinel
 
-    END = frozenset((P_END, S_END, X_END))
+    END = frozenset((P_END, S_END, X_END, S_SPLIT))
     TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
     TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE))
 
@@ -381,10 +381,10 @@ def parse_digits(w, convert_numbers):
         l = g[-1:]
         # Only match if the single character is not a
         # unit of measurement (e.g. 'A', 'l', 'V')
-        if l not in SI_UNITS.keys():
+        if l not in SI_UNITS_SET:
             n = int(g[:-1])
             return TOK.NumberWithLetter(g, n, l), s.end()
-    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
+    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
         # TODO STILLING Ætti að klippa þetta í sundur?
@@ -393,7 +393,7 @@ def parse_digits(w, convert_numbers):
         vf = s.group(2)
         val = float(ln) + unicodedata.numeric(vf)
         return TOK.Number(g, val), s.end()
-    s = re.match(r"\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
+    s = re.match(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
@@ -401,7 +401,7 @@ def parse_digits(w, convert_numbers):
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         n = re.sub(",", ".", n)  # Convert decimal comma to point
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"\d+(\.\d\d\d)+(?!\d)", w)
+    s = re.match(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)", w)
     if s:
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
@@ -462,7 +462,7 @@ def parse_digits(w, convert_numbers):
         # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
         n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
         return TOK.Ordinal(g, int(n)), s.end()
-    s = re.match(r"\d+(,\d\d\d)*\.\d+", w)
+    s = re.match(r"[\+\-]?\d+(,\d\d\d)*\.\d+", w)
     if s:
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
@@ -473,7 +473,7 @@ def parse_digits(w, convert_numbers):
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
             g = re.sub("x", ".", g)  # Change 'x' to '.'
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"\d+(,\d\d\d)*(?!\d)", w)
+    s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
     if s:
         # Integer, possibly with a ',' thousands separator
         g = s.group()
@@ -569,10 +569,16 @@ def parse_tokens(txt, options):
             yield TOK.Word(w, None)
             continue
 
+        if w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX:
+            # Sign ('-' or '+') followed by digit: parse as a number
+            t, eaten = parse_digits(w, convert_numbers)
+            yield t
+            w = w[eaten:]
+
         # More complex case of mixed punctuation, letters and numbers
         # TODO STILLING Hér er möguleg gæsalappastilling.
         # Hér eru gæsalappir utan um stakt orð.
-        if len(w) > 2:
+        if len(w) >= 3:
             if w[0] in DQUOTES and w[-1] in DQUOTES:
                 # Convert to matching Icelandic quotes
                 yield TOK.Punctuation("„")
@@ -698,7 +704,7 @@ def parse_tokens(txt, options):
                 ate = True
                 w = endp
 
-            if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
+            if w and len(w) >= 2 and re.match(r"#\w", w, re.UNICODE):
                 # Handle hashtags. Eat all text up to next punctuation character
                 # so we can handle strings like "#MeToo-hreyfingin" as two words
                 tag = w[:1]
@@ -706,7 +712,7 @@ def parse_tokens(txt, options):
                 while w and w[0] not in PUNCTUATION:
                     tag += w[0]
                     w = w[1:]
-                if re.search(r"^#\d+$", tag):
+                if re.match(r"#\d+$", tag):
                     # Hash is being used as a number sign, e.g. "#12"
                     yield TOK.Ordinal(tag, int(tag[1:]))
                 else:
@@ -731,7 +737,11 @@ def parse_tokens(txt, options):
                 w = endp
 
             # Numbers or other stuff starting with a digit
-            if w and w[0] in DIGITS:
+            # (eventually prefixed by a '+' or '-')
+            if w and (
+                w[0] in DIGITS_PREFIX
+                or (w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX)
+            ):
                 # Handle kludgy ordinals: '3ji', '5ti', etc.
                 for key, val in items(ORDINAL_ERRORS):
                     if w.startswith(key):
@@ -763,17 +773,22 @@ def parse_tokens(txt, options):
                     # TODO STILLING skoða hvað er gert hér.
                     t, eaten = parse_digits(w, convert_numbers)
                     yield t
+
                 # Continue where the digits parser left off
                 ate = True
                 w = w[eaten:]
-                # TODO STILLING viljum við skipta þessu í tvo tóka?
-                if w in SI_UNITS:
-                    # Handle the case where a measurement unit is
-                    # immediately following a number, without an intervening space
-                    # (note that some of them contain nonalphabetic characters,
-                    # so they won't be caught by the isalpha() check below)
-                    yield TOK.Word(w, None)
-                    w = ""
+
+                if w:
+                    # Check for an SI unit immediately following a number
+                    r = SI_UNITS_REGEX.match(w)
+                    if r:
+                        unit = r.group()
+                        # Handle the case where a measurement unit is
+                        # immediately following a number, without an intervening space
+                        # (note that some of them contain nonalphabetic characters,
+                        # so they won't be caught by the isalpha() check below)
+                        yield TOK.Word(unit, None)
+                        w = w[len(unit):]
 
             # Check for molecular formula ('H2SO4')
             if w:
@@ -921,7 +936,7 @@ def parse_particles(token_stream, options):
             # TODO STILLING Sleppa að sameina?
             # Check for currency symbol followed by number, e.g. $10
             if token.txt in CURRENCY_SYMBOLS:
-                for symbol, currabbr in CURRENCY_SYMBOLS.items():
+                for symbol, currabbr in items(CURRENCY_SYMBOLS):
                     if (
                         token.kind == TOK.PUNCTUATION
                         and token.txt == symbol
