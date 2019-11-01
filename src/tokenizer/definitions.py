@@ -462,7 +462,16 @@ SI_UNITS = {
 SI_UNITS_SET = frozenset(keys(SI_UNITS))
 
 SI_UNITS_REGEX = re.compile(
-    r"({0})".format(r"|".join(map(re.escape, keys(SI_UNITS)))),
+    r"({0})".format(
+        r"|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
     re.UNICODE,
 )
 
