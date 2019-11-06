@@ -327,8 +327,8 @@ def parse_digits(w, convert_numbers):
         if (0 <= h < 24) and (0 <= m < 60):
             return TOK.Time(g, h, m, 0), s.end()
     s = (
-            re.match(r"\d{4}-\d\d-\d\d(?!\d)", w) or
-            re.match(r"\d{4}/\d\d/\d\d(?!\d)", w)
+        re.match(r"\d{4}-\d\d-\d\d(?!\d)", w) or
+        re.match(r"\d{4}/\d\d/\d\d(?!\d)", w)
     )
     if s:
         # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
@@ -342,14 +342,18 @@ def parse_digits(w, convert_numbers):
         d = int(p[2])
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
-    s = re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or re.match(
-        r"\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w
+    s = (
+        re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or
+        re.match(r"\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w) or
+        re.match(r"\d{1,2}-\d{1,2}-\d{2,4}(?!\d)", w)
     )
     if s:
         # Looks like a date with day, month and year parts
         g = s.group()
         if "/" in g:
             p = g.split("/")
+        elif "-" in g:
+            p = g.split("-")
         else:
             p = g.split(".")
         y = int(p[2])
@@ -357,10 +361,8 @@ def parse_digits(w, convert_numbers):
             y += 2000
         m = int(p[1])
         d = int(p[0])
-        # TODO STILLING Þarf líka sérstillingu fyrir að snúa þessu ekki við,
-        # leyfa að standa eins og er
         if m > 12 >= d:
-            # Probably wrong way around
+            # Probably wrong way (i.e. U.S. American way) around
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
@@ -387,7 +389,6 @@ def parse_digits(w, convert_numbers):
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
-        # TODO STILLING Ætti að klippa þetta í sundur?
         g = s.group()
         ln = s.group(1)
         vf = s.group(2)
@@ -420,12 +421,10 @@ def parse_digits(w, convert_numbers):
             and p[1][0] != "0"
             and ((d <= 5 and m <= 6) or (d == 1 and m <= 10))
         ):
-            # TODO STILLING ?
             # This is probably a fraction, not a date
             # (1/2, 1/3, 1/4, 1/5, 1/6, 2/3, 2/5, 5/6 etc.)
             # Return a number
             return TOK.Number(g, float(d) / m), s.end()
-        # TODO STILLING  Velja að snúa þessu við
         if m > 12 >= d:
             # Date is probably wrong way around
             m, d = d, m
@@ -467,7 +466,7 @@ def parse_digits(w, convert_numbers):
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
-        # TODO STILLING  Hér er stillingin convert_numbers notuð
+        # !!! TODO: May want to mark this as an error
         if convert_numbers:
             g = re.sub(",", "x", g)  # Change thousands separator to 'x'
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
@@ -478,13 +477,12 @@ def parse_digits(w, convert_numbers):
         # Integer, possibly with a ',' thousands separator
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
-        # TODO STILLING Hér er stillingin convert_numbers notuð.
-        # Þarf líka að geta merkt sem villu.
+        # !!! TODO: May want to mark this as an error
         if convert_numbers:
             g = re.sub(",", ".", g)  # Change thousands separator to a dot
         return TOK.Number(g, int(n)), s.end()
     # Strange thing
-    # TODO STILLING Setja villu í tókann?
+    # !!! TODO: May want to mark this as an error
     return TOK.Unknown(w), len(w)
 
 
@@ -770,7 +768,6 @@ def parse_tokens(txt, options):
                         break  # This skips the for loop 'else'
                 else:
                     # Not a kludgy ordinal: eat tokens starting with a digit
-                    # TODO STILLING skoða hvað er gert hér.
                     t, eaten = parse_digits(w, convert_numbers)
                     yield t
 
