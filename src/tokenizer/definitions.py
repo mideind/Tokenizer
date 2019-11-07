@@ -116,7 +116,7 @@ COMPOSITE_HYPHEN = EN_DASH
 
 # Recognized punctuation
 LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>°"
+RIGHT_PUNCTUATION = ".,:;)]!%‰?“»”’‛‘…>°"
 CENTER_PUNCTUATION = '"*&+=@©|'
 NONE_PUNCTUATION = "/±'´~\\" + HYPHEN + EN_DASH + EM_DASH
 PUNCTUATION = (
