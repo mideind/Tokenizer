@@ -1162,14 +1162,6 @@ def parse_particles(token_stream, options):
                     token = TOK.Percent(token.txt + sign, token.val[0] * factor)
                     next_token = next(token_stream)
 
-            # Coalesce permilles into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt == "‰":
-                if token.kind == TOK.NUMBER:
-                    # Convert to a percentage token
-                    # In this case, there are no cases and no gender
-                    token = TOK.Percent(token.txt + "‰", token.val[0]/10.0)
-                    next_token = next(token_stream)
-
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
             if next_token.kind == TOK.PUNCTUATION and next_token.txt == ".":
                 if (
