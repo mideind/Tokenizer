@@ -62,6 +62,7 @@ Hér komum við átta f.h. til að breyta heiminum.
 Hér komum við átta e.h. til að breyta heiminum.
 
 Hér komum við 08:54 GMT til að breyta heiminum.
+Hér komum við 08:54 GMT+4 til að breyta heiminum.
 Hér komum við 08:54 UTC+1 til að breyta heiminum.
 
 
@@ -189,9 +190,11 @@ Hún á 14dl af 15 kg kaffi við 200°C eða 200° C eða 200 °C í gær.
 Ég þarf ¼dl af mold.
 Ég þarf ¼ dl af mold.
 Ég þarf 122¼ lítra af mold.
+Ég þarf 122 ¼ lítra af mold.
 Hann á ½kg af mold og ¼ lítra af vatni.
 Byrjum á 2½ dl af rjóma því ¼-½ matskeið er ekki nóg. Helmingur er ½. Svarið er 42, ekki 41⅞.
 Þetta er 1¼ en ekki 2⅞ og heldur ekki 33⅗ til að það sé á hreinu.
+Þetta er 1 ¼ en ekki 2 ⅞ og heldur ekki 33 ⅗ til að það sé á hreinu.
 Hlutföllin eru 2:3 vatn á móti hveiti.
 Hlutföllin eru 2,5:1 vatn á móti hveiti.
 
@@ -405,7 +408,7 @@ Lögnin var 10A, en ég átti 16A tengil.
 
 Ég bý í 52°22'N 3°54'E, Húsagötu 15, 108 Rvk., íbúð 104, Þjóðvegi 66
 Ég bý í 109 Reykjavík
-Ég bý í búð 201
+Ég bý í íbúð 201
 Ég bý á Lækjartorgi 3a
 Ég bý á Lækjartorgi 3l
 Húsið er á Lækjartorgi 13A en líka Hlemmi 23f.
@@ -418,7 +421,7 @@ Maður var lagður inn á deild 33C eftir handtöku á Bárugötu 14a þann nít
 Ég keypti A4.
 
 Pin-númerið er 0000.
-CCV-númerið er 000.
+CVV-númerið er 000.
 Kreditkortanúmerið er 0000-0000-0000-0000.
 Kreditkortanúmerið er 0000 0000 0000 0000.
 
@@ -481,6 +484,8 @@ Hann er helv… leiðindagaur.
 
 Þetta er langdregið……………
 Þetta er langdregið............
+Þetta er langdregið.............
+Þetta er langdregið..............
 
 Hér er tösku- og hanskaframleiðsla.
 Hér er tösku- og hanskaframleiðsla.
