@@ -1092,12 +1092,15 @@ def parse_particles(token_stream, options):
                 token = TOK.Telno(w, telno)
                 next_token = next(token_stream)
 
-            # Coalesce percentages into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt == "%":
+            # Coalesce percentages or promilles into a single token
+            if next_token.kind == TOK.PUNCTUATION and next_token.txt in ("%", "‰"):
                 if token.kind == TOK.NUMBER:
-                    # Percentage: convert to a percentage token
+                    # Percentage: convert to a single 'tight' percentage token
                     # In this case, there are no cases and no gender
-                    token = TOK.Percent(token.txt + "%", token.val[0])
+                    sign = next_token.txt
+                    # Store promille as one-tenth of a percentage
+                    factor = 1.0 if sign == "%" else 0.1
+                    token = TOK.Percent(token.txt + sign, token.val[0] * factor)
                     next_token = next(token_stream)
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
