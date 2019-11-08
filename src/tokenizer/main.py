@@ -87,6 +87,10 @@ group.add_argument(
     "--json",
     help="Output one token per line in JSON format", action="store_true"
 )
+group.add_argument(
+    "--normalize",
+    help="Normalize punctuation", action="store_true"
+)
 
 
 def main():
@@ -118,7 +122,14 @@ def main():
             return t.val[0]
         if t.kind == TOK.S_BEGIN:
             return None
+        if t.kind == TOK.PUNCTUATION:
+            return quote(t.val[1]) if quote_word else t.val[1]
         return t.val
+
+    if args.normalize:
+        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+    else:
+        to_text = lambda t: t.txt
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(',', ':'))
@@ -150,8 +161,10 @@ def main():
                 if curr_sent:
                     print(" ".join(curr_sent), file=args.outfile)
                     curr_sent = []
-            elif t.txt:
-                curr_sent.append(t.txt)
+            else:
+                txt = to_text(t)
+                if txt:
+                    curr_sent.append(txt)
 
     if curr_sent:
         print(" ".join(curr_sent), file=args.outfile)

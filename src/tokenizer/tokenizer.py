@@ -142,16 +142,18 @@ class TOK:
     # Token constructors
 
     @staticmethod
-    def Punctuation(w, sf):
+    def Punctuation(w, normalized=None):
         tp = TP_CENTER  # Default punctuation type
-        if sf:          # Standard/normalized form
-            if sf[0] in LEFT_PUNCTUATION:
+        if normalized is None:
+            normalized = w
+        if normalized and len(normalized) == 1:
+            if normalized in LEFT_PUNCTUATION:
                 tp = TP_LEFT
-            elif sf[0] in RIGHT_PUNCTUATION:
+            elif normalized in RIGHT_PUNCTUATION:
                 tp = TP_RIGHT
-            elif sf[0] in NONE_PUNCTUATION:
+            elif normalized in NONE_PUNCTUATION:
                 tp = TP_NONE
-        return Tok(TOK.PUNCTUATION, w, (tp, sf))
+        return Tok(TOK.PUNCTUATION, w, (tp, normalized))
 
     @staticmethod
     def Time(w, h, m, s):
@@ -555,8 +557,6 @@ def parse_tokens(txt, options):
     for w in gen(txt, replace_composite_glyphs):
         # Handle each sequence of non-whitespace characters
 
-        qmark = False
-
         if not w:
             # Signal the presence of an empty line, which splits sentences
             yield TOK.Split_Sentence()
@@ -583,37 +583,31 @@ def parse_tokens(txt, options):
                 yield TOK.Punctuation(w[0], "„")
                 if w[1:-1].isalpha():
                     yield TOK.Word(w[1:-1], None)
-                    # yield TOK.Punctuation("“")
-                    yield TOK.Punctuation(w[-1], "“")
+                    yield TOK.Punctuation(w[-1], normalized="“")
                     continue
                 # w = w[1:-1] + "“"
                 w = w[1:] # TODO LAGA sleppa þessu??
-                qmark = True
             elif w[0] in SQUOTES and w[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("‚")
                 yield TOK.Punctuation(w[0], "‚")
                 if w[1:-1].isalpha():
                     yield TOK.Word(w[1:-1], None)
-                    # yield TOK.Punctuation("‘")
-                    yield TOK.Punctuation(w[-1], "‘")
+                    yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
                 # w = w[1:-1] + "‘"
                 w = w[1:]
-                qmark = True
 
         # TODO STILLING Hér er önnur möguleg gæsalappastilling.
         # Hér eru gæsalappir í upphafi setningar.
         if len(w) > 1:
             if w[0] in DQUOTES:
                 # Convert simple quotes to proper opening quotes
-                # yield TOK.Punctuation("„")
-                yield TOK.Punctuation(w[0], "„")
+                yield TOK.Punctuation(w[0], normalized="„")
                 w = w[1:]
             elif w[0] in SQUOTES:
                 # Convert simple quotes to proper opening quotes
-                # yield TOK.Punctuation("‚")
-                yield TOK.Punctuation(w[0], "‚")
+                yield TOK.Punctuation(w[0], normalized="‚")
                 w = w[1:]
 
         while w:
@@ -622,70 +616,40 @@ def parse_tokens(txt, options):
             while w and w[0] in PUNCTUATION:
                 ate = True
                 lw = len(w)
-                # TODO STILLING þremur punktum breytt í þrípunkt og klippt framan af tóka
                 if w.startswith("[...]"):
-                    # yield TOK.Punctuation("[…]")
-                    yield TOK.Punctuation("[...]", "[…]")
+                    yield TOK.Punctuation("[...]", normalized="[…]")
                     w = w[5:]
                 elif w.startswith("[…]"):
-                    # yield TOK.Punctuation("[…]")
-                    yield TOK.Punctuation("[…]", "[…]")
+                    yield TOK.Punctuation("[…]")
                     w = w[3:]
-                # TODO STILLING þremur stökum punktum breytt í þrípunkt
                 elif w.startswith("..."):
                     # Treat ellipsis as one piece of punctuation
-                    # yield TOK.Punctuation("…")
                     dots = "..."
                     wdots = w[3:]
-                    while True:
-                        if not wdots:
-                            break
-                        if wdots[0] == ".":
-                            dots = dots + w[0]
-                            if not wdots[1:]:
-                                break
-                            wdots = wdots[1:]
-                        else:
-                            break
-                    if wdots == ".":
-                        dots = dots + wdots
-                        wdots = ""
-                    yield TOK.Punctuation(dots, "…")
+                    while wdots.startswith("."):
+                        dots += "."
+                        wdots = wdots[1:]
+                    yield TOK.Punctuation(dots, normalized="…")
                     w = wdots
                 elif w.startswith("…"):
                     # Treat ellipsis as one piece of punctuation
-                    # yield TOK.Punctuation("…")
                     dots = "…"
                     wdots = w[1:]
-                    while True:
-                        if not wdots:
-                            break
-                        if wdots[0] == "…":
-                            dots = dots + w[0]
-                            if not wdots[1:]:
-                                break
-                            wdots = wdots[1:]
-                        else:
-                            break
-                    if wdots == "…":
-                        dots = dots + wdots
-                        wdots = ""
-                    yield TOK.Punctuation(dots, "…")
+                    while wdots.startswith("…"):
+                        dots += "…"
+                        wdots = wdots[1:]
+                    yield TOK.Punctuation(dots, normalized="…")
                     # TODO LAGA Hér ætti að safna áfram.
                     w = wdots
-
-
                 # TODO STILLING Was at the end of a word or by itself, should be ",".
                 # Won't correct automatically, check for M6
                 elif w == ",,":
-                    # yield TOK.Punctuation(",")
-                    yield TOK.Punctuation(",,", ",")
+                    yield TOK.Punctuation(",,", normalized=",")
                     w = ""
                 # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
                 elif w.startswith(",,"):
                     # Probably an idiot trying to type opening double quotes with commas
-                    # yield TOK.Punctuation("„")
-                    yield TOK.Punctuation(",,", "„")
+                    yield TOK.Punctuation(",,", normalized="„")
                     w = w[2:]
                 elif lw == 2 and (w == "[[" or w == "]]"):
                     # Begin or end paragraph marker
@@ -697,8 +661,7 @@ def parse_tokens(txt, options):
                 # TODO STILLING Öllum bandstrikum varpað í það sama
                 elif w[0] in HYPHENS:
                     # Represent all hyphens the same way
-                    # yield TOK.Punctuation(HYPHEN)
-                    yield TOK.Punctuation(w[0], HYPHEN)
+                    yield TOK.Punctuation(w[0], normalized=HYPHEN)
                     w = w[1:]
                     # Any sequence of hyphens is treated as a single hyphen
                     # TODO LAGA Took this out, check if makes sense
@@ -707,23 +670,20 @@ def parse_tokens(txt, options):
                 # TODO STILLING gæsalappir
                 elif lw == 1 and w in DQUOTES:
                     # Convert to a proper closing double quote
-                    # yield TOK.Punctuation("“")
-                    yield TOK.Punctuation(w, "“")
+                    yield TOK.Punctuation(w, normalized="“")
                     w = ""
-                    qmark = False
                 # TODO STILLING gæsalappir
                 elif lw == 1 and w in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
                     # yield TOK.Punctuation("‘")
-                    yield TOK.Punctuation(w, "‘")
+                    yield TOK.Punctuation(w, normalized="‘")
                     w = ""
-                    qmark = False
                 elif lw > 1 and w.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
                     break
                 else:
-                    yield TOK.Punctuation(w[0], w[0])
+                    yield TOK.Punctuation(w[0])
                     w = w[1:]
 
             if w and "@" in w:
@@ -889,7 +849,7 @@ def parse_tokens(txt, options):
                     # We have a lowercase word immediately followed by a period
                     # and an uppercase word
                     yield TOK.Word(a[0])
-                    yield TOK.Punctuation(".", ".")
+                    yield TOK.Punctuation(".")
                     yield TOK.Word(a[1])
                     w = None
                 else:
@@ -907,21 +867,18 @@ def parse_tokens(txt, options):
                         # might be a continuation ('fjármála- og efnahagsráðuneyti')
                         # Yield a special hyphen as a marker
                         # yield TOK.Punctuation(COMPOSITE_HYPHEN)
-                        yield TOK.Punctuation(w[0], COMPOSITE_HYPHEN)
+                        yield TOK.Punctuation(w[0], normalized=COMPOSITE_HYPHEN)
                         w = w[1:]
-                    # TODO STILLING Gæsalappir
-                    if qmark and w and w[:-1].isalpha():
-                        yield TOK.Word(w[:-1])
-                        w = w[-1:]
-                        if w in SQUOTES:
-                            # yield TOK.Punctuation("‘")
-                            yield TOK.Punctuation(w, "‘")
-                            w = ""
-                        elif w in DQUOTES:
-                            # yield TOK.Punctuation("“")
-                            yield TOK.Punctuation(w, "“")
-                            w = ""
-                        qmark = False
+
+            if w:
+                if w[0] in SQUOTES:
+                    yield TOK.Punctuation(w[0], normalized="‘")
+                    w = w[1:]
+                    ate = True
+                elif w[0] in DQUOTES:
+                    yield TOK.Punctuation(w[0], normalized="“")
+                    w = w[1:]
+                    ate = True
 
             if not ate:
                 # Ensure that we eat everything, even unknown stuff
@@ -930,18 +887,6 @@ def parse_tokens(txt, options):
                 yield TOK.Unknown(w[0])
                 w = w[1:]
 
-            # We have eaten something from the front of the raw token.
-            # Check whether we're left with a simple double quote,
-            # in which case we convert it to a proper closing double quote
-            if w:
-                # TODO STILLING gæsalappir
-                if w[0] in DQUOTES:
-                    # w = "“" + w[1:]
-                    pass
-                # TODO STILLING gæsalappir
-                elif w[0] in SQUOTES:
-                    # w = "‘" + w[1:]
-                    pass
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
 
@@ -989,7 +934,6 @@ def parse_particles(token_stream, options):
             next_token = next(token_stream)
             # Make the lookahead checks we're interested in
             clock = False
-            # TODO STILLING Sleppa að sameina? Ath. token.val[1], normalized form.
             # Check for currency symbol followed by number, e.g. $10
             if token.txt in CURRENCY_SYMBOLS:
                 for symbol, currabbr in items(CURRENCY_SYMBOLS):
@@ -1013,7 +957,7 @@ def parse_particles(token_stream, options):
                     # separately
                     y, m, d = token.val
                     yield TOK.Daterel(token.txt[:-1], y, m, d)
-                    token = TOK.Punctuation(".", ".")
+                    token = TOK.Punctuation(".")
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
@@ -1163,7 +1107,7 @@ def parse_particles(token_stream, options):
                     next_token = next(token_stream)
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt == ".":
+            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] == ".":
                 if (
                     token.kind == TOK.NUMBER
                     and not ("." in token.txt or "," in token.txt)
@@ -1710,7 +1654,7 @@ def parse_phrases_2(token_stream):
             ):
                 # Accumulate the prefix in tq
                 tq.append(token)
-                tq.append(TOK.Punctuation(next_token.txt, HYPHEN))
+                tq.append(TOK.Punctuation(next_token.txt, normalized=HYPHEN))
                 # Check for optional comma after the prefix
                 comma_token = next(token_stream)
                 if comma_token.kind == TOK.PUNCTUATION and comma_token.val[1] == ",":
@@ -1919,3 +1863,14 @@ def correct_spaces(s):
             r.append(w)
         last = this
     return "".join(r)
+
+
+def detokenize(tokens, *, normalize=False):
+    """ Utility function to convert an iterable of tokens back
+        to a correctly spaced string. If normalized is True,
+        punctuation is normalized before assembling the string. """
+    if normalize:
+        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+    else:
+        to_text = lambda t: t.txt
+    return correct_spaces(" ".join(filter(None, map(to_text, tokens))))

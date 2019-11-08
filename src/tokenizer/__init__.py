@@ -31,7 +31,7 @@ from __future__ import absolute_import
 
 from .tokenizer import (
     TOK, Tok, tokenize, tokenize_without_annotation, split_into_sentences,
-    parse_tokens, correct_spaces, mark_paragraphs, paragraphs,
+    parse_tokens, correct_spaces, detokenize, mark_paragraphs, paragraphs,
     TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD,
     EN_DASH, EM_DASH,
     CONVERT_NUMBERS,

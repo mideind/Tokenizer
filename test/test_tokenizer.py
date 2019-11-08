@@ -526,9 +526,13 @@ def test_single_tokens():
                     + " "
                     + repr(TOK.descr[check.kind])
                 )
-                assert tok.txt == check.txt, tok.txt + ": " + check.txt
+                if check.kind == TOK.PUNCTUATION and check.val is None:
+                    # Check normalized form of token
+                    assert tok.val[1] == check.txt, tok.val[1] + " != " + check.txt
+                else:
+                    assert tok.txt == check.txt, tok.txt + " != " + check.txt
                 if check.val is not None:
-                    assert tok.val == check.val, repr(tok.val) + ": " + repr(check.val)
+                    assert tok.val == check.val, repr(tok.val) + " != " + repr(check.val)
 
     run_test(TEST_CASES)
     run_test(
@@ -904,19 +908,19 @@ def test_correction():
     ]
     for sent, correct in SENT:
         s = t.tokenize(sent)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_KLUDGY_ORDINALS_MODIFY:
         s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_KLUDGY_ORDINALS_TRANSLATE:
         s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_CONVERT_NUMBERS:
         s = t.tokenize(sent, convert_numbers=True)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
 
 
@@ -963,7 +967,7 @@ def test_abbrev():
             txt="Mbl",
             val=[("Morgunblaðið", 0, "hk", "skst", "Mbl", "-")],
         ),
-        Tok(kind=TOK.PUNCTUATION, txt=".", val=3),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
