@@ -1865,7 +1865,7 @@ def correct_spaces(s):
     return "".join(r)
 
 
-def detokenize(tokens, *, normalize=False):
+def detokenize(tokens, normalize=False):
     """ Utility function to convert an iterable of tokens back
         to a correctly spaced string. If normalized is True,
         punctuation is normalized before assembling the string. """
