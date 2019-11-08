@@ -1017,6 +1017,22 @@ def test_split_sentences():
     assert sents[2] == "200.000 manns mótmæltu"
     assert sents[3] == "Hér byrjar ný setning"
 
+    # Test the normalize option
+    s = (
+        "Hún sagði: \"Þú ert leiðinlegur\"! Hann svaraði engu -- "
+        "en hætti við ferðina.  \n"
+    )
+    g = t.split_into_sentences(s, normalize=True)
+    sents = list(g)
+    assert len(sents) == 2
+    assert sents[0] == "Hún sagði : „ Þú ert leiðinlegur “ !"
+    assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
+    g = t.split_into_sentences(s, normalize=False)
+    sents = list(g)
+    assert len(sents) == 2
+    assert sents[0] == "Hún sagði : \" Þú ert leiðinlegur \" !"
+    assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
+
 
 if __name__ == "__main__":
 

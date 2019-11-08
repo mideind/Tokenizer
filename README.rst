@@ -94,13 +94,20 @@ line ends with a single newline character (ASCII LF, ``chr(10)``, ``"\n"``).
 Within each line, tokens are separated by spaces.
 
 The following (mutually exclusive) options can be specified
-on the command line, causing the tokenizer to do deep tokenization:
+on the command line:
 
-+---------------+---------------------------------------------------+
-| ``--csv``     | Output token objects in CSV format, one per line  |
-+---------------+---------------------------------------------------+
-| ``--json``    | Output token objects in JSON format, one per line |
-+---------------+---------------------------------------------------+
++-----------------+---------------------------------------------------+
+| ``--csv``       | Deep tokenization. Output token objects in CSV    |
+|                 | format, one per line.                             |
++-----------------+---------------------------------------------------+
+| ``--json``      | Deep tokenization. Output token objects in JSON   |
+|                 | format, one per line.                             |
++-----------------+---------------------------------------------------+
+| ``--normalize`` | Normalize punctuation, causing e.g. quotes to be  |
+|                 | output in Icelandic form and hyphens to be        |
+|                 | regularized. This option is only applicable to    |
+|                 | shallow tokenization.                             |
++-----------------+---------------------------------------------------+
 
 Type ``tokenize -h`` or ``tokenize --help`` to get a short help message.
 
@@ -187,11 +194,11 @@ Output::
     WORD: 'laga'
     WORD: 'nr.' [('númer', 0, 'hk', 'skst', 'nr.', '-')]
     NUMBER: '10' (10, None, None)
-    PUNCTUATION: '/' 4
+    PUNCTUATION: '/' (4, '/')
     YEAR: '2007' 2007
     WORD: 'þann'
     DATEABS: '3. janúar 2010' (2010, 1, 3)
-    PUNCTUATION: '.' 3
+    PUNCTUATION: '.' (3, '.')
     END SENT: '-'
 
 Note the following:
@@ -259,6 +266,10 @@ This function returns a Python *generator* of strings, yielding a string
 for each sentence in the input. Within a sentence, the tokens are
 separated by spaces.
 
+You can pass the option ``normalize=True`` to the function if you want
+the normalized form of punctuation tokens, such as Icelandic single and
+double quotes, and regularized hyphens.
+
 The ``tokenizer.split_into_sentences()`` function is typically called
 in a ``for`` loop:
 
@@ -279,15 +290,32 @@ in a ``for`` loop:
 The ``correct_spaces()`` function
 ---------------------------------
 
-Tokenizer also contains the utility function
-``tokenizer.correct_spaces(text)``.
-This function returns a string after splitting it up and re-joining
-it with correct whitespace around punctuation tokens. Example::
+The ``tokenizer.correct_spaces(text)`` function returns a string after
+splitting it up and re-joining it with correct whitespace around
+punctuation tokens. Example::
 
+    >>> import tokenizer
     >>> tokenizer.correct_spaces(
     ... "Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100  /  2  =   50"
     ... )
     'Frétt dagsins: Jón, Friðgeir og Páll! 100/2 = 50'
+
+
+The ``detokenize()`` function
+---------------------------------
+
+The ``tokenizer.detokenize(tokens, normalize=False)`` function
+takes an iterable of token objects and returns a corresponding, correctly
+spaced text string, composed from the tokens' text. If the
+``normalize`` parameter is set to ``True``,
+the function uses the normalized form of any punctuation tokens, such
+as proper Icelandic single and double quotes instead of English-type
+quotes. Example::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: „Þú ert ágæt!“."))
+    >>> tokenizer.detokenize(toklist, normalize=True)
+    'Hann sagði: „Þú ert ágæt!“.'
 
 
 Tokenization options
@@ -472,9 +500,6 @@ with the following exceptions:
   with vowels to form single code points for the Icelandic letters
   á, é, í, ó, ú, ý and ö, in both lower and upper case.
 
-* It converts single and double quotes to the correct Icelandic
-  ones (i.e. „these“ or ‚these‘).
-
 * If the appropriate options are specified (see above), it converts
   kludgy ordinals (*3ja*) to proper ones (*þriðja*), and English-style
   thousand and decimal separators to Icelandic ones
@@ -486,7 +511,8 @@ abbreviation token's ``txt`` field. A sentence ending in *o.s.frv.*
 will thus end with two tokens, the next-to-last one being the tuple
 ``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted
 period in the ``txt`` field - and the last one being
-``(TOK.PUNCTUATION, ".", 3)`` (the 3 is explained below).
+``(TOK.PUNCTUATION, ".", (3, "."))`` (this tuple form is further
+explained below).
 
 
 The ``val`` field
@@ -495,14 +521,21 @@ The ``val`` field
 The ``val`` field contains auxiliary information, corresponding to
 the token kind, as follows:
 
-- For ``TOK.PUNCTUATION``, the ``val`` field specifies the whitespace
-  normally found around the symbol in question::
+- For ``TOK.PUNCTUATION``, the ``val`` field contains a tuple with
+  two items: ``(whitespace, normalform)``. The first item (``token.val[0]``)
+  specifies the whitespace normally found around the symbol in question,
+  as an integer::
 
     TP_LEFT = 1   # Whitespace to the left
     TP_CENTER = 2 # Whitespace to the left and right
     TP_RIGHT = 3  # Whitespace to the right
     TP_NONE = 4   # No whitespace
 
+  The second item (``token.val[1]``) contains a normalized representation of the
+  punctuation. For instance, various forms of single and double
+  quotes are represented as Icelandic ones (i.e. „these“ or ‚these‘) in
+  normalized form, and ellipsis ("...") are represented as the single
+  character "…".
 - For ``TOK.TIME``, the ``val`` field contains an
   ``(hour, minute, second)`` tuple.
 - For ``TOK.DATEABS``, the ``val`` field contains a
@@ -587,8 +620,9 @@ Changelog
 ---------
 
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
-  function; removed ``convert_telno`` option; splitting of coalesced tokens
-  made more robust; added ``TOK.SSN`` and ``TOK.MOLECULE``
+  and ``detokenize()`` functions; removed ``convert_telno`` option; splitting of
+  coalesced tokens made more robust; added ``TOK.SSN`` and ``TOK.MOLECULE``
+  token kinds
 * Version 1.4.0: Added the ``**options`` parameter to the
   ``tokenize()`` function, giving control over the handling of numbers,
   telephone numbers, and 'kludgy' ordinals

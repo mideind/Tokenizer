@@ -1747,6 +1747,10 @@ def split_into_sentences(text_or_gen, **options):
         a text string or a generator of lines of text (such as a file).
         This function returns a generator of strings, where each string
         is a sentence, and tokens are separated by spaces. """
+    if options.pop("normalize", False):
+        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+    else:
+        to_text = lambda t: t.txt
     curr_sent = []
     for t in tokenize_without_annotation(text_or_gen, **options):
         if t.kind in TOK.END:
@@ -1754,8 +1758,10 @@ def split_into_sentences(text_or_gen, **options):
             if curr_sent:
                 yield " ".join(curr_sent)
                 curr_sent = []
-        elif t.txt:
-            curr_sent.append(t.txt)
+        else:
+            txt = to_text(t)
+            if txt:
+                curr_sent.append(txt)
     if curr_sent:
         yield " ".join(curr_sent)
 
