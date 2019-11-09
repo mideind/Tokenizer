@@ -57,7 +57,7 @@ def read(*names, **kwargs):
 
 setup(
     name="tokenizer",
-    version="1.4.1",
+    version="2.0.0",
     license="MIT",
     description="A tokenizer for Icelandic text",
     long_description=u"{0}\n{1}".format(
@@ -100,4 +100,11 @@ setup(
     ],
     keywords=["nlp", "tokenizer", "icelandic"],
     install_requires=[],
+    # Set up a tokenize command (tokenize.exe on Windows),
+    # which calls main() in src/tokenizer/main.py
+    entry_points={
+        'console_scripts': [
+            'tokenize=tokenizer.main:main',
+        ],
+    },
 )

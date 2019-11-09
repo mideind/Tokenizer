@@ -85,6 +85,10 @@ class TOK:
     NUMWLETTER = 23
     DOMAIN = 24
     HASHTAG = 25
+    MOLECULE = 26  # Chemical compound ('H2SO4')
+    SSN = 27  # Social security number ('kennitala')
+
+    S_SPLIT = 10000  # Sentence split token
 
     P_BEGIN = 10001  # Paragraph begin
     P_END = 10002  # Paragraph end
@@ -94,9 +98,9 @@ class TOK:
 
     X_END = 12001  # End sentinel
 
-    END = frozenset((P_END, S_END, X_END))
-    TEXT = frozenset((WORD, PERSON, ENTITY))
-    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY))
+    END = frozenset((P_END, S_END, X_END, S_SPLIT))
+    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
+    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE))
 
     # Token descriptive names
 
@@ -126,6 +130,9 @@ class TOK:
         EMAIL: "EMAIL",
         ORDINAL: "ORDINAL",
         ENTITY: "ENTITY",
+        MOLECULE: "MOLECULE",
+        SSN: "SSN",
+        S_SPLIT: "SPLIT SENT",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
         S_BEGIN: "BEGIN SENT",
@@ -135,16 +142,18 @@ class TOK:
     # Token constructors
 
     @staticmethod
-    def Punctuation(w):
+    def Punctuation(w, normalized=None):
         tp = TP_CENTER  # Default punctuation type
-        if w:
-            if w[0] in LEFT_PUNCTUATION:
+        if normalized is None:
+            normalized = w
+        if normalized and len(normalized) == 1:
+            if normalized in LEFT_PUNCTUATION:
                 tp = TP_LEFT
-            elif w[0] in RIGHT_PUNCTUATION:
+            elif normalized in RIGHT_PUNCTUATION:
                 tp = TP_RIGHT
-            elif w[0] in NONE_PUNCTUATION:
+            elif normalized in NONE_PUNCTUATION:
                 tp = TP_NONE
-        return Tok(TOK.PUNCTUATION, w, tp)
+        return Tok(TOK.PUNCTUATION, w, (tp, normalized))
 
     @staticmethod
     def Time(w, h, m, s):
@@ -179,8 +188,10 @@ class TOK:
         return Tok(TOK.YEAR, w, n)
 
     @staticmethod
-    def Telno(w):
-        return Tok(TOK.TELNO, w, None)
+    def Telno(w, telno):
+        # The w parameter is the original token text,
+        # while telno has the standard form 'DDD-DDDD' (with hyphen)
+        return Tok(TOK.TELNO, w, telno)
 
     @staticmethod
     def Email(w):
@@ -229,6 +240,14 @@ class TOK:
         return Tok(TOK.HASHTAG, w, None)
 
     @staticmethod
+    def Ssn(w):
+        return Tok(TOK.SSN, w, None)
+
+    @staticmethod
+    def Molecule(w):
+        return Tok(TOK.MOLECULE, w, None)
+
+    @staticmethod
     def Measurement(w, unit, val):
         return Tok(TOK.MEASUREMENT, w, (unit, val))
 
@@ -272,10 +291,14 @@ class TOK:
     def End_Sentinel():
         return Tok(TOK.X_END, None, None)
 
+    @staticmethod
+    def Split_Sentence():
+        return Tok(TOK.S_SPLIT, None, None)
+
 
 def is_valid_date(y, m, d):
     """ Returns True if y, m, d is a valid date """
-    if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= 31):
+    if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
         try:
             datetime.datetime(year=y, month=m, day=d)
             return True
@@ -284,52 +307,75 @@ def is_valid_date(y, m, d):
     return False
 
 
-def parse_digits(w, convert_numbers, convert_telnos):
+def parse_digits(w, convert_numbers):
     """ Parse a raw token starting with a digit """
-    s = re.match(r"\d{1,2}:\d\d:\d\d", w)
-    # TODO STILLING Klukka sameinuð
+    s = re.match(r"\d{1,2}:\d\d:\d\d(?!\d)", w)
     if s:
         # Looks like a 24-hour clock, H:M:S
-        w = s.group()
-        p = w.split(":")
+        g = s.group()
+        p = g.split(":")
         h = int(p[0])
         m = int(p[1])
         sec = int(p[2])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
-            return TOK.Time(w, h, m, sec), s.end()
-    s = re.match(r"\d{1,2}:\d\d", w)
+            return TOK.Time(g, h, m, sec), s.end()
+    s = re.match(r"\d{1,2}:\d\d(?!\d)", w)
     if s:
         # Looks like a 24-hour clock, H:M
-        w = s.group()
-        p = w.split(":")
+        g = s.group()
+        p = g.split(":")
         h = int(p[0])
         m = int(p[1])
         if (0 <= h < 24) and (0 <= m < 60):
-            return TOK.Time(w, h, m, 0), s.end()
-    s = re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}", w) or re.match(
-        r"\d{1,2}/\d{1,2}/\d{2,4}", w
+            return TOK.Time(g, h, m, 0), s.end()
+    s = (
+        re.match(r"\d{4}-\d\d-\d\d(?!\d)", w) or
+        re.match(r"\d{4}/\d\d/\d\d(?!\d)", w)
     )
-    # TODO STILLING Sameina í dagsetningu, bara fara í ef stilling er valin?
     if s:
-        # Looks like a date
+        # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
+        g = s.group()
+        if "-" in g:
+            p = g.split("-")
+        else:
+            p = g.split("/")
+        y = int(p[0])
+        m = int(p[1])
+        d = int(p[2])
+        if is_valid_date(y, m, d):
+            return TOK.Date(g, y, m, d), s.end()
+    s = (
+        re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or
+        re.match(r"\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w) or
+        re.match(r"\d{1,2}-\d{1,2}-\d{2,4}(?!\d)", w)
+    )
+    if s:
+        # Looks like a date with day, month and year parts
         g = s.group()
         if "/" in g:
             p = g.split("/")
+        elif "-" in g:
+            p = g.split("-")
         else:
             p = g.split(".")
         y = int(p[2])
-        # noinspection PyAugmentAssignment
         if y <= 99:
-            y = 2000 + y
+            y += 2000
         m = int(p[1])
         d = int(p[0])
-        # TODO STILLING Þarf líka sérstillingu fyrir að snúa þessu ekki við,
-        # leyfa að standa eins og er
         if m > 12 >= d:
-            # Probably wrong way around
+            # Probably wrong way (i.e. U.S. American way) around
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
+    s = re.match(r"(\d{1,2})\.(\d{1,2})\.(?!\d)", w)
+    if s:
+        # A date in the form dd.mm.
+        g = s.group()
+        d = int(s.group(1))
+        m = int(s.group(2))
+        if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
+            return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
     s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
@@ -337,21 +383,20 @@ def parse_digits(w, convert_numbers, convert_telnos):
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
         g = s.group()
         l = g[-1:]
-        # TODO STILLING Ætti að klippa þetta í sundur?
         # Only match if the single character is not a
         # unit of measurement (e.g. 'A', 'l', 'V')
-        if l not in SI_UNITS.keys():
+        if l not in SI_UNITS_SET:
             n = int(g[:-1])
             return TOK.NumberWithLetter(g, n, l), s.end()
-    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w)
+    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
-        # TODO STILLING Ætti að klippa þetta í sundur?
+        g = s.group()
         ln = s.group(1)
         vf = s.group(2)
         val = float(ln) + unicodedata.numeric(vf)
-        return TOK.Number(w, val), s.end()
-    s = re.match(r"\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
+        return TOK.Number(g, val), s.end()
+    s = re.match(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
@@ -359,15 +404,15 @@ def parse_digits(w, convert_numbers, convert_telnos):
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         n = re.sub(",", ".", n)  # Convert decimal comma to point
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"\d+(\.\d\d\d)+", w)
+    s = re.match(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)", w)
     if s:
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
         g = s.group()
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         return TOK.Number(g, int(n)), s.end()
-    s = re.match(r"\d{1,2}/\d{1,2}", w)
-    if s and (s.end() >= len(w) or w[s.end()] not in DIGITS):
+    s = re.match(r"\d{1,2}/\d{1,2}(?!\d)", w)
+    if s:
         # Looks like a date (and not something like 10/2007)
         g = s.group()
         p = g.split("/")
@@ -378,76 +423,121 @@ def parse_digits(w, convert_numbers, convert_telnos):
             and p[1][0] != "0"
             and ((d <= 5 and m <= 6) or (d == 1 and m <= 10))
         ):
-            # TODO STILLING ?
             # This is probably a fraction, not a date
             # (1/2, 1/3, 1/4, 1/5, 1/6, 2/3, 2/5, 5/6 etc.)
             # Return a number
             return TOK.Number(g, float(d) / m), s.end()
-        # TODO STILLING  Velja að snúa þessu við
         if m > 12 >= d:
             # Date is probably wrong way around
             m, d = d, m
-        if (1 <= d <= 31) and (1 <= m <= 12):
+        if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             # Looks like a (roughly) valid date
-            return TOK.Date(g, 0, m, d), s.end()
-    s = re.match(r"\d\d\d\d$", w) or re.match(r"\d\d\d\d[^\d]", w)
+            return TOK.Daterel(g, y=0, m=m, d=d), s.end()
+    s = re.match(r"\d\d\d\d(?!\d)", w)
     if s:
-        n = int(w[0:4])
+        n = int(s.group())
         if 1776 <= n <= 2100:
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
-    s = re.match(r"\d\d\d-\d\d\d\d", w)
-    if s and s.group()[0] in TELNO_PREFIXES:
-        # Looks like a telephone number
-        # TODO STILLING Hér þarf að vera hægt að velja um
-        # að hafa bandstrikið í númerinu - convert_telnos?
-        return TOK.Telno(s.group()), s.end()
-    s = re.match(r"\d\d\d\d\d\d\d", w)
-    if s and s.group()[0] in TELNO_PREFIXES:
+    s = re.match(r"\d{6}\-\d{4}(?!\d)", w)
+    if s:
+        # Looks like a social security number
+        g = s.group()
+        if valid_ssn(g):
+            return TOK.Ssn(w[0:11]), 11
+    s = re.match(r"\d\d\d\-\d\d\d\d(?!\d)", w)
+    if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = s.group()
-        # TODO STILLING  Hér er stillingin convert_telnos notuð
-        if convert_telnos:
-            telno = telno[:3] + "-" + telno[3:]
-        return TOK.Telno(telno), s.end()
+        return TOK.Telno(telno, telno), 8
+    s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
+    if s and w[0] in TELNO_PREFIXES:
+        # Looks like a telephone number
+        telno = w[0:3] + "-" + w[3:7]
+        return TOK.Telno(w[0:7], telno), 7
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
     if s:
         # Some kind of ordinal chapter number: 2.5.1 etc.
         # (we need to check this before numbers with decimal points)
         g = s.group()
+        # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
         n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
         return TOK.Ordinal(g, int(n)), s.end()
-    s = re.match(r"\d+(,\d\d\d)*\.\d+", w)
+    s = re.match(r"[\+\-]?\d+(,\d\d\d)*\.\d+", w)
     if s:
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
-        # TODO STILLING  Hér er stillingin convert_numbers notuð
+        # !!! TODO: May want to mark this as an error
         if convert_numbers:
             g = re.sub(",", "x", g)  # Change thousands separator to 'x'
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
             g = re.sub("x", ".", g)  # Change 'x' to '.'
         return TOK.Number(g, float(n)), s.end()
-    s = re.match(r"\d+(,\d\d\d)*", w)
+    s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
     if s:
         # Integer, possibly with a ',' thousands separator
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
-        # TODO STILLING Hér er stillingin convert_numbers notuð.
-        # Þarf líka að geta merkt sem villu.
+        # !!! TODO: May want to mark this as an error
         if convert_numbers:
             g = re.sub(",", ".", g)  # Change thousands separator to a dot
         return TOK.Number(g, int(n)), s.end()
     # Strange thing
-    # TODO STILLING Setja villu í tókann?
+    # !!! TODO: May want to mark this as an error
     return TOK.Unknown(w), len(w)
 
 
-def prepare(txt):
-    """ Convert txt to Unicode (on Python 2.7) and replace composite glyphs
-        with single code points """
-    return UNICODE_REGEX.sub(
-        lambda match: UNICODE_REPLACEMENTS[match.group(0)], make_str(txt)
+def gen_from_string(txt, replace_composite_glyphs=True):
+    """ Generate rough tokens from a string """
+    # Convert txt to Unicode (on Python 2.7)
+    if replace_composite_glyphs:
+        # Replace composite glyphs with single code points
+        txt = UNICODE_REGEX.sub(
+            lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
+        )
+    # Do a simple split on whitespace and yield the rough tokens
+    for w in txt.split():
+        yield w
+
+
+def gen(text_or_gen, replace_composite_glyphs=True):
+    """ Generate rough tokens from a string or a generator """
+    if text_or_gen is None:
+        return
+    if is_str(text_or_gen):
+        # The parameter is a single string: wrap it in an iterable
+        text_or_gen = [text_or_gen]
+    # Iterate through text_or_gen, which is assumed to yield strings
+    for txt in text_or_gen:
+        txt = txt.strip()
+        if not txt:
+            # Empty line: signal this to the consumer of the generator
+            yield ""
+        else:
+            # Convert to a Unicode string (if Python 2.7)
+            txt = make_str(txt)
+            # Yield the contained rough tokens
+            for w in gen_from_string(txt, replace_composite_glyphs):
+                yield w
+
+
+def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
+    """ Return True if next_token could be ending the current sentence or
+        starting the next one """
+    return (
+        next_token.kind in TOK.END
+        or (
+            # Check whether the next token is an uppercase word, except if
+            # it is a month name (frequently misspelled in uppercase) or
+            # roman numeral, or a currency abbreviation if preceded by a
+            # multiplier (for example þ. USD for thousands of USD)
+            next_token.kind in test_set
+            and next_token.txt[0].isupper()
+            and next_token.txt.lower() not in MONTHS
+            and not RE_ROMAN_NUMERAL.match(next_token.txt)
+            and not (next_token.txt in CURRENCY_ABBREV and multiplier)
+        )
     )
 
 
@@ -456,7 +546,7 @@ def parse_tokens(txt, options):
 
     # Obtain individual flags from the options dict
     convert_numbers = options.get("convert_numbers", False)
-    convert_telnos = options.get("convert_telnos", False)
+    replace_composite_glyphs = options.get("replace_composite_glyphs", True)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
@@ -464,51 +554,56 @@ def parse_tokens(txt, options):
         "handle_kludgy_ordinals", KLUDGY_ORDINALS_PASS_THROUGH
     )
 
-    rough = prepare(txt).split()
-
-    for w in rough:
+    for w in gen(txt, replace_composite_glyphs):
         # Handle each sequence of non-whitespace characters
 
-        qmark = False
+        if not w:
+            # Signal the presence of an empty line, which splits sentences
+            yield TOK.Split_Sentence()
+            continue
 
         if w.isalpha() or w in SI_UNITS:
             # Shortcut for most common case: pure word
             yield TOK.Word(w, None)
             continue
 
+        if w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX:
+            # Sign ('-' or '+') followed by digit: parse as a number
+            t, eaten = parse_digits(w, convert_numbers)
+            yield t
+            w = w[eaten:]
+
         # More complex case of mixed punctuation, letters and numbers
         # TODO STILLING Hér er möguleg gæsalappastilling.
         # Hér eru gæsalappir utan um stakt orð.
-        if len(w) > 2:
+        if len(w) >= 3:
             if w[0] in DQUOTES and w[-1] in DQUOTES:
                 # Convert to matching Icelandic quotes
-                yield TOK.Punctuation("„")
+                # yield TOK.Punctuation("„")
                 if w[1:-1].isalpha():
+                    yield TOK.Punctuation(w[0], "„")
                     yield TOK.Word(w[1:-1], None)
-                    yield TOK.Punctuation("“")
+                    yield TOK.Punctuation(w[-1], normalized="“")
                     continue
-                w = w[1:-1] + "“"
-                qmark = True
             elif w[0] in SQUOTES and w[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
-                yield TOK.Punctuation("‚")
+                # yield TOK.Punctuation("‚")
                 if w[1:-1].isalpha():
+                    yield TOK.Punctuation(w[0], "‚")
                     yield TOK.Word(w[1:-1], None)
-                    yield TOK.Punctuation("‘")
+                    yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
-                w = w[1:-1] + "‘"
-                qmark = True
-
+    
         # TODO STILLING Hér er önnur möguleg gæsalappastilling.
         # Hér eru gæsalappir í upphafi setningar.
         if len(w) > 1:
             if w[0] in DQUOTES:
                 # Convert simple quotes to proper opening quotes
-                yield TOK.Punctuation("„")
+                yield TOK.Punctuation(w[0], normalized="„")
                 w = w[1:]
             elif w[0] in SQUOTES:
                 # Convert simple quotes to proper opening quotes
-                yield TOK.Punctuation("‚")
+                yield TOK.Punctuation(w[0], normalized="‚")
                 w = w[1:]
 
         while w:
@@ -517,26 +612,40 @@ def parse_tokens(txt, options):
             while w and w[0] in PUNCTUATION:
                 ate = True
                 lw = len(w)
-                # TODO STILLING þremur punktum breytt í þrípunkt og klippt framan af tóka
                 if w.startswith("[...]"):
-                    yield TOK.Punctuation("[…]")
+                    yield TOK.Punctuation("[...]", normalized="[…]")
                     w = w[5:]
                 elif w.startswith("[…]"):
                     yield TOK.Punctuation("[…]")
                     w = w[3:]
-                # TODO STILLING þremur stökum punktum breytt í þrípunkt
                 elif w.startswith("..."):
                     # Treat ellipsis as one piece of punctuation
-                    yield TOK.Punctuation("…")
-                    w = w[3:]
+                    dots = "..."
+                    wdots = w[3:]
+                    while wdots.startswith("."):
+                        dots += "."
+                        wdots = wdots[1:]
+                    yield TOK.Punctuation(dots, normalized="…")
+                    w = wdots
+                elif w.startswith("…"):
+                    # Treat ellipsis as one piece of punctuation
+                    dots = "…"
+                    wdots = w[1:]
+                    while wdots.startswith("…"):
+                        dots += "…"
+                        wdots = wdots[1:]
+                    yield TOK.Punctuation(dots, normalized="…")
+                    # TODO LAGA Hér ætti að safna áfram.
+                    w = wdots
                 # TODO STILLING Was at the end of a word or by itself, should be ",".
+                # Won't correct automatically, check for M6
                 elif w == ",,":
-                    yield TOK.Punctuation(",")
+                    yield TOK.Punctuation(",,", normalized=",")
                     w = ""
                 # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
                 elif w.startswith(",,"):
                     # Probably an idiot trying to type opening double quotes with commas
-                    yield TOK.Punctuation("„")
+                    yield TOK.Punctuation(",,", normalized="„")
                     w = w[2:]
                 elif lw == 2 and (w == "[[" or w == "]]"):
                     # Begin or end paragraph marker
@@ -548,23 +657,22 @@ def parse_tokens(txt, options):
                 # TODO STILLING Öllum bandstrikum varpað í það sama
                 elif w[0] in HYPHENS:
                     # Represent all hyphens the same way
-                    yield TOK.Punctuation(HYPHEN)
+                    yield TOK.Punctuation(w[0], normalized=HYPHEN)
                     w = w[1:]
                     # Any sequence of hyphens is treated as a single hyphen
-                    while w and w[0] in HYPHENS:
-                        w = w[1:]
+                    # TODO LAGA Took this out, check if makes sense
+                    # while w and w[0] in HYPHENS:
+                    #     w = w[1:]
                 # TODO STILLING gæsalappir
-                elif lw == 1 and w in DQUOTES:
+                elif w[0] in DQUOTES:
                     # Convert to a proper closing double quote
-                    yield TOK.Punctuation("“")
-                    w = ""
-                    qmark = False
+                    yield TOK.Punctuation(w[0], normalized="“")
+                    w = w[1:]
                 # TODO STILLING gæsalappir
-                elif lw == 1 and w in SQUOTES:
+                elif w[0] in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
-                    yield TOK.Punctuation("‘")
-                    w = ""
-                    qmark = False
+                    yield TOK.Punctuation(w[0], normalized="‘")
+                    w = w[1:]
                 elif lw > 1 and w.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
@@ -573,12 +681,11 @@ def parse_tokens(txt, options):
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
 
-            # TODO STILLING viljum við pikka netföng í sundur?
             if w and "@" in w:
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
                 # even though they're technically allowed according to the RFCs
-                s = re.match(r"^[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"”]+)+", w)
+                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", w)
                 if s:
                     ate = True
                     yield TOK.Email(s.group())
@@ -594,7 +701,6 @@ def parse_tokens(txt, options):
                 yield TOK.Number(w[0], unicodedata.numeric(w[0]))
                 w = w[1:]
 
-            # TODO STILLING Eitthvað hér í sambandi við URL?
             if w and w.startswith(URL_PREFIXES):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
@@ -607,8 +713,7 @@ def parse_tokens(txt, options):
                 ate = True
                 w = endp
 
-            # TODO STILLING myllumerki og samsett orð með myllumerki klippt.
-            if w and len(w) >= 2 and re.search(r"^#\w", w, re.UNICODE):
+            if w and len(w) >= 2 and re.match(r"#\w", w, re.UNICODE):
                 # Handle hashtags. Eat all text up to next punctuation character
                 # so we can handle strings like "#MeToo-hreyfingin" as two words
                 tag = w[:1]
@@ -616,9 +721,7 @@ def parse_tokens(txt, options):
                 while w and w[0] not in PUNCTUATION:
                     tag += w[0]
                     w = w[1:]
-                # TODO STILLING myllumerkið sameinað tölu á eftir;
-                # ætti þetta að vera tveir tókar?
-                if re.search(r"^#\d+$", tag):
+                if re.match(r"#\d+$", tag):
                     # Hash is being used as a number sign, e.g. "#12"
                     yield TOK.Ordinal(tag, int(tag[1:]))
                 else:
@@ -643,7 +746,11 @@ def parse_tokens(txt, options):
                 w = endp
 
             # Numbers or other stuff starting with a digit
-            if w and w[0] in DIGITS:
+            # (eventually prefixed by a '+' or '-')
+            if w and (
+                w[0] in DIGITS_PREFIX
+                or (w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX)
+            ):
                 # Handle kludgy ordinals: '3ji', '5ti', etc.
                 for key, val in items(ORDINAL_ERRORS):
                     if w.startswith(key):
@@ -672,20 +779,37 @@ def parse_tokens(txt, options):
                         break  # This skips the for loop 'else'
                 else:
                     # Not a kludgy ordinal: eat tokens starting with a digit
-                    # TODO STILLING skoða hvað er gert hér.
-                    t, eaten = parse_digits(w, convert_numbers, convert_telnos)
+                    t, eaten = parse_digits(w, convert_numbers)
                     yield t
+
                 # Continue where the digits parser left off
                 ate = True
                 w = w[eaten:]
-                # TODO STILLING viljum við skipta þessu í tvo tóka?
-                if w in SI_UNITS:
-                    # Handle the case where a measurement unit is
-                    # immediately following a number, without an intervening space
-                    # (note that some of them contain nonalphabetic characters,
-                    # so they won't be caught by the isalpha() check below)
-                    yield TOK.Word(w, None)
-                    w = ""
+
+                if w:
+                    # Check for an SI unit immediately following a number
+                    r = SI_UNITS_REGEX.match(w)
+                    if r:
+                        unit = r.group()
+                        # Handle the case where a measurement unit is
+                        # immediately following a number, without an intervening space
+                        # (note that some of them contain nonalphabetic characters,
+                        # so they won't be caught by the isalpha() check below)
+                        yield TOK.Word(unit, None)
+                        w = w[len(unit):]
+
+            # Check for molecular formula ('H2SO4')
+            if w:
+                r = MOLECULE_REGEX.match(w)
+                if r is not None:
+                    g = r.group()
+                    if g not in Abbreviations.DICT and MOLECULE_FILTER.search(g):
+                        # Correct format, containing at least one digit
+                        # and not separately defined as an abbreviation:
+                        # We assume that this is a molecular formula
+                        yield TOK.Molecule(g)
+                        ate = True
+                        w = w[r.end():]
 
             # Alphabetic characters
             if w and w[0].isalpha():
@@ -718,11 +842,20 @@ def parse_tokens(txt, options):
                     and a[1][0].isupper()
                 ):
                     # We have a lowercase word immediately followed by a period
-                    # and an uppercase word
-                    yield TOK.Word(a[0])
+                    # and an uppercase word (plus eventually)
+                    w = a[0]
+                    # Hack: check for single or double quotes at the end of w
+                    if w[-1] in SQUOTES:
+                        yield TOK.Word(w[:-1])
+                        yield TOK.Punctuation(w[-1], normalized="‘")
+                    elif w[-1] in DQUOTES:
+                        yield TOK.Word(w[:-1])
+                        yield TOK.Punctuation(w[-1], normalized="“")
+                    else:
+                        yield TOK.Word(w)
                     yield TOK.Punctuation(".")
                     yield TOK.Word(a[1])
-                    w = None
+                    w = ""
                 else:
                     while w[i - 1] == ".":
                         # Don't eat periods at the end of words
@@ -737,19 +870,19 @@ def parse_tokens(txt, options):
                         # This is a hyphen or en dash directly appended to a word:
                         # might be a continuation ('fjármála- og efnahagsráðuneyti')
                         # Yield a special hyphen as a marker
-                        yield TOK.Punctuation(COMPOSITE_HYPHEN)
+                        # yield TOK.Punctuation(COMPOSITE_HYPHEN)
+                        yield TOK.Punctuation(w[0], normalized=COMPOSITE_HYPHEN)
                         w = w[1:]
-                    # TODO STILLING Gæsalappir
-                    if qmark and w and w[:-1].isalpha():
-                        yield TOK.Word(w[:-1])
-                        w = w[-1:]
-                        if w in SQUOTES:
-                            yield TOK.Punctuation("‘")
-                            w = ""
-                        elif w in DQUOTES:
-                            yield TOK.Punctuation("“")
-                            w = ""
-                        qmark = False
+
+            if w:
+                if w[0] in SQUOTES:
+                    yield TOK.Punctuation(w[0], normalized="‘")
+                    w = w[1:]
+                    ate = True
+                elif w[0] in DQUOTES:
+                    yield TOK.Punctuation(w[0], normalized="“")
+                    w = w[1:]
+                    ate = True
 
             if not ate:
                 # Ensure that we eat everything, even unknown stuff
@@ -758,17 +891,6 @@ def parse_tokens(txt, options):
                 yield TOK.Unknown(w[0])
                 w = w[1:]
 
-            # We have eaten something from the front of the raw token.
-            # Check whether we're left with a simple double quote,
-            # in which case we convert it to a proper closing double quote
-            if w:
-                # TODO STILLING gæsalappir
-                if w[0] in DQUOTES:
-                    w = "“" + w[1:]
-                # TODO STILLING gæsalappir
-                elif w[0] in SQUOTES:
-                    w = "‘" + w[1:]
-
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
 
@@ -776,8 +898,6 @@ def parse_tokens(txt, options):
 def parse_particles(token_stream, options):
     """ Parse a stream of tokens looking for 'particles'
         (simple token pairs and abbreviations) and making substitutions """
-
-    convert_telnos = options.get("convert_telnos", False)
 
     def is_abbr_with_period(txt):
         """ Return True if the given token text is an abbreviation
@@ -817,12 +937,10 @@ def parse_particles(token_stream, options):
         while True:
             next_token = next(token_stream)
             # Make the lookahead checks we're interested in
-
             clock = False
-            # TODO STILLING Sleppa að sameina?
             # Check for currency symbol followed by number, e.g. $10
             if token.txt in CURRENCY_SYMBOLS:
-                for symbol, currabbr in CURRENCY_SYMBOLS.items():
+                for symbol, currabbr in items(CURRENCY_SYMBOLS):
                     if (
                         token.kind == TOK.PUNCTUATION
                         and token.txt == symbol
@@ -834,9 +952,20 @@ def parse_particles(token_stream, options):
                         next_token = next(token_stream)
                         break
 
+            # Special case for a DATEREL token of the form "25.10.",
+            # i.e. with a trailing period: It can end a sentence
+            if token.kind == TOK.DATEREL and token.txt[-1] == ".":
+                if could_be_end_of_sentence(next_token):
+                    # Assume that this ends a sentence: cut the
+                    # period off the DATEREL token and yield it
+                    # separately
+                    y, m, d = token.val
+                    yield TOK.Daterel(token.txt[:-1], y, m, d)
+                    token = TOK.Punctuation(".")
+
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt == ".":
+            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] == ".":
 
                 if (
                     token.kind == TOK.WORD
@@ -868,15 +997,8 @@ def parse_particles(token_stream, options):
                     # þær þarf að vera hægt að sameina í þessa flóknari tóka en viljum
                     # geta merkt það sem villu. Ætti líklega að setja í sérlista,
                     # WRONG_MONTHS, og sérif-lykkju og setja inn villu í tókann.
-                    finish = (follow_token.kind in TOK.END) or (
-                        follow_token.kind in test_set
-                        and follow_token.txt[0].isupper()
-                        and follow_token.txt.lower() not in MONTHS
-                        and not RE_ROMAN_NUMERAL.match(follow_token.txt)
-                        and not (
-                            abbrev in MULTIPLIERS
-                            and follow_token.txt in CURRENCY_ABBREV
-                        )
+                    finish = could_be_end_of_sentence(
+                        follow_token, test_set, abbrev in MULTIPLIERS
                     )
 
                     if finish:
@@ -965,10 +1087,6 @@ def parse_particles(token_stream, options):
                 next_token = next(token_stream)
 
             # Coalesece 3-digit number followed by 4-digit number into tel. no.
-            # NB: This will not catch phone numbers ending what has previously
-            # been identified as a year (e.g. 699 2018)
-            # TODO JAÐAR Skoða hvað verður um þannig símanúmer.
-            # TODO STILLING convert_telnos er notað hér.
             if (
                 token.kind == TOK.NUMBER
                 and (next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR)
@@ -976,29 +1094,34 @@ def parse_particles(token_stream, options):
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                if convert_telnos:
-                    telno = token.txt + "-" + next_token.txt
-                else:
-                    telno = token.txt + " " + next_token.txt
-                token = TOK.Telno(telno)
+                w = token.txt + " " + next_token.txt
+                telno = token.txt + "-" + next_token.txt
+                token = TOK.Telno(w, telno)
                 next_token = next(token_stream)
 
-            # TODO STILLING Er einhver ástæða til að sameina þetta ekki?
-            # Coalesce percentages into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt == "%":
+            # Coalesce percentages or promilles into a single token
+            if next_token.kind == TOK.PUNCTUATION and next_token.txt in ("%", "‰"):
                 if token.kind == TOK.NUMBER:
-                    # Percentage: convert to a percentage token
+                    # Percentage: convert to a single 'tight' percentage token
                     # In this case, there are no cases and no gender
-                    token = TOK.Percent(token.txt + "%", token.val[0])
+                    sign = next_token.txt
+                    # Store promille as one-tenth of a percentage
+                    factor = 1.0 if sign == "%" else 0.1
+                    token = TOK.Percent(token.txt + sign, token.val[0] * factor)
                     next_token = next(token_stream)
 
-            # TODO STILLING Er einhver ástæða til að sameina þetta ekki?
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt == ".":
+            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] == ".":
                 if (
                     token.kind == TOK.NUMBER
                     and not ("." in token.txt or "," in token.txt)
-                ) or (token.kind == TOK.WORD and RE_ROMAN_NUMERAL.match(token.txt)):
+                ) or (
+                    token.kind == TOK.WORD
+                    and RE_ROMAN_NUMERAL.match(token.txt)
+                    # Don't interpret a known abbreviation as a Roman numeral,
+                    # for instance the newspaper 'DV'
+                    and token.txt not in Abbreviations.DICT
+                ):
                     # Ordinal, i.e. whole number or Roman numeral followed by period:
                     # convert to an ordinal token
                     follow_token = next(token_stream)
@@ -1006,7 +1129,7 @@ def parse_particles(token_stream, options):
                         follow_token.kind in TOK.END
                         or (
                             follow_token.kind == TOK.PUNCTUATION
-                            and follow_token.txt in {"„", '"'}
+                            and follow_token.val[1] in {"„", '"'}
                         )
                         or (
                             follow_token.kind == TOK.WORD
@@ -1033,11 +1156,10 @@ def parse_particles(token_stream, options):
                         # Continue with the following word
                         next_token = follow_token
 
-            # TODO STILLING Sleppa því að sameina eða slíta í sundur síðar?
             if (
                 token.kind == TOK.NUMBER or token.kind == TOK.YEAR
             ) and next_token.txt in SI_UNITS:
-                # Convert "1800 mm" or "30 °C" to a single measurement token
+                # Convert "1920 mm" or "30 °C" to a single measurement token
                 value = token.val[0] if token.kind == TOK.NUMBER else token.val
                 unit, factor = SI_UNITS[next_token.txt]
                 if callable(factor):
@@ -1055,7 +1177,6 @@ def parse_particles(token_stream, options):
                     )
                 next_token = next(token_stream)
 
-            # TODO STILLING Sleppa því að sameina eða slíta í sundur síðar?
             if (
                 token.kind == TOK.MEASUREMENT
                 and token.val[0] == "°"
@@ -1074,10 +1195,8 @@ def parse_particles(token_stream, options):
                 )
                 next_token = next(token_stream)
 
-            # Replace straight abbreviations (i.e. those that don't end with
-            # a period)
-            # TODO STILLING Fyrir hvað er þessu skipt út?
-            # Ætti að vera kostur á að sleppa því?
+            # Replace straight abbreviations
+            # (i.e. those that don't end with a period)
             if token.kind == TOK.WORD and token.val is None:
                 if token.txt in Abbreviations.DICT:
                     # Add a meaning to the token
@@ -1124,17 +1243,27 @@ def parse_sentences(token_stream):
                     continue
             elif token.kind == TOK.X_END:
                 assert not in_sentence
+            elif token.kind == TOK.S_SPLIT:
+                # Empty line in input: make sure to finish the current
+                # sentence, if any, even if no ending punctuation has
+                # been encountered
+                if in_sentence:
+                    yield tok_end_sentence
+                in_sentence = False
+                # Swallow the S_SPLIT token
+                token = next_token
+                continue
             else:
                 if not in_sentence:
                     # This token starts a new sentence
                     yield tok_begin_sentence
                     in_sentence = True
-                if token.kind == TOK.PUNCTUATION and token.txt in END_OF_SENTENCE:
+                if token.kind == TOK.PUNCTUATION and token.val[1] in END_OF_SENTENCE:
                     # We may be finishing a sentence with not only a period but also
                     # right parenthesis and quotation marks
                     while (
                         next_token.kind == TOK.PUNCTUATION
-                        and next_token.txt in SENTENCE_FINISHERS
+                        and next_token.val[1] in SENTENCE_FINISHERS
                     ):
                         yield token
                         token = next_token
@@ -1151,7 +1280,7 @@ def parse_sentences(token_stream):
         pass
 
     # Final token (previous lookahead)
-    if token is not None:
+    if token is not None and token.kind != TOK.S_SPLIT:
         if not in_sentence and token.kind not in TOK.END:
             # Starting something here
             yield tok_begin_sentence
@@ -1343,27 +1472,13 @@ def parse_date_and_time(token_stream):
                         # Eat the year token
                         next_token = next(token_stream)
 
-            # Check for a single YEAR, change to DATEREL -- changed to keep distinction
-            # if token.kind == TOK.YEAR:
-            #     token = TOK.Daterel(token.txt, y = token.val, m = 0, d = 0)
-
             # TODO STILLING sleppa að sameina eða slíta í sundur síðar?
             # Check for a single month, change to DATEREL
             if token.kind == TOK.WORD:
                 month = month_for_token(token)
                 # Don't automatically interpret "mar", etc. as month names,
                 # since they are ambiguous
-                if month is not None and token.txt not in {
-                    "jan",
-                    "Jan",
-                    "mar",
-                    "Mar",
-                    "júl",
-                    "Júl",
-                    "des",
-                    "Des",
-                    "Ágúst",
-                }:
+                if month is not None and token.txt not in AMBIGUOUS_MONTH_NAMES:
                     token = TOK.Daterel(token.txt, y=0, m=month, d=0)
 
             # Split DATE into DATEABS and DATEREL
@@ -1410,7 +1525,8 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestampabs(
-                        token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.txt + " " + next_token.txt,
+                        y=y, mo=mo, d=d, h=h, m=m, s=s
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -1423,7 +1539,8 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestamprel(
-                        token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.txt + " " + next_token.txt,
+                        y=y, mo=mo, d=d, h=h, m=m, s=s
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -1537,14 +1654,14 @@ def parse_phrases_2(token_stream):
             while (
                 token.kind == TOK.WORD
                 and next_token.kind == TOK.PUNCTUATION
-                and next_token.txt == COMPOSITE_HYPHEN
+                and next_token.val[1] == COMPOSITE_HYPHEN 
             ):
                 # Accumulate the prefix in tq
                 tq.append(token)
-                tq.append(TOK.Punctuation(HYPHEN))
+                tq.append(TOK.Punctuation(next_token.txt, normalized=HYPHEN))
                 # Check for optional comma after the prefix
                 comma_token = next(token_stream)
-                if comma_token.kind == TOK.PUNCTUATION and comma_token.txt == ",":
+                if comma_token.kind == TOK.PUNCTUATION and comma_token.val[1] == ",":
                     # A comma is present: append it to the queue
                     # and skip to the next token
                     tq.append(comma_token)
@@ -1608,13 +1725,17 @@ def tokenize(text, **options):
 
     # Make sure that the abbreviation config file has been read
     Abbreviations.initialize()
+    with_annotation = options.pop("with_annotation", True)
 
     token_stream = parse_tokens(text, options)
     token_stream = parse_particles(token_stream, options)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
     token_stream = parse_date_and_time(token_stream)
-    token_stream = parse_phrases_2(token_stream)
+
+    # Skip the parse_phrases_2 pass if the with_annotation option is False
+    if with_annotation:
+        token_stream = parse_phrases_2(token_stream)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
 
@@ -1622,17 +1743,31 @@ def tokenize(text, **options):
 def tokenize_without_annotation(text, **options):
     """ Tokenize without the last pass which can be done more thoroughly if BÍN
         annotation is available, for instance in ReynirPackage. """
+    return tokenize(text, with_annotation=False, **options)
 
-    # Make sure that the abbreviation config file has been read
-    Abbreviations.initialize()
 
-    token_stream = parse_tokens(text, options)
-    token_stream = parse_particles(token_stream, options)
-    token_stream = parse_sentences(token_stream)
-    token_stream = parse_phrases_1(token_stream)
-    token_stream = parse_date_and_time(token_stream)
-
-    return (t for t in token_stream if t.kind != TOK.X_END)
+def split_into_sentences(text_or_gen, **options):
+    """ Shallow tokenization of the input text, which can be either
+        a text string or a generator of lines of text (such as a file).
+        This function returns a generator of strings, where each string
+        is a sentence, and tokens are separated by spaces. """
+    if options.pop("normalize", False):
+        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+    else:
+        to_text = lambda t: t.txt
+    curr_sent = []
+    for t in tokenize_without_annotation(text_or_gen, **options):
+        if t.kind in TOK.END:
+            # End of sentence/paragraph
+            if curr_sent:
+                yield " ".join(curr_sent)
+                curr_sent = []
+        else:
+            txt = to_text(t)
+            if txt:
+                curr_sent.append(txt)
+    if curr_sent:
+        yield " ".join(curr_sent)
 
 
 def mark_paragraphs(txt):
@@ -1738,3 +1873,14 @@ def correct_spaces(s):
             r.append(w)
         last = this
     return "".join(r)
+
+
+def detokenize(tokens, normalize=False):
+    """ Utility function to convert an iterable of tokens back
+        to a correctly spaced string. If normalized is True,
+        punctuation is normalized before assembling the string. """
+    if normalize:
+        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+    else:
+        to_text = lambda t: t.txt
+    return correct_spaces(" ".join(filter(None, map(to_text, tokens))))

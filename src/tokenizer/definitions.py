@@ -42,6 +42,7 @@ if sys.version_info >= (3, 0):
     keys = lambda d: d.keys()
     make_str = lambda s: s
     unicode_chr = lambda c: chr(c)
+    is_str = lambda s: isinstance(s, str)
 else:
     items = lambda d: d.iteritems()
     keys = lambda d: d.iterkeys()
@@ -53,13 +54,12 @@ else:
         return s.decode("utf-8")
 
     unicode_chr = lambda c: unichr(c)
+    is_str = lambda s: isinstance(s, (unicode, str))
 
 
 # TODO: These options will become settable configuration switches
 # Auto-convert numbers to Icelandic format (1,234.56 -> 1.234,56)?
 CONVERT_NUMBERS = False
-# Auto-convert telephone numbers (8881234 -> 888-1234)?
-CONVERT_TELNOS = False
 
 ACCENT = unicode_chr(769)
 UMLAUT = unicode_chr(776)
@@ -98,7 +98,9 @@ UNICODE_REPLACEMENTS = {
     ZEROWIDTH_SPACE: "",
     ZEROWIDTH_NBSP: "",
 }
-UNICODE_REGEX = re.compile("|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))))
+UNICODE_REGEX = re.compile(
+    r"|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))), re.UNICODE
+)
 
 # Hyphens that are cast to '-' for parsing and then re-cast
 # to normal hyphens, en or em dashes in final rendering
@@ -114,7 +116,7 @@ COMPOSITE_HYPHEN = EN_DASH
 
 # Recognized punctuation
 LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
-RIGHT_PUNCTUATION = ".,:;)]!%?“»”’‛‘…>°"
+RIGHT_PUNCTUATION = ".,:;)]!%‰?“»”’‛‘…>°"
 CENTER_PUNCTUATION = '"*&+=@©|'
 NONE_PUNCTUATION = "/±'´~\\" + HYPHEN + EN_DASH + EM_DASH
 PUNCTUATION = (
@@ -148,7 +150,7 @@ TP_SPACE = (
 )
 
 # Punctuation that ends a sentence
-END_OF_SENTENCE = frozenset([".", "?", "!"])  # Removed […]
+END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
@@ -169,8 +171,9 @@ ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
 
-# Numeric digits
-DIGITS = frozenset([d for d in "0123456789"])  # Set of digit characters
+# Characters that can start a numeric token
+DIGITS_PREFIX = frozenset([d for d in "0123456789"])
+SIGN_PREFIX = frozenset(("+", "-"))
 
 # Month names and numbers
 MONTHS = {
@@ -227,6 +230,14 @@ MONTHS = {
 
 # The masculine Icelandic name should not be identified as a month
 MONTH_BLACKLIST = frozenset(("Ágúst",))
+
+# Word forms that are not unambiguous as month names
+AMBIGUOUS_MONTH_NAMES = frozenset(
+    ("jan", "Jan", "mar", "Mar", "júl", "Júl", "des", "Des", "Ágúst")
+)
+
+# Max number of days in each month, indexed so that 1=January
+DAYS_IN_MONTH = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
 # Days of the month spelled out
 DAYS_OF_MONTH = {
@@ -368,43 +379,49 @@ SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
 SI_UNITS = {
+    # Distance
+    "m": ("m", 1.0),
+    "mm": ("m", 1.0e-3),
+    "μm": ("m", 1.0e-6),
+    "cm": ("m", 1.0e-2),
+    "sm": ("m", 1.0e-2),
+    "km": ("m", 1.0e3),
+    # Area
     "m²": ("m²", 1.0),
     "fm": ("m²", 1.0),
+    "km²": ("m²", 1.0e6),
     "cm²": ("m²", 1.0e-2),
+    # Volume
     "m³": ("m³", 1.0),
     "cm³": ("m³", 1.0e-6),
+    "km³": ("m³", 1.0e9),
     "l": ("m³", 1.0e-3),
     "ltr": ("m³", 1.0e-3),
     "dl": ("m³", 1.0e-4),
     "cl": ("m³", 1.0e-5),
     "ml": ("m³", 1.0e-6),
+    # Temperature
     "°C": ("K", lambda x: x + 273.15),
     "°F": ("K", lambda x: (x + 459.67) * 5 / 9),
     "K": ("K", 1.0),
+    # Mass
     "g": ("g", 1.0),
     "gr": ("g", 1.0),
     "kg": ("g", 1.0e3),
     "t": ("g", 1.0e6),
     "mg": ("g", 1.0e-3),
     "μg": ("g", 1.0e-6),
-    "m": ("m", 1.0),
-    "km": ("m", 1.0e3),
-    "mm": ("m", 1.0e-3),
-    "μm": ("m", 1.0e-6),
-    "cm": ("m", 1.0e-2),
-    "sm": ("m", 1.0e-2),
+    # Duration
     "s": ("s", 1.0),
     "ms": ("s", 1.0e-3),
     "μs": ("s", 1.0e-6),
-    "Nm": ("J", 1.0),
     "klst": ("s", 3600.0),
     "mín": ("s", 60.0),
-    "W": ("W", 1.0),
-    "mW": ("W", 1.0e-3),
-    "kW": ("W", 1.0e3),
-    "MW": ("W", 1.0e6),
-    "GW": ("W", 1.0e9),
-    "TW": ("W", 1.0e12),
+    # Force
+    "N": ("N", 1.0),
+    "kN": ("N", 1.0e3),
+    # Energy
+    "Nm": ("J", 1.0),
     "J": ("J", 1.0),
     "kJ": ("J", 1.0e3),
     "MJ": ("J", 1.0e6),
@@ -416,21 +433,47 @@ SI_UNITS = {
     "MWst": ("J", 3.6e9),
     "kcal": ("J", 4184),
     "cal": ("J", 4.184),
-    "N": ("N", 1.0),
-    "kN": ("N", 1.0e3),
+    # Power
+    "W": ("W", 1.0),
+    "mW": ("W", 1.0e-3),
+    "kW": ("W", 1.0e3),
+    "MW": ("W", 1.0e6),
+    "GW": ("W", 1.0e9),
+    "TW": ("W", 1.0e12),
+    # Electric potential
     "V": ("V", 1.0),
     "mV": ("V", 1.0e-3),
     "kV": ("V", 1.0e3),
+    # Electric current
     "A": ("A", 1.0),
     "mA": ("A", 1.0e-3),
+    # Frequency
     "Hz": ("Hz", 1.0),
     "kHz": ("Hz", 1.0e3),
     "MHz": ("Hz", 1.0e6),
     "GHz": ("Hz", 1.0e9),
+    # Pressure
     "Pa": ("Pa", 1.0),
     "hPa": ("Pa", 1.0e2),
+    # Angle
     "°": ("°", 1.0),  # Degree
 }
+
+SI_UNITS_SET = frozenset(keys(SI_UNITS))
+
+SI_UNITS_REGEX = re.compile(
+    r"({0})".format(
+        r"|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
+    re.UNICODE,
+)
 
 # If the handle_kludgy_ordinals option is set to
 # KLUDGY_ORDINALS_PASS_THROUGH, we do not convert
@@ -886,3 +929,148 @@ DOMAIN_REGEX = re.compile(
     ),
     re.UNICODE,
 )
+
+# A list of the symbols of the natural elements.
+# Note that single-letter symbols should follow two-letter symbols,
+# so that regexes do not match the single-letter ones greedily before
+# the two-letter ones.
+ELEMENTS = (
+    "Ac",
+    "Ag",
+    "Al",
+    "Am",
+    "Ar",
+    "As",
+    "At",
+    "Au",
+    "Ba",
+    "Be",
+    "Bh",
+    "Bi",
+    "Bk",
+    "Br",
+    "B",
+    "Ca",
+    "Cd",
+    "Ce",
+    "Cf",
+    "Cl",
+    "Cm",
+    "Cn",
+    "Co",
+    "Cr",
+    "Cs",
+    "Cu",
+    "C",
+    "Db",
+    "Ds",
+    "Dy",
+    "Er",
+    "Es",
+    "Eu",
+    "Fe",
+    "Fl",
+    "Fm",
+    "Fr",
+    "F",
+    "Ga",
+    "Gd",
+    "Ge",
+    "He",
+    "Hf",
+    "Hg",
+    "Ho",
+    "Hs",
+    "H",
+    "In",
+    "Ir",
+    "I",
+    "Kr",
+    "K",
+    "La",
+    "Li",
+    "Lr",
+    "Lu",
+    "Lv",
+    "Mc",
+    "Md",
+    "Mg",
+    "Mn",
+    "Mo",
+    "Mt",
+    "Na",
+    "Nb",
+    "Nd",
+    "Ne",
+    "Nh",
+    "Ni",
+    "No",
+    "Np",
+    "N",
+    "Og",
+    "Os",
+    "O",
+    "Pa",
+    "Pb",
+    "Pd",
+    "Pm",
+    "Po",
+    "Pr",
+    "Pt",
+    "Pu",
+    "P",
+    "Ra",
+    "Rb",
+    "Re",
+    "Rf",
+    "Rg",
+    "Rh",
+    "Rn",
+    "Ru",
+    "Sb",
+    "Sc",
+    "Se",
+    "Sg",
+    "Si",
+    "Sm",
+    "Sn",
+    "Sr",
+    "S",
+    "Ta",
+    "Tb",
+    "Tc",
+    "Te",
+    "Th",
+    "Ti",
+    "Tl",
+    "Tm",
+    "Ts",
+    "U",
+    "V",
+    "W",
+    "Xe",
+    "Yb",
+    "Y",
+    "Zn",
+    "Zr",
+)
+
+# Regex to recognize molecules ('H2SO4')
+# Note that we place a further constraint on the token so that
+# it must contain at least one digit to qualify as a molecular formula
+ELEMENTS_REGEX = r"|".join(ELEMENTS)
+MOLECULE_REGEX = re.compile(r"^(({0})+\d*)+".format(ELEMENTS_REGEX))
+MOLECULE_FILTER = re.compile(r"\d")
+
+
+# Validation of Icelandic social security numbers
+KT_MAGIC = [3, 2, 7, 6, 5, 4, 0, 3, 2]
+
+
+def valid_ssn(kt):
+    """ Validate Icelandic social security number """
+    if not kt or len(kt) != 11 or kt[6] != "-":
+        return False
+    m = 11 - sum((ord(kt[i]) - 48) * KT_MAGIC[i] for i in range(9)) % 11
+    c = ord(kt[9]) - 48
+    return m == 11 if c == 0 else m == c

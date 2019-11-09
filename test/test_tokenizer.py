@@ -50,6 +50,14 @@ def test_single_tokens():
         ("!", TOK.PUNCTUATION),
         ('"', [Tok(TOK.PUNCTUATION, "“", None)]),
         ("13:45", [Tok(TOK.TIME, "13:45", (13, 45, 0))]),
+        (
+            "13:450",
+            [
+                Tok(TOK.NUMBER, "13", (13, None, None)),
+                Tok(TOK.PUNCTUATION, ":", None),
+                Tok(TOK.NUMBER, "450", (450, None, None)),
+            ]
+        ),
         ("kl. 13:45", [Tok(TOK.TIME, "kl. 13:45", (13, 45, 0))]),
         ("klukkan 13:45", [Tok(TOK.TIME, "klukkan 13:45", (13, 45, 0))]),
         ("Klukkan 13:45", [Tok(TOK.TIME, "Klukkan 13:45", (13, 45, 0))]),
@@ -57,10 +65,53 @@ def test_single_tokens():
         ("kl. hálfátta", [Tok(TOK.TIME, "kl. hálfátta", (7, 30, 0))]),
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
+        (
+            "17.6.",
+            [
+                Tok(TOK.DATEREL, "17.6", (0, 6, 17)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
+            "17.16.",
+            [
+                Tok(TOK.NUMBER, "17.16", (17.16, None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
+            "30.9.",
+            [
+                Tok(TOK.DATEREL, "30.9", (0, 9, 30)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
+            "31.9.",
+            [
+                Tok(TOK.NUMBER, "31.9", (31.9, None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ]
+        ),
+        (
+            "17/60",
+            [
+                Tok(TOK.NUMBER, "17", (17, None, None)),
+                Tok(TOK.PUNCTUATION, "/", None),
+                Tok(TOK.NUMBER, "60", (60, None, None)),
+            ]
+        ),
         ("3. maí", [Tok(TOK.DATEREL, "3. maí", (0, 5, 3))]),
         ("Ágúst", TOK.WORD),  # Not month name if capitalized
         ("13. ágúst", [Tok(TOK.DATEREL, "13. ágúst", (0, 8, 13))]),
         ("nóvember 1918", [Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0))]),
+        (
+            "nóvember 19180",
+            [
+                Tok(TOK.DATEREL, "nóvember", (0, 11, 0)),
+                Tok(TOK.NUMBER, "19180", (19180, None, None)),
+            ]
+        ),
         ("sautjánda júní", [Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17))]),
         (
             "sautjánda júní 1811",
@@ -78,7 +129,28 @@ def test_single_tokens():
             ],
         ),
         ("17/6/2013", [Tok(TOK.DATEABS, "17/6/2013", (2013, 6, 17))]),
+        (
+            "17/6/20130",
+            [
+                Tok(TOK.DATEREL, "17/6", (0, 6, 17)),
+                Tok(TOK.PUNCTUATION, "/", None),
+                Tok(TOK.NUMBER, "20130", (20130, None, None)),
+            ]
+        ),
+        ("2013-06-17", [Tok(TOK.DATEABS, "2013-06-17", (2013, 6, 17))]),
+        ("2013/06/17", [Tok(TOK.DATEABS, "2013/06/17", (2013, 6, 17))]),
+        (
+            "2013-06-170",
+            [
+                Tok(TOK.YEAR, "2013", 2013),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.NUMBER, "06", (6, None, None)),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.NUMBER, "170", (170, None, None)),
+            ]
+        ),
         ("2013", [Tok(TOK.YEAR, "2013", 2013)]),
+        ("20130", [Tok(TOK.NUMBER, "20130", (20130, None, None))]),
         (
             "874 e.Kr.",
             [Tok(TOK.YEAR, "874 e.Kr", 874), Tok(TOK.PUNCTUATION, ".", None)],
@@ -98,8 +170,33 @@ def test_single_tokens():
         ("2.013", [Tok(TOK.NUMBER, "2.013", (2013, None, None))]),
         ("2,013", [Tok(TOK.NUMBER, "2,013", (2.013, None, None))]),
         ("2.013,45", [Tok(TOK.NUMBER, "2.013,45", (2013.45, None, None))]),
+        (
+            "2.0134,45",
+            [
+                Tok(TOK.NUMBER, "2.0134", (2.0134, None, None)),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.NUMBER, "45", (45, None, None)),
+            ]
+        ),
         ("2,013.45", [Tok(TOK.NUMBER, "2,013.45", (2013.45, None, None))]),
+        (
+            "2,0134.45",
+            [
+                Tok(TOK.NUMBER, "2", (2, None, None)),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.NUMBER, "0134.45", (134.45, None, None)),
+            ]
+        ),
         ("1/2", [Tok(TOK.NUMBER, "1/2", (0.5, None, None))]),
+        ("1/20", [Tok(TOK.DATEREL, "1/20", (0, 1, 20))]),
+        (
+            "1/37",
+            [
+                Tok(TOK.NUMBER, "1", (1, None, None)),
+                Tok(TOK.PUNCTUATION, "/", None),
+                Tok(TOK.NUMBER, "37", (37, None, None)),
+            ]
+        ),
         ("1/4", [Tok(TOK.NUMBER, "1/4", (0.25, None, None))]),
         ("¼", [Tok(TOK.NUMBER, "¼", (0.25, None, None))]),
         ("2⅞", [Tok(TOK.NUMBER, "2⅞", (2.875, None, None))]),
@@ -173,6 +270,13 @@ def test_single_tokens():
         ),
         ("t.d.", TOK.WORD, [("til dæmis", 0, "ao", "frasi", "t.d.", "-")]),
         ("hr.", TOK.WORD, [("herra", 0, "kk", "skst", "hr.", "-")]),
+        (
+            "dags. 10/7",
+            [
+                Tok(TOK.WORD, "dags.", [("dagsetja", 0, "so", "skst", "dags.", "-")]),
+                Tok(TOK.DATEREL, "10/7", (0, 7, 10)),
+            ],
+        ),
         ("Hr.", TOK.WORD, [("herra", 0, "kk", "skst", "hr.", "-")]),
         (
             "nk.",
@@ -234,11 +338,28 @@ def test_single_tokens():
                 Tok(TOK.NUMBER, "500", (500, None, None)),
             ],
         ),
+        ("591213-1480", TOK.SSN),
+        (
+            "591214-1480",
+            [
+                Tok(TOK.NUMBER, "591214", (591214, None, None)),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.NUMBER, "1480", (1480, None, None)),
+            ],
+        ),
+        (
+            "591213-14803",
+            [
+                Tok(TOK.NUMBER, "591213", (591213, None, None)),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.NUMBER, "14803", (14803, None, None)),
+            ],
+        ),
         ("9000000", TOK.NUMBER),
         ("1234567", TOK.NUMBER),
-        ("525-4764", TOK.TELNO),
-        ("4204200", [Tok(TOK.TELNO, "4204200", None)]),
-        ("699 2422", [Tok(TOK.TELNO, "699 2422", None)]),
+        ("525-4764", [Tok(TOK.TELNO, "525-4764", "525-4764")]),
+        ("4204200", [Tok(TOK.TELNO, "4204200", "420-4200")]),
+        ("699 2422", [Tok(TOK.TELNO, "699 2422", "699-2422")]),
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
@@ -301,9 +422,11 @@ def test_single_tokens():
         ("fake@news.is", TOK.EMAIL),
         ("jon.jonsson.99@netfang.is", TOK.EMAIL),
         ("valid@my-domain.reallylongtld", TOK.EMAIL),
+
         ("7a", [Tok(TOK.NUMWLETTER, "7a", (7, "a"))]),
         ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, "B"))]),
         ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, "c"))]),
+
         ("7l", [Tok(TOK.MEASUREMENT, "7 l", ("m³", 0.007))]),
         ("17 ltr", [Tok(TOK.MEASUREMENT, "17 ltr", ("m³", 17.0e-3))]),
         ("150m", [Tok(TOK.MEASUREMENT, "150 m", ("m", 150))]),
@@ -324,6 +447,13 @@ def test_single_tokens():
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
         ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
         ("1976kWst", [Tok(TOK.MEASUREMENT, "1976 kWst", ("J", 7113.6e6))]),
+
+        ("CO2", TOK.MOLECULE),
+        ("CO", TOK.WORD),
+        ("H2O", TOK.MOLECULE),
+        ("B5", TOK.MOLECULE),
+        ("H2SO4", TOK.MOLECULE),
+
     ]
 
     TEST_CASES_KLUDGY_MODIFY = [
@@ -342,8 +472,9 @@ def test_single_tokens():
 
     TEST_CASES_CONVERT_TELNOS = [
         ("525-4764", TOK.TELNO),
-        ("4204200", [Tok(TOK.TELNO, "420-4200", None)]),
-        ("699 2422", [Tok(TOK.TELNO, "699-2422", None)]),
+        ("4204200", [Tok(TOK.TELNO, "4204200", "420-4200")]),
+        ("699 2422", [Tok(TOK.TELNO, "699 2422", "699-2422")]),
+        ("699 2012", [Tok(TOK.TELNO, "699 2012", "699-2012")]),
     ]
 
     TEST_CASES_CONVERT_NUMBERS = [
@@ -395,9 +526,13 @@ def test_single_tokens():
                     + " "
                     + repr(TOK.descr[check.kind])
                 )
-                assert tok.txt == check.txt, tok.txt + ": " + check.txt
+                if check.kind == TOK.PUNCTUATION and check.val is None:
+                    # Check normalized form of token
+                    assert tok.val[1] == check.txt, tok.val[1] + " != " + check.txt
+                else:
+                    assert tok.txt == check.txt, tok.txt + " != " + check.txt
                 if check.val is not None:
-                    assert tok.val == check.val, repr(tok.val) + ": " + repr(check.val)
+                    assert tok.val == check.val, repr(tok.val) + " != " + repr(check.val)
 
     run_test(TEST_CASES)
     run_test(
@@ -408,10 +543,7 @@ def test_single_tokens():
         TEST_CASES_KLUDGY_TRANSLATE,
         handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE
     )
-    run_test(
-        TEST_CASES_CONVERT_TELNOS,
-        convert_telnos=True
-    )
+    run_test(TEST_CASES_CONVERT_TELNOS)
     run_test(
         TEST_CASES_CONVERT_NUMBERS,
         convert_numbers=True
@@ -442,6 +574,8 @@ def test_sentences():
         "ME": TOK.MEASUREMENT,
         "DM": TOK.DOMAIN,
         "HT": TOK.HASHTAG,
+        "K": TOK.SSN,
+        "MO": TOK.MOLECULE,
         "X": TOK.UNKNOWN,
     }
 
@@ -602,7 +736,7 @@ def test_sentences():
 
     test_sentence(
         "Mbl.is er fjölsóttari en www.visir.is, og Rúv.is... En greynir.is, hann er skemmtilegri.Far þú þangað, ekki á 4chan.org!",
-        "B DM   W  W           W  DM          P W  DM    P   W  DM        P W    W  W        P E B W W W      P W    W DM     P E",
+        "B DM   W  W           W  DM          P W  DM    P   E B W DM     P W    W  W        P E B W W W      P W    W DM     P E",
     )
 
     test_sentence(
@@ -618,6 +752,36 @@ def test_sentences():
     test_sentence(
         "Ég vildi [...] fara út. [...] Hann sá mig.",
         "B W W    P     W    W P P     E B W W W  P E",
+    )
+
+    test_sentence(
+        "Ég fæddist 15.10. í Skaftárhreppi en systir mín 25.9. Hún var eldri en ég.",
+        "B W W      DR     W W             W  W      W   DR  P E B W W W     W  W P E",
+    )
+
+    test_sentence(
+        "Jón fæddist 15.10. MCMXCVII í Skaftárhreppi.",
+        "B W W       DR     W        W W            P E",
+    )
+
+    test_sentence(
+        "Ég þvoði hárið með H2SO4, og notaði efni (Ag2FeSi) við það, en það hjálpaði ekki.",
+        "B W W    W     W   MO   P W  W      W    P MO    P W   W  P W  W   W        W   P E",
+    )
+
+    test_sentence(
+        "Ég þvoði hárið með H2SO4, og notaði efni (AgFeSi) við það, en það hjálpaði ekki.",
+        "B W W    W     W   MO   P W  W      W    P W    P W   W  P W  W   W        W   P E",
+    )
+
+    test_sentence(
+        "Kennitala fyrirtækisins er 591213-1480, en ekki 591214-1480.",
+        "B W       W             W  K          P W  W    N     P N  P E",
+    )
+
+    test_sentence(
+        "Jón, kt. 301265-5309, vann 301265-53090 kr. H2O var drukkið.",
+        "B W P W  K          P W    N     P A      P E B MO W W     P E",
     )
 
 
@@ -677,7 +841,7 @@ def test_correction():
         ),
         (
             """Hann sagði: Þú ert (´fífl´)! Ég mótmælti því.""",
-            """Hann sagði: Þú ert (´fífl‘)! Ég mótmælti því.""",  # !!!
+            """Hann sagði: Þú ert (‘ fífl‘)! Ég mótmælti því.""",  # !!!
         ),
         (
             """Hann "gaf" mér 10,780.65 dollara.""",
@@ -728,16 +892,6 @@ def test_correction():
             """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
         ),
     ]
-    SENT_CONVERT_TELNOS = [
-        (
-            """Hann sagði: Þú ert ´fífl´! Hringdu í 7771234.""",
-            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234."""
-        ),
-        (
-            """Hann sagði: Þú ert ´fífl´! Hringdu í 777 1234.""",
-            """Hann sagði: Þú ert ‚fífl‘! Hringdu í 777-1234."""
-        ),
-    ]
     SENT_CONVERT_NUMBERS = [
         (
             """Hann "gaf" mér 10,780.65 dollara.""",
@@ -754,23 +908,19 @@ def test_correction():
     ]
     for sent, correct in SENT:
         s = t.tokenize(sent)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_KLUDGY_ORDINALS_MODIFY:
         s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_KLUDGY_ORDINALS_TRANSLATE:
         s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
-        assert txt == correct
-    for sent, correct in SENT_CONVERT_TELNOS:
-        s = t.tokenize(sent, convert_telnos=True)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_CONVERT_NUMBERS:
         s = t.tokenize(sent, convert_numbers=True)
-        txt = t.correct_spaces(" ".join(token.txt for token in s if token.txt))
+        txt = t.detokenize(s, normalize=True)
         assert txt == correct
 
 
@@ -815,9 +965,9 @@ def test_abbrev():
         Tok(
             kind=TOK.WORD,
             txt="Mbl",
-            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl.", "-")],
+            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl", "-")],
         ),
-        Tok(kind=TOK.PUNCTUATION, txt=".", val=3),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
@@ -832,6 +982,58 @@ def test_overlap():
     )
 
 
+def test_split_sentences():
+    """ Test shallow tokenization """
+    s = (
+        "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000.  \n"
+        "200.000 manns mótmæltu.\n"
+        "Hér byrjar ný setning"
+    )
+    g = t.split_into_sentences(s)
+    sents = list(g)
+    assert len(sents) == 4
+    assert sents[0] == "3. janúar sl. keypti ég 64 kWst rafbíl ."
+    assert sents[1] == "Hann kostaði €30.000 ."
+    assert sents[2] == "200.000 manns mótmæltu ."
+    assert sents[3] == "Hér byrjar ný setning"
+
+    # Test using a generator as input into split_into_sentences()
+    s = (
+        "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000.  \n",
+        "200.000 manns mótmæltu\n",
+        "\n",
+        "Hér byrjar ný setning\n",
+    )
+
+    def gen(s):
+        for line in s:
+            yield line
+
+    g = t.split_into_sentences(gen(s))
+    sents = list(g)
+    assert len(sents) == 4
+    assert sents[0] == "3. janúar sl. keypti ég 64 kWst rafbíl ."
+    assert sents[1] == "Hann kostaði €30.000 ."
+    assert sents[2] == "200.000 manns mótmæltu"
+    assert sents[3] == "Hér byrjar ný setning"
+
+    # Test the normalize option
+    s = (
+        "Hún sagði: \"Þú ert leiðinlegur\"! Hann svaraði engu -- "
+        "en hætti við ferðina.  \n"
+    )
+    g = t.split_into_sentences(s, normalize=True)
+    sents = list(g)
+    assert len(sents) == 2
+    assert sents[0] == "Hún sagði : „ Þú ert leiðinlegur “ !"
+    assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
+    g = t.split_into_sentences(s, normalize=False)
+    sents = list(g)
+    assert len(sents) == 2
+    assert sents[0] == "Hún sagði : \" Þú ert leiðinlegur \" !"
+    assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
@@ -840,3 +1042,4 @@ if __name__ == "__main__":
     test_correction()
     test_abbrev()
     test_overlap()
+    test_split_sentences()
