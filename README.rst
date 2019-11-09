@@ -620,9 +620,9 @@ Changelog
 ---------
 
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
-  and ``detokenize()`` functions; removed ``convert_telno`` option; splitting of
-  coalesced tokens made more robust; added ``TOK.SSN`` and ``TOK.MOLECULE``
-  token kinds
+  and ``detokenize()`` functions; removed ``convert_telno`` option;
+  splitting of coalesced tokens made more robust;
+  added ``TOK.SSN`` and ``TOK.MOLECULE`` token kinds
 * Version 1.4.0: Added the ``**options`` parameter to the
   ``tokenize()`` function, giving control over the handling of numbers,
   telephone numbers, and 'kludgy' ordinals
