@@ -580,24 +580,20 @@ def parse_tokens(txt, options):
             if w[0] in DQUOTES and w[-1] in DQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("„")
-                yield TOK.Punctuation(w[0], "„")
                 if w[1:-1].isalpha():
+                    yield TOK.Punctuation(w[0], "„")
                     yield TOK.Word(w[1:-1], None)
                     yield TOK.Punctuation(w[-1], normalized="“")
                     continue
-                # w = w[1:-1] + "“"
-                w = w[1:] # TODO LAGA sleppa þessu??
             elif w[0] in SQUOTES and w[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("‚")
-                yield TOK.Punctuation(w[0], "‚")
                 if w[1:-1].isalpha():
+                    yield TOK.Punctuation(w[0], "‚")
                     yield TOK.Word(w[1:-1], None)
                     yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
-                # w = w[1:-1] + "‘"
-                w = w[1:]
-
+    
         # TODO STILLING Hér er önnur möguleg gæsalappastilling.
         # Hér eru gæsalappir í upphafi setningar.
         if len(w) > 1:
@@ -668,16 +664,15 @@ def parse_tokens(txt, options):
                     # while w and w[0] in HYPHENS:
                     #     w = w[1:]
                 # TODO STILLING gæsalappir
-                elif lw == 1 and w in DQUOTES:
+                elif w[0] in DQUOTES:
                     # Convert to a proper closing double quote
-                    yield TOK.Punctuation(w, normalized="“")
-                    w = ""
+                    yield TOK.Punctuation(w[0], normalized="“")
+                    w = w[1:]
                 # TODO STILLING gæsalappir
-                elif lw == 1 and w in SQUOTES:
+                elif w[0] in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
-                    # yield TOK.Punctuation("‘")
-                    yield TOK.Punctuation(w, normalized="‘")
-                    w = ""
+                    yield TOK.Punctuation(w[0], normalized="‘")
+                    w = w[1:]
                 elif lw > 1 and w.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
@@ -847,11 +842,20 @@ def parse_tokens(txt, options):
                     and a[1][0].isupper()
                 ):
                     # We have a lowercase word immediately followed by a period
-                    # and an uppercase word
-                    yield TOK.Word(a[0])
+                    # and an uppercase word (plus eventually)
+                    w = a[0]
+                    # Hack: check for single or double quotes at the end of w
+                    if w[-1] in SQUOTES:
+                        yield TOK.Word(w[:-1])
+                        yield TOK.Punctuation(w[-1], normalized="‘")
+                    elif w[-1] in DQUOTES:
+                        yield TOK.Word(w[:-1])
+                        yield TOK.Punctuation(w[-1], normalized="“")
+                    else:
+                        yield TOK.Word(w)
                     yield TOK.Punctuation(".")
                     yield TOK.Word(a[1])
-                    w = None
+                    w = ""
                 else:
                     while w[i - 1] == ".":
                         # Don't eat periods at the end of words

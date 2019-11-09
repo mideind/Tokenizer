@@ -841,7 +841,7 @@ def test_correction():
         ),
         (
             """Hann sagði: Þú ert (´fífl´)! Ég mótmælti því.""",
-            """Hann sagði: Þú ert (´fífl‘)! Ég mótmælti því.""",  # !!!
+            """Hann sagði: Þú ert (‘ fífl‘)! Ég mótmælti því.""",  # !!!
         ),
         (
             """Hann "gaf" mér 10,780.65 dollara.""",
