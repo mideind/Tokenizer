@@ -96,18 +96,18 @@ Within each line, tokens are separated by spaces.
 The following (mutually exclusive) options can be specified
 on the command line:
 
-+-----------------+---------------------------------------------------+
-| ``--csv``       | Deep tokenization. Output token objects in CSV    |
-|                 | format, one per line.                             |
-+-----------------+---------------------------------------------------+
-| ``--json``      | Deep tokenization. Output token objects in JSON   |
-|                 | format, one per line.                             |
-+-----------------+---------------------------------------------------+
-| ``--normalize`` | Normalize punctuation, causing e.g. quotes to be  |
-|                 | output in Icelandic form and hyphens to be        |
-|                 | regularized. This option is only applicable to    |
-|                 | shallow tokenization.                             |
-+-----------------+---------------------------------------------------+
++-------------------+---------------------------------------------------+
+| | ``--csv``       | Deep tokenization. Output token objects in CSV    |
+|                   | format, one per line.                             |
++-------------------+---------------------------------------------------+
+| | ``--json``      | Deep tokenization. Output token objects in JSON   |
+|                   | format, one per line.                             |
++-------------------+---------------------------------------------------+
+| | ``--normalize`` | Normalize punctuation, causing e.g. quotes to be  |
+|                   | output in Icelandic form and hyphens to be        |
+|                   | regularized. This option is only applicable to    |
+|                   | shallow tokenization.                             |
++-------------------+---------------------------------------------------+
 
 Type ``tokenize -h`` or ``tokenize --help`` to get a short help message.
 
