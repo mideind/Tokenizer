@@ -267,8 +267,10 @@ for each sentence in the input. Within a sentence, the tokens are
 separated by spaces.
 
 You can pass the option ``normalize=True`` to the function if you want
-the normalized form of punctuation tokens, such as Icelandic single and
-double quotes, and regularized hyphens.
+the normalized form of punctuation tokens. Normalization outputs
+Icelandic single and double quotes („these“) instead of English-style
+ones ("these"), converts three-dot ellipsis ... to single character
+ellipsis …, and casts en-dashes – and em-dashes — to regular hyphens.
 
 The ``tokenizer.split_into_sentences()`` function is typically called
 in a ``for`` loop:

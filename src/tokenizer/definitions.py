@@ -105,8 +105,8 @@ UNICODE_REGEX = re.compile(
 # Hyphens that are cast to '-' for parsing and then re-cast
 # to normal hyphens, en or em dashes in final rendering
 HYPHEN = "-"  # Normal hyphen
-EN_DASH = "–"
-EM_DASH = "—"
+EN_DASH = "\u2013"  # "–"
+EM_DASH = "\u2014"  # "—"
 
 HYPHENS = HYPHEN + EN_DASH + EM_DASH
 
