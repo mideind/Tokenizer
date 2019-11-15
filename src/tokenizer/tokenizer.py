@@ -1615,6 +1615,7 @@ def parse_phrases_2(token_stream):
                     next_token = next(token_stream)
                 elif next_token.txt in CURRENCY_ABBREV:
                     # A number followed by an ISO currency abbreviation
+                    token = convert_to_num(token)
                     token = TOK.Amount(
                         token.txt + " " + next_token.txt, next_token.txt, token.val[0]
                     )

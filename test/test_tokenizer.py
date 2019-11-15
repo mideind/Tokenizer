@@ -240,6 +240,20 @@ def test_single_tokens():
             ],
         ),
         (
+            "milljón USD.",
+            [
+                Tok(TOK.AMOUNT, "milljón USD", (1e6, "USD", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
+            "hundrað þúsund USD.",
+            [
+                Tok(TOK.AMOUNT, "hundrað þúsund USD", (1e5, "USD", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
             "m.kr.",
             [
                 Tok(
