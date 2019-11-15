@@ -1878,7 +1878,7 @@ def correct_spaces(s):
 
 def detokenize(tokens, normalize=False):
     """ Utility function to convert an iterable of tokens back
-        to a correctly spaced string. If normalized is True,
+        to a correctly spaced string. If normalize is True,
         punctuation is normalized before assembling the string. """
     if normalize:
         to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
