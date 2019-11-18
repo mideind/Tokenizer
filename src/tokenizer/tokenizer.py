@@ -1223,6 +1223,16 @@ def parse_particles(token_stream, options):
                 )
                 next_token = next(token_stream)
 
+            # Cases such as 19$, 199.99$
+            if (
+                token.kind == TOK.NUMBER
+                and next_token.kind == TOK.PUNCTUATION
+                and next_token.txt in CURRENCY_SYMBOLS
+            ):
+                token = TOK.Amount(
+                    token.txt + next_token.txt, CURRENCY_SYMBOLS[next_token.txt], token.val[0]
+                )
+                next_token = next(token_stream)
             # Replace straight abbreviations
             # (i.e. those that don't end with a period)
             if token.kind == TOK.WORD and token.val is None:
@@ -1440,7 +1450,6 @@ def parse_date_and_time(token_stream):
         token = next(token_stream)
         while True:
             next_token = next(token_stream)
-
             # TODO STILLING Sleppa að sameina eða slíta í sundur?
             # Og villa, "5 mars" endar sem dagsetning. Þarf að geta merkt.
             # DATEABS and DATEREL made
@@ -1607,7 +1616,6 @@ def parse_phrases_2(token_stream):
         token = next(token_stream)
         while True:
             next_token = next(token_stream)
-
             # Logic for numbers and fractions that are partially or entirely
             # written out in words
 
