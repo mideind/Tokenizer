@@ -490,7 +490,6 @@ def parse_digits(w, convert_numbers):
 
 def gen_from_string(txt, replace_composite_glyphs=True):
     """ Generate rough tokens from a string """
-    # Convert txt to Unicode (on Python 2.7)
     if replace_composite_glyphs:
         # Replace composite glyphs with single code points
         txt = UNICODE_REGEX.sub(
@@ -1557,7 +1556,7 @@ def parse_date_and_time(token_stream):
         yield token
 
 
-def parse_phrases_2(token_stream):
+def parse_phrases_2(token_stream, coalesce_percent=False):
     """ Handle numbers, amounts and composite words. """
 
     token = None
@@ -1621,17 +1620,20 @@ def parse_phrases_2(token_stream):
                     )
                     next_token = next(token_stream)
                 else:
-                    # Check for [number] 'percent'
-                    percentage = match_stem_list(next_token, PERCENTAGES)
-                    if percentage is not None:
-                        token = convert_to_num(token)
-                        token = TOK.Percent(
-                            token.txt + " " + next_token.txt, token.val[0]
-                        )
-                        # Eat the percentage token
-                        next_token = next(token_stream)
+                    # Check for [number] 'prósent/prósentustig/hundraðshluta'
+                    if coalesce_percent:
+                        percentage = match_stem_list(next_token, PERCENTAGES)
                     else:
+                        percentage = None
+                    if percentage is None:
                         break
+                    # We have '17 prósent': coalesce into a single token
+                    token = convert_to_num(token)
+                    token = TOK.Percent(
+                        token.txt + " " + next_token.txt, token.val[0]
+                    )
+                    # Eat the percent word token
+                    next_token = next(token_stream)
 
                 multiplier = None
 
@@ -1727,6 +1729,7 @@ def tokenize(text, **options):
     # Make sure that the abbreviation config file has been read
     Abbreviations.initialize()
     with_annotation = options.pop("with_annotation", True)
+    coalesce_percent = options.pop("coalesce_percent", False)
 
     token_stream = parse_tokens(text, options)
     token_stream = parse_particles(token_stream, options)
@@ -1736,7 +1739,7 @@ def tokenize(text, **options):
 
     # Skip the parse_phrases_2 pass if the with_annotation option is False
     if with_annotation:
-        token_stream = parse_phrases_2(token_stream)
+        token_stream = parse_phrases_2(token_stream, coalesce_percent=coalesce_percent)
 
     return (t for t in token_stream if t.kind != TOK.X_END)
 
