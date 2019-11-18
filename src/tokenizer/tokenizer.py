@@ -87,6 +87,7 @@ class TOK:
     HASHTAG = 25
     MOLECULE = 26  # Chemical compound ('H2SO4')
     SSN = 27  # Social security number ('kennitala')
+    USERNAME = 28 # Social media user name ('@user')
 
     S_SPLIT = 10000  # Sentence split token
 
@@ -99,8 +100,8 @@ class TOK:
     X_END = 12001  # End sentinel
 
     END = frozenset((P_END, S_END, X_END, S_SPLIT))
-    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
-    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE))
+    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE, USERNAME))
+    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE, USERNAME))
 
     # Token descriptive names
 
@@ -132,6 +133,7 @@ class TOK:
         ENTITY: "ENTITY",
         MOLECULE: "MOLECULE",
         SSN: "SSN",
+        USERNAME: "USERNAME",
         S_SPLIT: "SPLIT SENT",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
@@ -246,6 +248,10 @@ class TOK:
     @staticmethod
     def Molecule(w):
         return Tok(TOK.MOLECULE, w, None)
+
+    @staticmethod
+    def Username(w, username):
+        return Tok(TOK.USERNAME, w, username)
 
     @staticmethod
     def Measurement(w, unit, val):
@@ -556,7 +562,6 @@ def parse_tokens(txt, options):
 
     for w in gen(txt, replace_composite_glyphs):
         # Handle each sequence of non-whitespace characters
-
         if not w:
             # Signal the presence of an empty line, which splits sentences
             yield TOK.Split_Sentence()
@@ -677,6 +682,10 @@ def parse_tokens(txt, options):
                     # Might be a hashtag, processed later
                     ate = False
                     break
+                elif lw > 1 and w.startswith("@"):
+                    # Username on Twitter or other social media platforms
+                    yield TOK.Username(w, w[1:])
+                    w = ""
                 else:
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
@@ -902,7 +911,7 @@ def parse_particles(token_stream, options):
     def is_abbr_with_period(txt):
         """ Return True if the given token text is an abbreviation
             when followed by a period """
-        if "." in txt and txt not in Abbreviations.DICT:
+        if "." in txt:
             # There is already a period in it: must be an abbreviation
             # (this applies for instance to "t.d" but not to "mbl.is")
             return True
@@ -961,20 +970,19 @@ def parse_particles(token_stream, options):
                     # separately
                     y, m, d = token.val
                     yield TOK.Daterel(token.txt[:-1], y, m, d)
-                    token = TOK.Punctuation(".")
+                    token = TOK.Punctuation(".", ".")
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
             if next_token.kind == TOK.PUNCTUATION and next_token.val[1] == ".":
-
                 if (
                     token.kind == TOK.WORD
                     and token.txt[-1] != "."
                     and is_abbr_with_period(token.txt)
+
                 ):
                     # Abbreviation ending with period: make a special token for it
                     # and advance the input stream
-
                     clock = token.txt.lower() == CLOCK_ABBREV
                     follow_token = next(token_stream)
                     abbrev = token.txt + "."
@@ -1000,7 +1008,6 @@ def parse_particles(token_stream, options):
                     finish = could_be_end_of_sentence(
                         follow_token, test_set, abbrev in MULTIPLIERS
                     )
-
                     if finish:
                         # Potentially at the end of a sentence
                         if abbrev in Abbreviations.FINISHERS:
@@ -1029,7 +1036,6 @@ def parse_particles(token_stream, options):
                         token = TOK.Word(abbrev, lookup(abbrev))
 
                     next_token = follow_token
-
             # TODO STILLING Sleppa því að sameina? Eða rífa í sundur síðar?
             # Coalesce 'klukkan'/[kl.] + time or number into a time
             if next_token.kind == TOK.TIME or next_token.kind == TOK.NUMBER:
@@ -1100,7 +1106,7 @@ def parse_particles(token_stream, options):
                 next_token = next(token_stream)
 
             # Coalesce percentages or promilles into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.txt in ("%", "‰"):
+            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] in ("%", "‰"):
                 if token.kind == TOK.NUMBER:
                     # Percentage: convert to a single 'tight' percentage token
                     # In this case, there are no cases and no gender
@@ -1161,7 +1167,8 @@ def parse_particles(token_stream, options):
             ) and next_token.txt in SI_UNITS:
                 # Convert "1920 mm" or "30 °C" to a single measurement token
                 value = token.val[0] if token.kind == TOK.NUMBER else token.val
-                unit, factor = SI_UNITS[next_token.txt]
+                orig_unit = next_token.txt
+                unit, factor = SI_UNITS[orig_unit]
                 if callable(factor):
                     # We have a lambda conversion function
                     value = factor(value)
@@ -1176,7 +1183,28 @@ def parse_particles(token_stream, options):
                         token.txt + " " + next_token.txt, unit, value
                     )
                 next_token = next(token_stream)
+                if (
+                    token.kind == TOK.MEASUREMENT
+                    and next_token.kind == TOK.PUNCTUATION 
+                    and next_token.val[1] == "."
+                    and is_abbr_with_period(orig_unit)
 
+                ):
+                    token = TOK.Measurement(
+                        token.txt + ".", unit, value
+                    )
+                    next_token = next(token_stream)
+
+            # Special case for measurement abbreviations erroneously containing a period
+            # Introduces too many errors as-is, TODO see if can be improved
+            #if (
+            #    token.kind == TOK.MEASUREMENT
+            #    and next_token.kind == TOK.PUNCTUATION
+            #    and next_token.val[1] == "."
+            #    and not could_be_end_of_sentence(next_token)
+            #):
+            #    token = TOK.Measurement(token.txt + next_token.txt, token.val[0], token.val[1])
+            #    next_token = next(token_stream)
             if (
                 token.kind == TOK.MEASUREMENT
                 and token.val[0] == "°"
@@ -1259,6 +1287,18 @@ def parse_sentences(token_stream):
                     yield tok_begin_sentence
                     in_sentence = True
                 if token.kind == TOK.PUNCTUATION and token.val[1] in END_OF_SENTENCE:
+                    # Combining punctuation ('??!!!')
+                    while (
+                        token.val[1] in PUNCT_COMBINATIONS
+                        and next_token.txt in PUNCT_COMBINATIONS
+                    ):
+                        # The normalized form comes from the first token except with "…?"
+                        v = token.val[1]
+                        if token.val[1] == "…" and next_token.val[1] == "?":
+                            v = next_token.val[1]
+                        next_token = TOK.Punctuation(token.txt+next_token.txt, v)
+                        token = next_token
+                        next_token = next(token_stream)
                     # We may be finishing a sentence with not only a period but also
                     # right parenthesis and quotation marks
                     while (

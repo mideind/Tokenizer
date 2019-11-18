@@ -155,6 +155,9 @@ END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
 PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’"])  # Period and apostrophes
+# Punctuation symbols that may occur together
+
+PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
 
 # Single and double quotes
 SQUOTES = "'‚‛‘´"
@@ -635,7 +638,7 @@ AMOUNT_ABBREV = {
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
-URL_PREFIXES = ("http://", "https://", "file://")
+URL_PREFIXES = ("http://", "https://", "file://", "www")
 
 TOP_LEVEL_DOMAINS = frozenset(
     (

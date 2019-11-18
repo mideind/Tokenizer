@@ -102,6 +102,9 @@ def main():
     def quote(s):
         """ Return the string s within double quotes, and with any contained
             backslashes and double quotes escaped with a backslash """
+        if type(s) == tuple:
+            # Abbreviation possibly containing many meanings
+            s = "{0},{1},{2},{3},{4},{5}".format(s[0], s[1], s[2], s[3], s[4], s[5])
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     def gen(f):

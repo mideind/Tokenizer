@@ -62,6 +62,9 @@ class Abbreviations:
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
     NAME_FINISHERS = set()
+    # Wrong versions of abbreviations with possible corrections
+    # wrong version : [correction1, correction2, ...]
+    WRONGDOTS = {}
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
@@ -104,22 +107,110 @@ class Abbreviations:
                 "!, * and ^ modifiers are mutually exclusive on abbreviations"
             )
         # Append the abbreviation and its meaning in tuple form
-        if abbrev in Abbreviations.DICT:
-            raise ConfigError(
-                "Abbreviation '{0}' is defined more than once".format(abbrev)
-            )
-        Abbreviations.DICT[abbrev] = (
+        #if abbrev in Abbreviations.DICT:
+        #    raise ConfigError(
+        #        "Abbreviation '{0}' is defined more than once".format(abbrev)
+        #    )
+        # Support for many meanings for each abbreviations. Later stages choose between them.
+        if abbrev not in Abbreviations.DICT:
+            Abbreviations.DICT[abbrev] = []
+        Abbreviations.DICT[abbrev].append((
             meaning,
             0,
             gender,
             "skst" if fl is None else fl,
             abbrev,
             "-",
-        )
+        ))
         Abbreviations.MEANINGS.add(meaning)
         if abbrev[-1] == "." and "." not in abbrev[0:-1]:
             # Only one dot, at the end
             Abbreviations.SINGLES.add(abbrev[0:-1])  # Lookup is without the dot
+            wabbrev = abbrev[0:-1]
+            if wabbrev not in Abbreviations.DICT:
+               Abbreviations.DICT[wabbrev] = []
+            if wabbrev not in Abbreviations.WRONGDOTS:
+               Abbreviations.WRONGDOTS[wabbrev] = []
+            if finisher:
+                Abbreviations.FINISHERS.add(wabbrev)
+
+            Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+            Abbreviations.DICT[wabbrev].append((
+                meaning,
+                0,
+                gender,
+                "skst" if fl is None else fl,
+                wabbrev,                            # TODO STILLING Bæta við normalized útgáfu?
+                "-",
+            ))
+
+        elif "." in abbrev:     # Only multiple dots, checked single dots above
+            # Want to see versions with each one deleted, and one where all are deleted
+            indices = ( [pos for pos, char in enumerate(abbrev) if char == "."])
+            for i in indices:
+                # Removing one dot at a time
+                wabbrev = abbrev[:i]+abbrev[i+1:]
+                if wabbrev not in Abbreviations.DICT:
+                   Abbreviations.DICT[wabbrev] = []
+                if finisher:
+                    Abbreviations.FINISHERS.add(wabbrev)
+                if wabbrev not in Abbreviations.WRONGDOTS:
+                   Abbreviations.WRONGDOTS[wabbrev] = []
+                Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+                Abbreviations.DICT[wabbrev].append((
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,                            # TODO STILLING Bæta við normalized útgáfu?
+                    "-",
+                ))
+            if len(indices) > 2:   # 3 or 4 dots currently in vocabulary
+                # Not all cases with 4 dots are handled.
+                i1 = indices[0]
+                i2 = indices[1]
+                i3 = indices[2]
+                wabbrevs = []
+                # 1 and 2 removed
+                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i2]+abbrev[i2+1:])
+                # 1 and 3 removed
+                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i3]+abbrev[i3+1:])
+                # 2 and 3 removed
+                wabbrevs.append(abbrev[:i2]+abbrev[i2+1:i3]+abbrev[i3+1:])
+                for wabbrev in wabbrevs:
+                    if wabbrev not in Abbreviations.DICT:
+                        Abbreviations.DICT[wabbrev] = []
+                    if finisher:
+                        Abbreviations.FINISHERS.add(wabbrev)
+                    if wabbrev not in Abbreviations.WRONGDOTS:
+                        Abbreviations.WRONGDOTS[wabbrev] = []
+                    Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+                    Abbreviations.DICT[wabbrev].append((
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,                           # TODO STILLING Bæta við normalized útgáfu?
+                        "-",
+                    ))
+            # Removing all dots
+            wabbrev = abbrev.replace(".", "")
+            if wabbrev not in Abbreviations.DICT:
+                Abbreviations.DICT[wabbrev] = []
+                Abbreviations.SINGLES.add(wabbrev)
+            if finisher:
+                Abbreviations.FINISHERS.add(wabbrev)
+            if wabbrev not in Abbreviations.WRONGDOTS:
+                Abbreviations.WRONGDOTS[wabbrev] = []
+            Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+            Abbreviations.DICT[wabbrev].append((
+                meaning,
+                0,
+                gender,
+                "skst" if fl is None else fl,
+                wabbrev,                                # TODO STILLING Bæta við normalized útgáfu?
+                "-",
+            ))
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
         if not_finisher or name_finisher:
@@ -140,7 +231,12 @@ class Abbreviations:
     def get_meaning(abbrev):
         """ Lookup meaning of abbreviation, if available """
         return (
-            None if abbrev not in Abbreviations.DICT else Abbreviations.DICT[abbrev][0]
+            None if (
+                abbrev not in Abbreviations.DICT 
+                and abbrev not in Abbreviations.NODOTS
+                and abbrev not in Abbreviations.WRONGDOTS
+            )
+            else Abbreviations.DICT[abbrev][0]
         )
 
     @staticmethod
