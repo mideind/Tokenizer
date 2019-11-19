@@ -478,6 +478,83 @@ SI_UNITS_REGEX = re.compile(
     re.UNICODE,
 )
 
+# Real number formatted with decimal comma and possibly thousands separator
+NUM_WITH_SI_UNITS_REGEX1 = re.compile(
+    r"[\+\-]?(\d+\.\d\d\d)*,\d+(?!\d*\.\d)({0})".format(
+        "|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
+    re.UNICODE
+)
+
+# Integer with a '.' thousands separator
+NUM_WITH_SI_UNITS_REGEX2 = re.compile(
+    r"[\+\-]?(\d+\.\d\d\d)+(?!\d)({0})".format(
+        "|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
+    re.UNICODE
+)
+
+# Real number, possibly with a thousands separator and decimal comma/point
+NUM_WITH_SI_UNITS_REGEX3 = re.compile(
+    r"[\+\-]?(\d+)(,\d\d\d)({0})".format(
+        "|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
+    re.UNICODE
+)
+
+# Integer, possibly with a ',' thousands separator
+NUM_WITH_SI_UNITS_REGEX4 = re.compile(
+    r"[\+\-]?(\d+)(,\d\d\d)*(?!\d)({0})".format(
+        "|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
+    re.UNICODE
+)
+
+# One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
+NUM_WITH_SI_UNITS_REGEX5 = re.compile(
+    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(
+        "|".join(
+            map(
+                re.escape,
+                # Sort in descending order by length, so that longer strings
+                # are matched before shorter ones
+                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+            )
+        )
+    ),
+    re.UNICODE
+)
+
+
+
 # If the handle_kludgy_ordinals option is set to
 # KLUDGY_ORDINALS_PASS_THROUGH, we do not convert
 # kludgy ordinals but pass them through as word tokens.
