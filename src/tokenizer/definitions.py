@@ -154,9 +154,8 @@ END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
-PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’"])  # Period and apostrophes
+PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", "-", "–"])  # Period and apostrophes
 # Punctuation symbols that may occur together
-
 PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
 
 # Single and double quotes
@@ -462,6 +461,12 @@ SI_UNITS = {
     "°": ("°", 1.0),  # Degree
 }
 
+DIRECTIONS = {
+    "N": "Norður",
+
+
+}
+
 SI_UNITS_SET = frozenset(keys(SI_UNITS))
 
 SI_UNITS_REGEX = re.compile(
@@ -552,6 +557,32 @@ NUM_WITH_SI_UNITS_REGEX5 = re.compile(
     ),
     re.UNICODE
 )
+
+# Real number formatted with decimal comma and possibly thousands separator
+PERCENT1 = re.compile(
+    r"[\+\-]?(\d+\.\d\d\d)*,\d+(?!\d*\.\d)([%‰])"
+)
+
+# Integer with a '.' thousands separator
+PERCENT2 = re.compile(
+    r"[\+\-]?(\d+\.\d\d\d)+(?!\d)([%‰])"
+)
+
+# Real number, possibly with a thousands separator and decimal comma/point
+PERCENT3 = re.compile(
+    r"[\+\-]?(\d+)(,\d\d\d)([%‰])"
+)
+
+# Integer, possibly with a ',' thousands separator
+PERCENT4 = re.compile(
+    r"[\+\-]?(\d+)(,\d\d\d)*(?!\d)([%‰])"
+)
+
+# One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
+PERCENT5 = re.compile(
+    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])([%‰])"
+)
+
 
 
 

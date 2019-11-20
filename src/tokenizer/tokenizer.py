@@ -257,7 +257,7 @@ class TOK:
 
     @staticmethod
     def SerialNumber(w):
-        return Tok(TOK.SERIALNUMBER, w)
+        return Tok(TOK.SERIALNUMBER, w, None)
 
     @staticmethod
     def Measurement(w, unit, val):
@@ -321,11 +321,11 @@ def is_valid_date(y, m, d):
 
 def parse_digits(w, convert_numbers):
     """ Parse a raw token starting with a digit """
-    print("Í upphafi: {}".format(w))
-    # Setja sekúndubrot hér
+    #print("Í upphafi: {}".format(w))
+    # TODO Setja sekúndubrot hér
     s = re.match(r"\d{1,2}:\d\d:\d\d(?!\d)", w)
     if s:
-        print("      11A: {}".format(w))
+        #print("      11A: {}".format(w))
         # Looks like a 24-hour clock, H:M:S
         g = s.group()
         p = g.split(":")
@@ -336,7 +336,7 @@ def parse_digits(w, convert_numbers):
             return TOK.Time(g, h, m, sec), s.end()
     s = re.match(r"\d{1,2}:\d\d(?!\d)", w)
     if s:
-        print("      11B: {}".format(w))
+        #print("      11B: {}".format(w))
         # Looks like a 24-hour clock, H:M
         g = s.group()
         p = g.split(":")
@@ -349,7 +349,7 @@ def parse_digits(w, convert_numbers):
         re.match(r"\d{4}/\d\d/\d\d(?!\d)", w)
     )
     if s:
-        print("      11C: {}".format(w))
+        #print("      11C: {}".format(w))
         # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
         g = s.group()
         if "-" in g:
@@ -367,7 +367,7 @@ def parse_digits(w, convert_numbers):
         re.match(r"\d{1,2}-\d{1,2}-\d{2,4}(?!\d)", w)
     )
     if s:
-        print("      11D: {}".format(w))
+        #print("      11D: {}".format(w))
         # Looks like a date with day, month and year parts
         g = s.group()
         if "/" in g:
@@ -391,7 +391,7 @@ def parse_digits(w, convert_numbers):
         re.match(r"(\d{1,2})-(\d{1,2})(?!\d)", w)
     )
     if s:
-        print("      11E: {}".format(w))
+        #print("      11E: {}".format(w))
         # A date in the form dd.mm, d.mm, dd.m, d.m, dd-mm, d-mm, dd-m or d-m
         g = s.group()
         d = int(s.group(1))
@@ -403,7 +403,7 @@ def parse_digits(w, convert_numbers):
     )
     if s:
         # A date in the form of mm-yy; mm.yy is to ambiguous.
-        print("      11E_1")
+        #print("      11E_1")
         g = s.group()
         m = int(s.group(1))
         y = int(s.group(2))
@@ -416,7 +416,7 @@ def parse_digits(w, convert_numbers):
     )
     if s:
         # A date in the form of mm.yyyy or mm-yyyy
-        print("      11E_2")
+        #print("      11E_2")
         g = s.group()
         m = int(s.group(1))
         y = int(s.group(2))
@@ -426,7 +426,7 @@ def parse_digits(w, convert_numbers):
     # \w matches all Icelandic characters under Python 2
     s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
     if s:
-        print("      11F: {}".format(w))
+        #print("      11F: {}".format(w))
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
         g = s.group()
         l = g[-1:]
@@ -438,7 +438,7 @@ def parse_digits(w, convert_numbers):
 
     s = re.match(r"(\d+)(°[CKF])", w, re.UNICODE)
     if s:
-        print("    11F_6: {}".format(w))
+        #print("    11F_6: {}".format(w))
         g = s.group()
         value = int(s.group(1))
         unit, factor = SI_UNITS[s.group(2)]
@@ -450,7 +450,7 @@ def parse_digits(w, convert_numbers):
 
     s = NUM_WITH_SI_UNITS_REGEX1.match(w)
     if s:
-        print("    11F_1: {}".format(w))
+        #print("    11F_1: {}".format(w))
         # Real number formatted with decimal comma and possibly thousands separator and an SI unit
         g = s.group()
         val = s.group(1)
@@ -467,7 +467,7 @@ def parse_digits(w, convert_numbers):
 
     s = NUM_WITH_SI_UNITS_REGEX2.match(w)
     if s:
-        print("    11F_2: {}".format(w))
+        #print("    11F_2: {}".format(w))
         # Integer with a '.' thousands separator and an SI unit
         g = s.group()
         val = s.group(1)
@@ -483,7 +483,7 @@ def parse_digits(w, convert_numbers):
 
     s = NUM_WITH_SI_UNITS_REGEX3.match(w)
     if s:
-        print("    11F_3: {}".format(w))
+        #print("    11F_3: {}".format(w))
         # Real number, possibly with a thousands separator and decimal comma/point and an SI unit
         g = s.group()
         val = "".join(s.group(1,2))
@@ -503,15 +503,15 @@ def parse_digits(w, convert_numbers):
 
     s = NUM_WITH_SI_UNITS_REGEX4.match(w)
     if s:
-        print("    11F_4: {}".format(w))
+        #print("    11F_4: {}".format(w))
         # Integer, possibly with a ',' thousands separator and an SI unit
         g = s.group()
         if s.group(2):
-            value = "".join(s.group(1,2))
+            value = int("".join(s.group(1,2)))
             value = re.sub(",", ".", value)
             orig_unit = s.group(3)
         else:
-            value = s.group(1)
+            value = int(s.group(1))
             orig_unit = s.group(3)
         unit, factor = SI_UNITS[orig_unit]
         if callable(factor):
@@ -519,11 +519,11 @@ def parse_digits(w, convert_numbers):
         else:
             # Simple scaling factor
             value *= factor
-
         return TOK.Measurement(g, unit, int(value)), s.end()
+
     s = NUM_WITH_SI_UNITS_REGEX5.match(w)
     if s:
-        print("    11F_5: {}".format(w))
+        #print("    11F_5: {}".format(w))
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½') and an SI unit
         g = s.group()
         ln = s.group(1)
@@ -539,9 +539,74 @@ def parse_digits(w, convert_numbers):
         return TOK.Measurement(g, unit, value), s.end()
 
 
+    s = PERCENT1.match(w)
+    if s:
+        #print("    11G_1: {}".format(w))
+        # Real number formatted with decimal comma and possibly thousands separator and an SI unit
+        g = s.group()
+        val = s.group(1)
+        val = re.sub(r"\.", ".", val)
+        val = float(re.sub(",", ".", val))
+        unit = s.group(2)
+        factor = 1.0 if unit == "%" else 0.1
+        return TOK.Percent(g, val*factor), s.end()
+
+    s = PERCENT2.match(w)
+    if s:
+        #print("    11G_2: {}".format(w))
+        # Integer with a '.' thousands separator and an SI unit
+        g = s.group()
+        val = s.group(1)
+        val = float(re.sub(r"\.", "", val))
+        unit = s.group(2)
+        factor = 1.0 if unit == "%" else 0.1
+        return TOK.Percent(g, val*factor), s.end()
+
+    s = PERCENT3.match(w)
+    if s:
+        #print("    11G_3: {}".format(w))
+        # Real number, possibly with a thousands separator and decimal comma/point and an SI unit
+        g = s.group()
+        val = "".join(s.group(1,2))
+        unit = s.group(3)
+        value = float(re.sub(",", "", val))
+        if convert_numbers:
+            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
+            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
+            g = re.sub("x", ".", g)  # Change 'x' to '.'
+        factor = 1.0 if unit == "%" else 0.1
+        return TOK.Percent(g, value*factor), s.end()
+
+    s = PERCENT4.match(w)
+    if s:
+        #print("    11G_4: {}".format(w))
+        # Integer, possibly with a ',' thousands separator and an SI unit
+        g = s.group()
+        if s.group(2):
+            value = int("".join(s.group(1,2)))
+            value = re.sub(",", ".", value)
+            unit = s.group(3)
+        else:
+            value = int(s.group(1))
+            unit = s.group(3)
+        factor = 1.0 if unit == "%" else 0.1
+        return TOK.Percent(g, value*factor), s.end()
+
+    s = PERCENT5.match(w)
+    if s:
+        #print("    11G_5: {}".format(w))
+        # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½') and an SI unit
+        g = s.group()
+        ln = s.group(1)
+        vf = s.group(2)
+        unit = s.group(3)
+        value = float(ln) + unicodedata.numeric(vf)
+        factor = 1.0 if unit == "%" else 0.1
+        return TOK.Percent(g, value*factor), s.end()
+
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
-        print("      11G: {}".format(w))
+        #print("    11H_1: {}".format(w))
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
         g = s.group()
         ln = s.group(1)
@@ -550,7 +615,7 @@ def parse_digits(w, convert_numbers):
         return TOK.Number(g, val), s.end()
     s = re.match(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
-        print("      11H: {}".format(w))
+        #print("    11H_2: {}".format(w))
         # Real number formatted with decimal comma and possibly thousands separator
         # (we need to check this before checking integers)
         g = s.group()
@@ -559,7 +624,7 @@ def parse_digits(w, convert_numbers):
         return TOK.Number(g, float(n)), s.end()
     s = re.match(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)", w)
     if s:
-        print("      11I: {}".format(w))
+        #print("      11I: {}".format(w))
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
         g = s.group()
@@ -567,7 +632,7 @@ def parse_digits(w, convert_numbers):
         return TOK.Number(g, int(n)), s.end()
     s = re.match(r"\d{1,2}/\d{1,2}(?!\d)", w)
     if s:
-        print("      11J: {}".format(w))
+        #print("      11J: {}".format(w))
         # Looks like a date (and not something like 10/2007)
         g = s.group()
         p = g.split("/")
@@ -590,38 +655,38 @@ def parse_digits(w, convert_numbers):
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
     s = re.match(r"\d\d\d\d(?!\d)", w)
     if s:
-        print("      11K: {}".format(w))
+        #print("      11K: {}".format(w))
         n = int(s.group())
         if 1776 <= n <= 2100:
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
     s = re.match(r"\d{6}\-\d{4}(?!\d)", w)
     if s:
-        print("      11L: {}".format(w))
+        #print("      11L: {}".format(w))
         # Looks like a social security number
         g = s.group()
         if valid_ssn(g):
             return TOK.Ssn(w[0:11]), 11
     s = re.match(r"\d\d\d\-\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
-        print("      11M: {}".format(w))
+        #print("      11M: {}".format(w))
         # Looks like a telephone number
         telno = s.group()
         return TOK.Telno(telno, telno), 8
     if s:
         # Most likely some sort of serial number
         # Unknown token for now, don't want it separated
-        print("    11M_1: {}".format(w))
+        #print("    11M_1: {}".format(w))
         return TOK.SerialNumber(w), s.end()
     s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
-        print("      11N: {}".format(w))
+        #print("      11N: {}".format(w))
         # Looks like a telephone number
         telno = w[0:3] + "-" + w[3:7]
         return TOK.Telno(w[0:7], telno), 7
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
     if s:
-        print("      11O: {}".format(w))
+        #print("      11O: {}".format(w))
         # Some kind of ordinal chapter number: 2.5.1 etc.
         # (we need to check this before numbers with decimal points)
         g = s.group()
@@ -630,7 +695,7 @@ def parse_digits(w, convert_numbers):
         return TOK.Ordinal(g, int(n)), s.end()
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*\.\d+", w)
     if s:
-        print("      11P: {}".format(w))
+        #print("      11P: {}".format(w))
         # Real number, possibly with a thousands separator and decimal comma/point
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
@@ -642,7 +707,7 @@ def parse_digits(w, convert_numbers):
         return TOK.Number(g, float(n)), s.end()
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
     if s:
-        print("      11Q: {}".format(w))
+        #print("      11Q: {}".format(w))
         # Integer, possibly with a ',' thousands separator
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
@@ -652,7 +717,7 @@ def parse_digits(w, convert_numbers):
         return TOK.Number(g, int(n)), s.end()
     # Strange thing
     # !!! TODO: May want to mark this as an error
-    print("      11R: {}".format(w))
+    #print("      11R: {}".format(w))
     return TOK.Unknown(w), len(w)
 
 
@@ -728,6 +793,7 @@ def parse_tokens(txt, options):
             # Signal the presence of an empty line, which splits sentences
             yield TOK.Split_Sentence()
             continue
+        #print("Í upphafi: {}".format(w))
         #print("      1: {}".format(w))
         if w.isalpha() or w in SI_UNITS:
             # Shortcut for most common case: pure word
@@ -780,14 +846,17 @@ def parse_tokens(txt, options):
                 ate = True
                 lw = len(w)
                 if w.startswith("[...]"):
+                    #print("    5_A: {}".format(w))
                     yield TOK.Punctuation("[...]", normalized="[…]")
                     w = w[5:]
                 elif w.startswith("[…]"):
                     yield TOK.Punctuation("[…]")
+                    #print("    5_B: {}".format(w))
                     w = w[3:]
                 elif w.startswith("..."):
                     # Treat ellipsis as one piece of punctuation
                     dots = "..."
+                    #print("    5_C: {}".format(w))
                     wdots = w[3:]
                     while wdots.startswith("."):
                         dots += "."
@@ -797,6 +866,7 @@ def parse_tokens(txt, options):
                 elif w.startswith("…"):
                     # Treat ellipsis as one piece of punctuation
                     dots = "…"
+                    #print("    5_D: {}".format(w))
                     wdots = w[1:]
                     while wdots.startswith("…"):
                         dots += "…"
@@ -808,21 +878,25 @@ def parse_tokens(txt, options):
                 # Won't correct automatically, check for M6
                 elif w == ",,":
                     yield TOK.Punctuation(",,", normalized=",")
+                    #print("    5_E: {}".format(w))
                     w = ""
                 # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
                 elif w.startswith(",,"):
                     # Probably an idiot trying to type opening double quotes with commas
+                    #print("    5_F: {}".format(w))
                     yield TOK.Punctuation(",,", normalized="„")
                     w = w[2:]
                 elif lw == 2 and (w == "[[" or w == "]]"):
                     # Begin or end paragraph marker
+                    #print("    5_G: {}".format(w))
                     if w == "[[":
                         yield TOK.Begin_Paragraph()
                     else:
                         yield TOK.End_Paragraph()
                     w = w[2:]
                 # TODO STILLING Öllum bandstrikum varpað í það sama
-                elif w[0] in HYPHENS:
+                elif w in HYPHENS:
+                    #print("    5_H: {}".format(w))
                     # Normalize all hyphens the same way
                     yield TOK.Punctuation(w[0], normalized=HYPHEN)
                     w = w[1:]
@@ -830,8 +904,28 @@ def parse_tokens(txt, options):
                     # TODO LAGA Took this out, check if makes sense
                     # while w and w[0] in HYPHENS:
                     #     w = w[1:]
+                elif w[0] in HYPHENS:
+                    # Most likely latter part of MW compound, 'golfbuxur og -vesti'
+                    # Want to deal with later
+                    #print("    5_I: {}".format(w))
+                    if w[1:].isalpha():
+                        #print("    5_I1: {}".format(w))
+                        yield TOK.Word(w)
+                        ate = True
+                        w = ""
+                    elif w[-1] in END_OF_SENTENCE and w[1:-1].isalpha():
+                        # Possibly an MW compound at the end of a sentence
+                        #print("    5_I2: {}".format(w))
+                        yield TOK.Word(w[:-1])
+                        w = w[-1]
+                    else:
+                        # Something more complex
+                        #print("    5_I3: {}".format(w))
+                        yield TOK.Punctuation(w[0], normalized=HYPHEN)
+                        w = w[1:]
                 # TODO STILLING gæsalappir
                 elif w[0] in DQUOTES:
+                    #print("    5_J: {}".format(w))
                     # Convert to a proper closing double quote
                     yield TOK.Punctuation(w[0], normalized="“")
                     w = w[1:]
@@ -982,6 +1076,22 @@ def parse_tokens(txt, options):
                         ate = True
                         w = w[r.end():]
             #print("      13: {}".format(w))
+            # Most likely the last part of a MW compound ('þingkonur og -menn')
+            if w and w[0] in HYPHENS and w[1] and w[1:].isalpha():
+                #print("Fann seinni hluta:{}".format(w))
+                yield TOK.Word(w)
+                ate = True
+                w = ""
+
+            if w and len(w) > 2 and w[-1] in "," and w[-2] in HYPHENS:
+                # Most likely the first part of a long MW compound
+                # ('golf-, fótbolta- og skíðaföt')
+                if w[:-2].isalpha():
+                    ate = True
+                    #print("Fann orð!")
+                    yield TOK.Word(w[:-1])
+                    yield TOK.Punctuation(w[-1], w[-1])
+                    w = ""
             # Alphabetic characters
             if w and w[0].isalpha():
                 ate = True
@@ -1049,7 +1159,6 @@ def parse_tokens(txt, options):
                         # This is a hyphen or en dash directly appended to a word:
                         # might be a continuation ('fjármála- og efnahagsráðuneyti')
                         # Yield a special hyphen as a marker
-                        # yield TOK.Punctuation(COMPOSITE_HYPHEN)
                         #print("      13F: {}".format(w))
                         yield TOK.Punctuation(w[0], normalized=COMPOSITE_HYPHEN)
                         w = w[1:]
@@ -1075,7 +1184,7 @@ def parse_tokens(txt, options):
     yield TOK.End_Sentinel()
 
 
-def parse_particles(token_stream, options):
+def parse_particles(token_stream, options, convert_measurements=False):
     """ Parse a stream of tokens looking for 'particles'
         (simple token pairs and abbreviations) and making substitutions """
 
@@ -1279,12 +1388,13 @@ def parse_particles(token_stream, options):
             # Coalesce percentages or promilles into a single token
             if next_token.kind == TOK.PUNCTUATION and next_token.val[1] in ("%", "‰"):
                 if token.kind == TOK.NUMBER:
+                    #print("Hér??")
                     # Percentage: convert to a single 'tight' percentage token
                     # In this case, there are no cases and no gender
                     sign = next_token.txt
                     # Store promille as one-tenth of a percentage
                     factor = 1.0 if sign == "%" else 0.1
-                    token = TOK.Percent(token.txt + sign, token.val[0] * factor)
+                    token = TOK.Percent(token.txt + " " + sign, token.val[0] * factor)
                     next_token = next(token_stream)
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
@@ -1337,6 +1447,7 @@ def parse_particles(token_stream, options):
             if (
                 token.kind == TOK.NUMBER or token.kind == TOK.YEAR
             ) and next_token.txt in SI_UNITS:
+                #print("      11S: {}".format(token))
                 value = token.val[0] if token.kind == TOK.NUMBER else token.val
                 orig_unit = next_token.txt
                 unit, factor = SI_UNITS[orig_unit]
@@ -1382,16 +1493,25 @@ def parse_particles(token_stream, options):
                 and next_token.kind == TOK.WORD
                 and next_token.txt in {"C", "F"}
             ):
+                #print("      11T: {}".format(token))
                 # Handle 200° C
                 new_unit = "°" + next_token.txt
                 unit, factor = SI_UNITS[new_unit]
                 # Both °C and °F have callable (lambda) factors
                 assert callable(factor)
-                token = TOK.Measurement(
-                    token.txt[:-1] + " " + new_unit,  # 200 °C
-                    unit,  # K
-                    factor(token.val[1]),  # 200 converted to Kelvin
-                )
+                if convert_measurements:    
+                    token = TOK.Measurement(
+                        token.txt[:-1] + " " + new_unit,  # 200 °C
+                        unit,  # K
+                        factor(token.val[1]),  # 200 converted to Kelvin
+                    )
+                else:
+                    token = TOK.Measurement(
+                        token.txt + " " + next_token.txt,  # 200 °C
+                        unit,  # K
+                        factor(token.val[1]),  # 200 converted to Kelvin
+                    )
+
                 next_token = next(token_stream)
 
             # Cases such as 19$, 199.99$
