@@ -101,8 +101,8 @@ class TOK:
     X_END = 12001  # End sentinel
 
     END = frozenset((P_END, S_END, X_END, S_SPLIT))
-    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE, USERNAME))
-    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE, USERNAME))
+    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
+    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE))
 
     # Token descriptive names
 
@@ -321,8 +321,7 @@ def is_valid_date(y, m, d):
 
 def parse_digits(w, convert_numbers):
     """ Parse a raw token starting with a digit """
-    #print("Í upphafi: {}".format(w))
-    # TODO Setja sekúndubrot hér
+
     s = re.match(r"\d{1,2}:\d\d:\d\d(?!\d)", w)
     if s:
         #print("      11A: {}".format(w))
@@ -334,6 +333,7 @@ def parse_digits(w, convert_numbers):
         sec = int(p[2])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
             return TOK.Time(g, h, m, sec), s.end()
+
     s = re.match(r"\d{1,2}:\d\d(?!\d)", w)
     if s:
         #print("      11B: {}".format(w))
@@ -344,10 +344,8 @@ def parse_digits(w, convert_numbers):
         m = int(p[1])
         if (0 <= h < 24) and (0 <= m < 60):
             return TOK.Time(g, h, m, 0), s.end()
-    s = (
-        re.match(r"\d{4}-\d\d-\d\d(?!\d)", w) or
-        re.match(r"\d{4}/\d\d/\d\d(?!\d)", w)
-    )
+
+    s = re.match(r"((\d{4}-\d\d-\d\d)|(\d{4}/\d\d/\d\d))(?!\d)", w)
     if s:
         #print("      11C: {}".format(w))
         # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
@@ -361,6 +359,7 @@ def parse_digits(w, convert_numbers):
         d = int(p[2])
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
+
     s = (
         re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w) or
         re.match(r"\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w) or
@@ -386,10 +385,8 @@ def parse_digits(w, convert_numbers):
             m, d = d, m
         if is_valid_date(y, m, d):
             return TOK.Date(g, y, m, d), s.end()
-    s = (
-        re.match(r"(\d{1,2})\.(\d{1,2})(?!\d)", w) or
-        re.match(r"(\d{1,2})-(\d{1,2})(?!\d)", w)
-    )
+
+    s = re.match(r"(\d{1,2})[-.](\d{1,2})(?!\d)", w)
     if s:
         #print("      11E: {}".format(w))
         # A date in the form dd.mm, d.mm, dd.m, d.m, dd-mm, d-mm, dd-m or d-m
@@ -398,11 +395,10 @@ def parse_digits(w, convert_numbers):
         m = int(s.group(2))
         if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
-    s = (
-        re.match(r"(\d{2})-(\d{2})(?!\d)", w)
-    )
+
+    s = re.match(r"(\d{2})-(\d{2})(?!\d)", w)
     if s:
-        # A date in the form of mm-yy; mm.yy is to ambiguous.
+        # A date in the form of mm-yy; mm.yy is too ambiguous.
         #print("      11E_1")
         g = s.group()
         m = int(s.group(1))
@@ -410,10 +406,8 @@ def parse_digits(w, convert_numbers):
         y += 2000            # ATTN: Should have a cutoff so >40 only adds 1900
         if (1 <= m <= 12):
             return TOK.Daterel(g, y=y, m=m, d=0), s.end()
-    s = (
-        re.match(r"(\d{2})\.(\d{4})(?!\d)", w) or
-        re.match(r"(\d{2})-(\d{4})(?!\d)", w)
-    )
+
+    s = re.match(r"(\d{2})[-.](\d{4})(?!\d)", w)
     if s:
         # A date in the form of mm.yyyy or mm-yyyy
         #print("      11E_2")
@@ -422,6 +416,7 @@ def parse_digits(w, convert_numbers):
         y = int(s.group(2))
         if (1776 <= y <= 2100) and (1 <= m <= 12):
             return TOK.Daterel(g, y=y, m=m, d=0), s.end()
+
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
     s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
@@ -436,95 +431,43 @@ def parse_digits(w, convert_numbers):
             n = int(g[:-1])
             return TOK.NumberWithLetter(g, n, l), s.end()
 
-    s = re.match(r"(\d+)(°[CKF])", w, re.UNICODE)
-    if s:
-        #print("    11F_6: {}".format(w))
-        g = s.group()
-        value = int(s.group(1))
-        unit, factor = SI_UNITS[s.group(2)]
-        if callable(factor):
-            value = factor(value)
-        else:
-            value *= factor
-        return TOK.Measurement(g, unit, value), s.end()
-
     s = NUM_WITH_SI_UNITS_REGEX1.match(w)
     if s:
-        #print("    11F_1: {}".format(w))
-        # Real number formatted with decimal comma and possibly thousands separator and an SI unit
-        g = s.group()
-        val = s.group(1)
-        val = re.sub(r"\.", ".", val)
-        val = re.sub(",", ".", val)
-        orig_unit = s.group(2)
-        unit, factor = SI_UNITS[orig_unit]
+        # Icelandic-style number followed by an SI unit, or degree/percentage
+        val = float(s.group(1).replace(".", "").replace(",", "."))
+        unit, factor = SI_UNITS[s.group(4)]
         if callable(factor):
             val = factor(val)
         else:
             # Simple scaling factor
             val *= factor
-        return TOK.Measurement(g, unit, float(val)), s.end()
+        if unit in ("%", "‰"):
+            return TOK.Percent(s.group(), val), s.end()
+        return TOK.Measurement(s.group(), unit, val), s.end()
 
     s = NUM_WITH_SI_UNITS_REGEX2.match(w)
     if s:
-        #print("    11F_2: {}".format(w))
-        # Integer with a '.' thousands separator and an SI unit
-        g = s.group()
-        val = s.group(1)
-        val = re.sub(r"\.", "", val)
-        orig_unit = s.group(2)
-        unit, factor = SI_UNITS[orig_unit]
+        # English-style number followed by an SI unit, or degree/percentage
+        val = float(s.group(1).replace(",", ""))
+        unit, factor = SI_UNITS[s.group(4)]
         if callable(factor):
             val = factor(val)
         else:
             # Simple scaling factor
             val *= factor
-        return TOK.Measurement(g, unit, int(val)), s.end()
+        g = s.group()
+        if convert_numbers:
+            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
+            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
+            g = re.sub("x", ".", g)  # Change 'x' to '.'
+        if unit in ("%", "‰"):
+            return TOK.Percent(g, val), s.end()
+        return TOK.Measurement(g, unit, val), s.end()
 
     s = NUM_WITH_SI_UNITS_REGEX3.match(w)
     if s:
-        #print("    11F_3: {}".format(w))
-        # Real number, possibly with a thousands separator and decimal comma/point and an SI unit
-        g = s.group()
-        val = "".join(s.group(1,2))
-        orig_unit = s.group(3)
-        value = re.sub(",", "", val)
-        unit, factor = SI_UNITS[orig_unit]
-        if callable(factor):
-            value = factor(value)
-        else:
-            # Simple scaling factor
-            value *= factor
-        if convert_numbers:
-            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
-            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
-            g = re.sub("x", ".", g)  # Change 'x' to '.'
-        return TOK.Measurement(g, unit, float(value)), s.end()        
-
-    s = NUM_WITH_SI_UNITS_REGEX4.match(w)
-    if s:
-        #print("    11F_4: {}".format(w))
-        # Integer, possibly with a ',' thousands separator and an SI unit
-        g = s.group()
-        if s.group(2):
-            value = int("".join(s.group(1,2)))
-            value = re.sub(",", ".", value)
-            orig_unit = s.group(3)
-        else:
-            value = int(s.group(1))
-            orig_unit = s.group(3)
-        unit, factor = SI_UNITS[orig_unit]
-        if callable(factor):
-            value = factor(value)
-        else:
-            # Simple scaling factor
-            value *= factor
-        return TOK.Measurement(g, unit, int(value)), s.end()
-
-    s = NUM_WITH_SI_UNITS_REGEX5.match(w)
-    if s:
-        #print("    11F_5: {}".format(w))
-        # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½') and an SI unit
+        # One or more digits, followed by a unicode
+        # vulgar fraction char (e.g. '2½') and an SI unit
         g = s.group()
         ln = s.group(1)
         vf = s.group(2)
@@ -536,73 +479,9 @@ def parse_digits(w, convert_numbers):
         else:
             # Simple scaling factor
             value *= factor
+        if unit in ("%", "‰"):
+            return TOK.Percent(g, value), s.end()
         return TOK.Measurement(g, unit, value), s.end()
-
-
-    s = PERCENT1.match(w)
-    if s:
-        #print("    11G_1: {}".format(w))
-        # Real number formatted with decimal comma and possibly thousands separator and an SI unit
-        g = s.group()
-        val = s.group(1)
-        val = re.sub(r"\.", ".", val)
-        val = float(re.sub(",", ".", val))
-        unit = s.group(2)
-        factor = 1.0 if unit == "%" else 0.1
-        return TOK.Percent(g, val*factor), s.end()
-
-    s = PERCENT2.match(w)
-    if s:
-        #print("    11G_2: {}".format(w))
-        # Integer with a '.' thousands separator and an SI unit
-        g = s.group()
-        val = s.group(1)
-        val = float(re.sub(r"\.", "", val))
-        unit = s.group(2)
-        factor = 1.0 if unit == "%" else 0.1
-        return TOK.Percent(g, val*factor), s.end()
-
-    s = PERCENT3.match(w)
-    if s:
-        #print("    11G_3: {}".format(w))
-        # Real number, possibly with a thousands separator and decimal comma/point and an SI unit
-        g = s.group()
-        val = "".join(s.group(1,2))
-        unit = s.group(3)
-        value = float(re.sub(",", "", val))
-        if convert_numbers:
-            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
-            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
-            g = re.sub("x", ".", g)  # Change 'x' to '.'
-        factor = 1.0 if unit == "%" else 0.1
-        return TOK.Percent(g, value*factor), s.end()
-
-    s = PERCENT4.match(w)
-    if s:
-        #print("    11G_4: {}".format(w))
-        # Integer, possibly with a ',' thousands separator and an SI unit
-        g = s.group()
-        if s.group(2):
-            value = int("".join(s.group(1,2)))
-            value = re.sub(",", ".", value)
-            unit = s.group(3)
-        else:
-            value = int(s.group(1))
-            unit = s.group(3)
-        factor = 1.0 if unit == "%" else 0.1
-        return TOK.Percent(g, value*factor), s.end()
-
-    s = PERCENT5.match(w)
-    if s:
-        #print("    11G_5: {}".format(w))
-        # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½') and an SI unit
-        g = s.group()
-        ln = s.group(1)
-        vf = s.group(2)
-        unit = s.group(3)
-        value = float(ln) + unicodedata.numeric(vf)
-        factor = 1.0 if unit == "%" else 0.1
-        return TOK.Percent(g, value*factor), s.end()
 
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
@@ -613,15 +492,18 @@ def parse_digits(w, convert_numbers):
         vf = s.group(2)
         val = float(ln) + unicodedata.numeric(vf)
         return TOK.Number(g, val), s.end()
+
     s = re.match(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)  # Can't end with digits.digits
     if s:
         #print("    11H_2: {}".format(w))
-        # Real number formatted with decimal comma and possibly thousands separator
+        # Icelandic-style real number formatted with decimal comma (,)
+        # and possibly thousands separators (.)
         # (we need to check this before checking integers)
         g = s.group()
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         n = re.sub(",", ".", n)  # Convert decimal comma to point
         return TOK.Number(g, float(n)), s.end()
+
     s = re.match(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)", w)
     if s:
         #print("      11I: {}".format(w))
@@ -630,6 +512,7 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
         return TOK.Number(g, int(n)), s.end()
+
     s = re.match(r"\d{1,2}/\d{1,2}(?!\d)", w)
     if s:
         #print("      11J: {}".format(w))
@@ -653,6 +536,7 @@ def parse_digits(w, convert_numbers):
         if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             # Looks like a (roughly) valid date
             return TOK.Daterel(g, y=0, m=m, d=d), s.end()
+
     s = re.match(r"\d\d\d\d(?!\d)", w)
     if s:
         #print("      11K: {}".format(w))
@@ -660,6 +544,7 @@ def parse_digits(w, convert_numbers):
         if 1776 <= n <= 2100:
             # Looks like a year
             return TOK.Year(w[0:4], n), 4
+
     s = re.match(r"\d{6}\-\d{4}(?!\d)", w)
     if s:
         #print("      11L: {}".format(w))
@@ -667,6 +552,7 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         if valid_ssn(g):
             return TOK.Ssn(w[0:11]), 11
+
     s = re.match(r"\d\d\d\-\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         #print("      11M: {}".format(w))
@@ -678,12 +564,14 @@ def parse_digits(w, convert_numbers):
         # Unknown token for now, don't want it separated
         #print("    11M_1: {}".format(w))
         return TOK.SerialNumber(w), s.end()
+
     s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         #print("      11N: {}".format(w))
         # Looks like a telephone number
         telno = w[0:3] + "-" + w[3:7]
         return TOK.Telno(w[0:7], telno), 7
+
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
     if s:
         #print("      11O: {}".format(w))
@@ -693,10 +581,12 @@ def parse_digits(w, convert_numbers):
         # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
         n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
         return TOK.Ordinal(g, int(n)), s.end()
+
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*\.\d+", w)
     if s:
         #print("      11P: {}".format(w))
-        # Real number, possibly with a thousands separator and decimal comma/point
+        # English-style real number with a decimal point (.),
+        # and possibly commas as thousands separators (,)
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
@@ -705,6 +595,7 @@ def parse_digits(w, convert_numbers):
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
             g = re.sub("x", ".", g)  # Change 'x' to '.'
         return TOK.Number(g, float(n)), s.end()
+
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
     if s:
         #print("      11Q: {}".format(w))
@@ -715,6 +606,7 @@ def parse_digits(w, convert_numbers):
         if convert_numbers:
             g = re.sub(",", ".", g)  # Change thousands separator to a dot
         return TOK.Number(g, int(n)), s.end()
+
     # Strange thing
     # !!! TODO: May want to mark this as an error
     #print("      11R: {}".format(w))
@@ -1217,10 +1109,9 @@ def parse_particles(token_stream, options, convert_measurements=False):
         """ Look up an abbreviation, both in original case and in lower case,
             and return either None if not found or a meaning list having one entry """
         m = Abbreviations.DICT.get(abbrev)
-        if m is not None:
-            return [m]
-        m = Abbreviations.DICT.get(abbrev.lower())
-        return None if m is None else [m]
+        if not m:
+            m = Abbreviations.DICT.get(abbrev.lower())
+        return list(m) if m else None
 
     token = None
     try:
@@ -1247,14 +1138,18 @@ def parse_particles(token_stream, options, convert_measurements=False):
 
             # Special case for a DATEREL token of the form "25.10.",
             # i.e. with a trailing period: It can end a sentence
-            if token.kind == TOK.DATEREL and token.txt[-1] == ".":
-                if could_be_end_of_sentence(next_token):
-                    # Assume that this ends a sentence: cut the
-                    # period off the DATEREL token and yield it
-                    # separately
-                    y, m, d = token.val
-                    yield TOK.Daterel(token.txt[:-1], y, m, d)
-                    token = TOK.Punctuation(".", ".")
+            if token.kind == TOK.DATEREL and "." in token.txt:
+                if next_token.txt == ".":
+                    next_next_token = next(token_stream)
+                    if could_be_end_of_sentence(next_next_token):
+                        # This is something like 'Ég fæddist 25.9. Það var gaman.'
+                        yield token
+                        token = next_token
+                    else:
+                        # This is something like 'Ég fæddist 25.9. í Svarfaðardal.'
+                        y, m, d = token.val
+                        token = TOK.Daterel(token.txt + ".", y, m, d)
+                    next_token = next_next_token
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
@@ -1461,9 +1356,8 @@ def parse_particles(token_stream, options, convert_measurements=False):
                 else:
                     # Simple scaling factor
                     value *= factor
-                if next_token.txt in RIGHT_PUNCTUATION:
-                    # Probably a degree (°)
-                    token = TOK.Measurement(token.txt + next_token.txt, unit, value)
+                if unit in ("%", "‰"):
+                    token = TOK.Percent(token.txt + " " + next_token.txt, value)
                 else:
                     token = TOK.Measurement(
                         token.txt + " " + next_token.txt, unit, value
@@ -1474,7 +1368,6 @@ def parse_particles(token_stream, options, convert_measurements=False):
                     and next_token.kind == TOK.PUNCTUATION 
                     and next_token.val[1] == "."
                     and is_abbr_with_period(orig_unit)
-
                 ):
                     token = TOK.Measurement(
                         token.txt + ".", unit, value
@@ -1491,29 +1384,33 @@ def parse_particles(token_stream, options, convert_measurements=False):
             #):
             #    token = TOK.Measurement(token.txt + next_token.txt, token.val[0], token.val[1])
             #    next_token = next(token_stream)
+
             if (
                 token.kind == TOK.MEASUREMENT
                 and token.val[0] == "°"
                 and next_token.kind == TOK.WORD
-                and next_token.txt in {"C", "F"}
+                and next_token.txt in {"C", "F", "K"}
             ):
                 #print("      11T: {}".format(token))
                 # Handle 200° C
                 new_unit = "°" + next_token.txt
                 unit, factor = SI_UNITS[new_unit]
-                # Both °C and °F have callable (lambda) factors
-                assert callable(factor)
+                if callable(factor):
+                    val = factor(token.val[1])
+                else:
+                    val = factor * token.val[1]
+
                 if convert_measurements:    
                     token = TOK.Measurement(
                         token.txt[:-1] + " " + new_unit,  # 200 °C
                         unit,  # K
-                        factor(token.val[1]),  # 200 converted to Kelvin
+                        val,  # 200 converted to Kelvin
                     )
                 else:
                     token = TOK.Measurement(
                         token.txt + " " + next_token.txt,  # 200 °C
                         unit,  # K
-                        factor(token.val[1]),  # 200 converted to Kelvin
+                        val,  # 200 converted to Kelvin
                     )
 
                 next_token = next(token_stream)
@@ -1528,12 +1425,13 @@ def parse_particles(token_stream, options, convert_measurements=False):
                     token.txt + next_token.txt, CURRENCY_SYMBOLS[next_token.txt], token.val[0]
                 )
                 next_token = next(token_stream)
+
             # Replace straight abbreviations
             # (i.e. those that don't end with a period)
             if token.kind == TOK.WORD and token.val is None:
-                if token.txt in Abbreviations.DICT:
+                if Abbreviations.has_meaning(token.txt):
                     # Add a meaning to the token
-                    token = TOK.Word(token.txt, [Abbreviations.DICT[token.txt]])
+                    token = TOK.Word(token.txt, Abbreviations.get_meaning(token.txt))
 
             # Yield the current token and advance to the lookahead
             yield token

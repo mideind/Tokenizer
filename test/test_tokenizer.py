@@ -273,7 +273,13 @@ def test_single_tokens():
         (
             "dags. 10/7",
             [
-                Tok(TOK.WORD, "dags.", [("dagsetja", 0, "so", "skst", "dags.", "-")]),
+                Tok(TOK.WORD, "dags.",
+                    [
+                        ('dagsetja', 0, 'so', 'skst', 'dags.', '-'),
+                        ('dagsettur', 0, 'lo', 'skst', 'dags.', '-'),
+                        ('dagsetning', 0, 'kvk', 'skst', 'dags.', '-'),
+                    ]
+                ),
                 Tok(TOK.DATEREL, "10/7", (0, 7, 10)),
             ],
         ),
@@ -304,36 +310,76 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
-        ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
-        ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
-        ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
-        ("ferðamála- dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
-        ("ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
+        (
+            "stjórnskipunar- og eftirlitsnefnd",
+            [
+                Tok(TOK.WORD, "stjórnskipunar-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.WORD, "eftirlitsnefnd", None),
+            ]
+        ),
+        (
+            "dómsmála-, viðskipta- og iðnaðarráðherra",
+            [
+                Tok(TOK.WORD, "dómsmála-", None),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.WORD, "viðskipta-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.WORD, "iðnaðarráðherra", None),
+            ]
+        ),
+        (
+            "dómsmála- viðskipta- og iðnaðarráðherra",
+            [
+                Tok(TOK.WORD, "dómsmála-", None),
+                Tok(TOK.WORD, "viðskipta-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.WORD, "iðnaðarráðherra", None),
+            ]
+        ),
+        (
+            "ferðamála- dómsmála- viðskipta- og iðnaðarráðherra",
+            [
+                Tok(TOK.WORD, "ferðamála-", None),
+                Tok(TOK.WORD, "dómsmála-", None),
+                Tok(TOK.WORD, "viðskipta-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.WORD, "iðnaðarráðherra", None),
+            ]
+        ),
+        (
+            "ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra",
+            [
+                Tok(TOK.WORD, "ferðamála-", None),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.WORD, "dómsmála-", None),
+                Tok(TOK.PUNCTUATION, ",", None),
+                Tok(TOK.WORD, "viðskipta-", None),
+                Tok(TOK.WORD, "og", None),
+                Tok(TOK.WORD, "iðnaðarráðherra", None),
+            ]
+        ),
         # Test backoff if composition is not successful
         (
             "ferðamála- ráðherra",
             [
-                Tok(TOK.WORD, "ferðamála", None),
-                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ferðamála-", None),
                 Tok(TOK.WORD, "ráðherra", None),
             ],
         ),
         (
             "ferðamála-, iðnaðar- ráðherra",
             [
-                Tok(TOK.WORD, "ferðamála", None),
-                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ferðamála-", None),
                 Tok(TOK.PUNCTUATION, ",", None),
-                Tok(TOK.WORD, "iðnaðar", None),
-                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "iðnaðar-", None),
                 Tok(TOK.WORD, "ráðherra", None),
             ],
         ),
         (
             "ferðamála- og 500",
             [
-                Tok(TOK.WORD, "ferðamála", None),
-                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.WORD, "ferðamála-", None),
                 Tok(TOK.WORD, "og", None),
                 Tok(TOK.NUMBER, "500", (500, None, None)),
             ],
@@ -361,7 +407,7 @@ def test_single_tokens():
         ("4204200", [Tok(TOK.TELNO, "4204200", "420-4200")]),
         ("699 2422", [Tok(TOK.TELNO, "699 2422", "699-2422")]),
         ("12,3%", TOK.PERCENT),
-        ("12,3 %", [Tok(TOK.PERCENT, "12,3%", (12.3, None, None))]),
+        ("12,3 %", [Tok(TOK.PERCENT, "12,3 %", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
         ("https://greynir.is", TOK.URL),
         ("https://pypi.org/project/tokenizer/", TOK.URL),
@@ -427,26 +473,27 @@ def test_single_tokens():
         ("33B", [Tok(TOK.NUMWLETTER, "33B", (33, "B"))]),
         ("1129c", [Tok(TOK.NUMWLETTER, "1129c", (1129, "c"))]),
 
-        ("7l", [Tok(TOK.MEASUREMENT, "7 l", ("m³", 0.007))]),
+        ("7l", [Tok(TOK.MEASUREMENT, "7l", ("m³", 0.007))]),
         ("17 ltr", [Tok(TOK.MEASUREMENT, "17 ltr", ("m³", 17.0e-3))]),
-        ("150m", [Tok(TOK.MEASUREMENT, "150 m", ("m", 150))]),
-        ("220V", [Tok(TOK.MEASUREMENT, "220 V", ("V", 220))]),
-        ("11A", [Tok(TOK.MEASUREMENT, "11 A", ("A", 11))]),
+        ("150m", [Tok(TOK.MEASUREMENT, "150m", ("m", 150))]),
+        ("220V", [Tok(TOK.MEASUREMENT, "220V", ("V", 220))]),
+        ("220Volt", [Tok(TOK.NUMBER, "220", (220, None, None)), Tok(TOK.WORD, "Volt", None)]),
+        ("11A", [Tok(TOK.MEASUREMENT, "11A", ("A", 11))]),
         ("100 mm", [Tok(TOK.MEASUREMENT, "100 mm", ("m", 0.1))]),
-        ("30,7°C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
+        ("30,7°C", [Tok(TOK.MEASUREMENT, "30,7°C", ("K", 273.15 + 30.7))]),
         ("30,7 °C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
-        ("30,7° C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
-        ("30,7 ° C", [Tok(TOK.MEASUREMENT, "30,7 °C", ("K", 273.15 + 30.7))]),
-        ("32°F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("30,7° C", [Tok(TOK.MEASUREMENT, "30,7° C", ("K", 273.15 + 30.7))]),
+        ("30,7 ° C", [Tok(TOK.MEASUREMENT, "30,7 ° C", ("K", 273.15 + 30.7))]),
+        ("32°F", [Tok(TOK.MEASUREMENT, "32°F", ("K", 273.15))]),
         ("32 °F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
-        ("32° F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
-        ("32 ° F", [Tok(TOK.MEASUREMENT, "32 °F", ("K", 273.15))]),
+        ("32° F", [Tok(TOK.MEASUREMENT, "32° F", ("K", 273.15))]),
+        ("32 ° F", [Tok(TOK.MEASUREMENT, "32 ° F", ("K", 273.15))]),
         ("180°", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
-        ("180 °", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
+        ("180 °", [Tok(TOK.MEASUREMENT, "180 °", ("°", 180))]),
         ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6))]),
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
         ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
-        ("1976kWst", [Tok(TOK.MEASUREMENT, "1976 kWst", ("J", 7113.6e6))]),
+        ("1976kWst", [Tok(TOK.MEASUREMENT, "1976kWst", ("J", 7113.6e6))]),
 
         ("CO2", TOK.MOLECULE),
         ("CO", TOK.WORD),
@@ -576,6 +623,7 @@ def test_sentences():
         "HT": TOK.HASHTAG,
         "K": TOK.SSN,
         "MO": TOK.MOLECULE,
+        "SE": TOK.SERIALNUMBER,
         "X": TOK.UNKNOWN,
     }
 
@@ -596,7 +644,7 @@ def test_sentences():
     test_sentence(
         "  Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
         "skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.",
-        "B W      W   W     W   W "
+        "B W      W   W     W   W               W  W                "
         "W    O  W   O     W     W    W   N P Y   W    DA            P E",
     )
 
@@ -630,8 +678,8 @@ def test_sentences():
     test_sentence(
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015 nk. Ál-verið notar 60 MWst á ári.",
-        "B W   W  W    W    W            W   W                                   W O   W "
-        "W    O     W     W    DA                 W P E B W P W W    ME      W W  P E",
+        "B W   W  W    W    W            W   W               W  W                W O   W    "
+        "W    O     W     W    DA                 W P E B W    W     ME      W W  P E",
     )
 
     test_sentence(
@@ -653,7 +701,7 @@ def test_sentences():
     test_sentence(
         "Skoðaðu vörunúmerin 000-1224 eða 121-2233. Hafðu síðan samband í síma 692 2073. "
         "Þeir voru 313 2012 en 916 árið 2013.",
-        "B W     W           N  P N   W   N  P N P E B W  W     W       W W    TEL P E "
+        "B W     W           SE       W   SE      P E B W  W     W       W W    TEL P E "
         "B W  W    N   Y    W  N    Y P E"
     )
 
@@ -721,17 +769,17 @@ def test_sentences():
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W                                        W    DA           P E",
+        "B W    W       W         W           W   W      W        P W          W  W               W    DA           P E",
     )
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W                                                  W    DA         P E",
+        "B W    W       W         W           W   W      W          W         W          W  W               W    DA         P E",
     )
 
     test_sentence(
         "#MeToo-byltingin er til staðar á Íslandsmóti #1. #12stig í Eurovision en #égerekkiaðfílaþað! #ruv50.",
-        "B HT  P W        W  W   W      W W         O P E B HT    W W          W  HT              P E B HT P E",
+        "B HT  W          W  W   W      W W           O P E B HT  W W          W  HT                P E B HT P E",
     )
 
     test_sentence(
@@ -800,9 +848,10 @@ def test_unicode():
     )
     tokens = list(t.tokenize(sent))
     assert tokens[1].txt == "Körfuboltamaðurinn"
-    assert tokens[6].txt == "Kristófer"
-    assert tokens[9].txt == "á"
-    assert tokens[11].txt == "ævintýranna"
+    assert tokens[3].txt == "KR-ingurinn"
+    assert tokens[4].txt == "Kristófer"
+    assert tokens[7].txt == "á"
+    assert tokens[9].txt == "ævintýranna"
 
 
 def test_correction():
@@ -992,7 +1041,7 @@ def test_split_sentences():
     g = t.split_into_sentences(s)
     sents = list(g)
     assert len(sents) == 4
-    assert sents[0] == "3. janúar sl. keypti ég 64 kWst rafbíl ."
+    assert sents[0] == "3. janúar sl. keypti ég 64kWst rafbíl ."
     assert sents[1] == "Hann kostaði €30.000 ."
     assert sents[2] == "200.000 manns mótmæltu ."
     assert sents[3] == "Hér byrjar ný setning"
@@ -1012,7 +1061,7 @@ def test_split_sentences():
     g = t.split_into_sentences(gen(s))
     sents = list(g)
     assert len(sents) == 4
-    assert sents[0] == "3. janúar sl. keypti ég 64 kWst rafbíl ."
+    assert sents[0] == "3. janúar sl. keypti ég 64kWst rafbíl ."
     assert sents[1] == "Hann kostaði €30.000 ."
     assert sents[2] == "200.000 manns mótmæltu"
     assert sents[3] == "Hér byrjar ný setning"
