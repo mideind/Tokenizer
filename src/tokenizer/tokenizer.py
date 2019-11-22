@@ -940,8 +940,12 @@ def parse_tokens(txt, options):
                     break
                 elif lw > 1 and w.startswith("@"):
                     # Username on Twitter or other social media platforms
-                    yield TOK.Username(w, w[1:])
-                    w = ""
+                    if w[-1] in END_OF_SENTENCE:
+                        yield TOK.Username(w[:-1], w[1:-1])
+                        w = w[-1]
+                    else:
+                        yield TOK.Username(w, w[1:])
+                        w = ""
                 else:
                     yield TOK.Punctuation(w[0])
                     w = w[1:]
