@@ -579,7 +579,12 @@ def test_single_tokens():
                 else:
                     assert tok.txt == check.txt, tok.txt + " != " + check.txt
                 if check.val is not None:
-                    assert tok.val == check.val, repr(tok.val) + " != " + repr(check.val)
+                    if check.kind == TOK.WORD:
+                        # Test set equivalence, since the order of word meanings
+                        # is not deterministic
+                        assert set(tok.val) == set(check.val), repr(tok.val) + " != " + repr(check.val)
+                    else:
+                        assert tok.val == check.val, repr(tok.val) + " != " + repr(check.val)
 
     run_test(TEST_CASES)
     run_test(
