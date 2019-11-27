@@ -164,6 +164,10 @@ CLOCK_ABBREV = "kl"
 # Allowed first digits in Icelandic telephone numbers
 TELNO_PREFIXES = "45678"
 
+# Known telephone country codes
+COUNTRY_CODES = frozenset((
+    "354",
+))
 # Prefixes that can be applied to adjectives with an intervening hyphen
 ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
 
@@ -479,7 +483,7 @@ SI_UNITS_REGEX_STRING = r"|".join(
 )
 SI_UNITS_REGEX = re.compile(r"({0})".format(SI_UNITS_REGEX_STRING), re.UNICODE)
 
-# Icelandic-style number, followed by an unit
+# Icelandic-style number, followed by a unit
 NUM_WITH_SI_UNITS_REGEX1 = re.compile(
     r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(SI_UNITS_REGEX_STRING),
     re.UNICODE
@@ -494,6 +498,33 @@ NUM_WITH_SI_UNITS_REGEX2 = re.compile(
 # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
 NUM_WITH_SI_UNITS_REGEX3 = re.compile(
     r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(SI_UNITS_REGEX_STRING),
+    re.UNICODE
+)
+
+CURRENCY_REGEX_STRING = r"|".join(
+    map(
+        # Sort in descending order by length, so that longer strings
+        # are matched before shorter ones
+        re.escape,
+        sorted(keys(CURRENCY_SYMBOLS), key=lambda s: len(s), reverse=True)
+    )
+)
+
+# Icelandic-style number, followed by a currency symbol
+NUM_WITH_CURRENCY_REGEX1 = re.compile(
+    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(CURRENCY_REGEX_STRING),
+    re.UNICODE
+)
+
+# English-style number, followed by a currency symbol
+NUM_WITH_CURRENCY_REGEX2 = re.compile(
+    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(CURRENCY_REGEX_STRING),
+    re.UNICODE
+)
+
+# One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
+NUM_WITH_CURRENCY_REGEX3 = re.compile(
+    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(CURRENCY_REGEX_STRING),
     re.UNICODE
 )
 

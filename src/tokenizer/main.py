@@ -46,7 +46,7 @@ import argparse
 import json
 from functools import partial
 
-from .tokenizer import TOK, tokenize_without_annotation
+from .tokenizer import TOK, tokenize
 from .definitions import make_str
 
 
@@ -138,7 +138,7 @@ def main():
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(',', ':'))
     curr_sent = []
 
-    for t in tokenize_without_annotation(gen(args.infile), **options):
+    for t in tokenize(gen(args.infile), **options):
         if args.csv:
             # Output the tokens in CSV format, one line per token
             if t.txt:

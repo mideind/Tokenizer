@@ -76,6 +76,7 @@ N.A.S.A. er stofnun.
 Hér er minnst á B.B.C. til að skerpa á umræðunni.
 Gengið var að H.Í. í hádeginu.
 Gengið var að H.Í. Þar hvíldist göngufólk.
+Hér eru e-r um e-ja frá e-m til e-rra.
 54 ml er há tala.
 54,664 ml er há tala.
 54.664 ml er há tala.
@@ -249,86 +250,86 @@ Tvö hundruð og fjörutíu ma. ml er há tala.
 +23,985,554 ½ml er há tala.
 +23,985,554 ¼ml er há tala.
 +23,985,554 1/3ml er há tala.
-Kg54 er há tala.
-Kg54,664 er há tala.
-Kg54.664 er há tala.
-Kg54½ er há tala.
-Kg54¼ er há tala.
-Kg54 ½ er há tala.
-Kg54 ¼ er há tala.
-Kg54 1/3 er há tala.
-Kg5.554 er há tala.
-Kg5.554,664 er há tala.
-Kg5.554.664 er há tala.
-Kg5.554½ er há tala.
-Kg5.554¼ er há tala.
-Kg5.554 ½ er há tala.
-Kg5.554 ¼ er há tala.
-Kg5.554 1/3 er há tala.
-Kg5,554 er há tala.
-Kg5,554,664 er há tala.
-Kg5,554.664 er há tala.
-Kg5,554½ er há tala.
-Kg5,554¼ er há tala.
-Kg5,554 ½ er há tala.
-Kg5,554 ¼ er há tala.
-Kg5,554 1/3 er há tala.
-Kg23.985.554 er há tala.
-Kg23.985.554,664 er há tala.
-Kg23.985.554.664 er há tala.
-Kg23.985.554½ er há tala.
-Kg23.985.554¼ er há tala.
-Kg23.985.554 ½ er há tala.
-Kg23.985.554 ¼ er há tala.
-Kg23.985.554 1/3 er há tala.
-Kg23,985,554 er há tala.
-Kg23,985,554,664 er há tala.
-Kg23,985,554.664 er há tala.
-Kg23,985,554½ er há tala.
-Kg23,985,554¼ er há tala.
-Kg23,985,554 ½ er há tala.
-Kg23,985,554 ¼ er há tala.
-Kg23,985,554 1/3 er há tala.
-Kg+54 er há tala.
-Kg+54,664 er há tala.
-Kg+54.664 er há tala.
-Kg+54½ er há tala.
-Kg+54¼ er há tala.
-Kg+54 ½ er há tala.
-Kg+54 ¼ er há tala.
-Kg+54 1/3 er há tala.
-Kg+5.554 er há tala.
-Kg+5.554,664 er há tala.
-Kg+5.554.664 er há tala.
-Kg+5.554½ er há tala.
-Kg+5.554¼ er há tala.
-Kg+5.554 ½ er há tala.
-Kg+5.554 ¼ er há tala.
-Kg+5.554 1/3 er há tala.
-Kg+5,554 er há tala.
-Kg+5,554,664 er há tala.
-Kg+5,554.664 er há tala.
-Kg+5,554½ er há tala.
-Kg+5,554¼ er há tala.
-Kg+5,554 ½ er há tala.
-Kg+5,554 ¼ er há tala.
-Kg+5,554 1/3 er há tala.
-Kg+23.985.554 er há tala.
-Kg+23.985.554,664 er há tala.
-Kg+23.985.554.664 er há tala.
-Kg+23.985.554½ er há tala.
-Kg+23.985.554¼ er há tala.
-Kg+23.985.554 ½ er há tala.
-Kg+23.985.554 ¼ er há tala.
-Kg+23.985.554 1/3 er há tala.
-Kg+23,985,554 er há tala.
-Kg+23,985,554,664 er há tala.
-Kg+23,985,554.664 er há tala.
-Kg+23,985,554½ er há tala.
-Kg+23,985,554¼ er há tala.
-Kg+23,985,554 ½ er há tala.
-Kg+23,985,554 ¼ er há tala.
-Kg+23,985,554 1/3 er há tala.
+Kg 54 er há tala.
+Kg 54,664 er há tala.
+Kg 54.664 er há tala.
+Kg 54½ er há tala.
+Kg 54¼ er há tala.
+Kg 54 ½ er há tala.
+Kg 54 ¼ er há tala.
+Kg 54 1/3 er há tala.
+Kg 5.554 er há tala.
+Kg 5.554,664 er há tala.
+Kg 5.554.664 er há tala.
+Kg 5.554½ er há tala.
+Kg 5.554¼ er há tala.
+Kg 5.554 ½ er há tala.
+Kg 5.554 ¼ er há tala.
+Kg 5.554 1/3 er há tala.
+Kg 5,554 er há tala.
+Kg 5,554,664 er há tala.
+Kg 5,554.664 er há tala.
+Kg 5,554½ er há tala.
+Kg 5,554¼ er há tala.
+Kg 5,554 ½ er há tala.
+Kg 5,554 ¼ er há tala.
+Kg 5,554 1/3 er há tala.
+Kg 23.985.554 er há tala.
+Kg 23.985.554,664 er há tala.
+Kg 23.985.554.664 er há tala.
+Kg 23.985.554½ er há tala.
+Kg 23.985.554¼ er há tala.
+Kg 23.985.554 ½ er há tala.
+Kg 23.985.554 ¼ er há tala.
+Kg 23.985.554 1/3 er há tala.
+Kg 23,985,554 er há tala.
+Kg 23,985,554,664 er há tala.
+Kg 23,985,554.664 er há tala.
+Kg 23,985,554½ er há tala.
+Kg 23,985,554¼ er há tala.
+Kg 23,985,554 ½ er há tala.
+Kg 23,985,554 ¼ er há tala.
+Kg 23,985,554 1/3 er há tala.
+Kg +54 er há tala.
+Kg +54,664 er há tala.
+Kg +54.664 er há tala.
+Kg +54½ er há tala.
+Kg +54¼ er há tala.
+Kg +54 ½ er há tala.
+Kg +54 ¼ er há tala.
+Kg +54 1/3 er há tala.
+Kg +5.554 er há tala.
+Kg +5.554,664 er há tala.
+Kg +5.554.664 er há tala.
+Kg +5.554½ er há tala.
+Kg +5.554¼ er há tala.
+Kg +5.554 ½ er há tala.
+Kg +5.554 ¼ er há tala.
+Kg +5.554 1/3 er há tala.
+Kg +5,554 er há tala.
+Kg +5,554,664 er há tala.
+Kg +5,554.664 er há tala.
+Kg +5,554½ er há tala.
+Kg +5,554¼ er há tala.
+Kg +5,554 ½ er há tala.
+Kg +5,554 ¼ er há tala.
+Kg +5,554 1/3 er há tala.
+Kg +23.985.554 er há tala.
+Kg +23.985.554,664 er há tala.
+Kg +23.985.554.664 er há tala.
+Kg +23.985.554½ er há tala.
+Kg +23.985.554¼ er há tala.
+Kg +23.985.554 ½ er há tala.
+Kg +23.985.554 ¼ er há tala.
+Kg +23.985.554 1/3 er há tala.
+Kg +23,985,554 er há tala.
+Kg +23,985,554,664 er há tala.
+Kg +23,985,554.664 er há tala.
+Kg +23,985,554½ er há tala.
+Kg +23,985,554¼ er há tala.
+Kg +23,985,554 ½ er há tala.
+Kg +23,985,554 ¼ er há tala.
+Kg +23,985,554 1/3 er há tala.
 Kg54 er há tala.
 Kg54,664 er há tala.
 Kg54.664 er há tala.
@@ -501,7 +502,7 @@ Tveir ma. klst er há tala.
 Áttatíu og átta mrð. klst er há tala.
 Hundrað og einn mrð. klst er há tala.
 Tvö hundruð og fjörutíu ma. klst er há tala.
-Átta þúsund og ellefu þús. klst er há tala
+Átta þúsund og ellefu þús. klst er há tala.
 54klst er há tala.
 54,664klst er há tala.
 54.664klst er há tala.
@@ -3574,7 +3575,7 @@ Tólf hundruð milljónir íslenskar krónur er há tala.
 Tveir ma. íslenskar krónur er há tala.
 Þrjátíu þús. íslenskar krónur er há tala.
 Áttatíu og átta mrð. íslenskar krónur er há tala.
-Hundrað og ein mrð. íslensk króna er há tala.
+Hundrað og einn mrð. íslenskra króna er há tala.
 Tvö hundruð og fjörutíu ma. íslenskar krónur er há tala.
 Átta þúsund og ellefu þús. íslenskar krónur er há tala.
 Hér eru 54 ml á ferðinni.
@@ -7075,7 +7076,7 @@ Hér eru átján milljarðar íslenskar krónur á ferðinni.
 Hér eru tveir ma. íslenskar krónur á ferðinni.
 Hér eru þrjátíu þús. íslenskar krónur á ferðinni.
 Hér eru áttatíu og átta mrð. íslenskar krónur á ferðinni.
-Hér eru hundrað og ein mrð. íslensk króna á ferðinni.
+Hér eru hundrað og einn mrð. íslenskra króna á ferðinni.
 Hér eru tvö hundruð og fjörutíu ma. íslenskar krónur á ferðinni.
 Hér eru átta þúsund og ellefu þús. íslenskar krónur á ferðinni.
 Loks höfum við 54 m. Eins gott að það gangi vel.
@@ -9527,7 +9528,7 @@ Loks höfum við USD 23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við USD 23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við USD 23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við USD 23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við USD +5. Eins gott að það gangi vel.
+Loks höfum við USD +54. Eins gott að það gangi vel.
 Loks höfum við USD +54,664. Eins gott að það gangi vel.
 Loks höfum við USD +54.664. Eins gott að það gangi vel.
 Loks höfum við USD +54½. Eins gott að það gangi vel.
@@ -9567,7 +9568,7 @@ Loks höfum við USD +23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við USD +23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við USD +23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við USD +23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við USD5. Eins gott að það gangi vel.
+Loks höfum við USD54. Eins gott að það gangi vel.
 Loks höfum við USD54,664. Eins gott að það gangi vel.
 Loks höfum við USD54.664. Eins gott að það gangi vel.
 Loks höfum við USD54½. Eins gott að það gangi vel.
@@ -9607,7 +9608,7 @@ Loks höfum við USD23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við USD23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við USD23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við USD23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við USD+5. Eins gott að það gangi vel.
+Loks höfum við USD+54. Eins gott að það gangi vel.
 Loks höfum við USD+54,664. Eins gott að það gangi vel.
 Loks höfum við USD+54.664. Eins gott að það gangi vel.
 Loks höfum við USD+54½. Eins gott að það gangi vel.
@@ -9860,7 +9861,7 @@ Loks höfum við USD. 23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við USD. 23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við USD. 23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við USD. 23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við USD. +5. Eins gott að það gangi vel.
+Loks höfum við USD. +54. Eins gott að það gangi vel.
 Loks höfum við USD. +54,664. Eins gott að það gangi vel.
 Loks höfum við USD. +54.664. Eins gott að það gangi vel.
 Loks höfum við USD. +54½. Eins gott að það gangi vel.
@@ -9900,7 +9901,7 @@ Loks höfum við USD. +23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við USD. +23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við USD. +23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við USD. +23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við USD.5. Eins gott að það gangi vel.
+Loks höfum við USD.54. Eins gott að það gangi vel.
 Loks höfum við USD.54,664. Eins gott að það gangi vel.
 Loks höfum við USD.54.664. Eins gott að það gangi vel.
 Loks höfum við USD.54½. Eins gott að það gangi vel.
@@ -9940,7 +9941,7 @@ Loks höfum við USD.23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við USD.23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við USD.23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við USD.23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við USD.+5. Eins gott að það gangi vel.
+Loks höfum við USD.+54. Eins gott að það gangi vel.
 Loks höfum við USD.+54,664. Eins gott að það gangi vel.
 Loks höfum við USD.+54.664. Eins gott að það gangi vel.
 Loks höfum við USD.+54½. Eins gott að það gangi vel.
@@ -10446,7 +10447,7 @@ Loks höfum við $ 23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við $ 23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við $ 23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við $ 23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við $ +5. Eins gott að það gangi vel.
+Loks höfum við $ +54. Eins gott að það gangi vel.
 Loks höfum við $ +54,664. Eins gott að það gangi vel.
 Loks höfum við $ +54.664. Eins gott að það gangi vel.
 Loks höfum við $ +54½. Eins gott að það gangi vel.
@@ -10486,7 +10487,7 @@ Loks höfum við $ +23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við $ +23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við $ +23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við $ +23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við $5. Eins gott að það gangi vel.
+Loks höfum við $54. Eins gott að það gangi vel.
 Loks höfum við $54,664. Eins gott að það gangi vel.
 Loks höfum við $54.664. Eins gott að það gangi vel.
 Loks höfum við $54½. Eins gott að það gangi vel.
@@ -10526,7 +10527,7 @@ Loks höfum við $23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við $23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við $23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við $23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við $+5. Eins gott að það gangi vel.
+Loks höfum við $+54. Eins gott að það gangi vel.
 Loks höfum við $+54,664. Eins gott að það gangi vel.
 Loks höfum við $+54.664. Eins gott að það gangi vel.
 Loks höfum við $+54½. Eins gott að það gangi vel.
@@ -10649,14 +10650,14 @@ Loks höfum við +23,985,554 1/3 íslenskar krónur. Eins gott að það gangi v
 Loks höfum við tvær íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við þrjátíu íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við áttatíu og átta íslenskar krónur. Eins gott að það gangi vel.
-Loks höfum við hundrað og ein íslensk krón. Eins gott að það gangi vel.
+Loks höfum við hundrað og eina íslenska krónu. Eins gott að það gangi vel.
 Loks höfum við tvö hundruð og fjörutíu íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við tólf hundruð milljónir íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við átján milljarðar íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við tveir ma. íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við þrjátíu þús. íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við áttatíu og átta mrð. íslenskar krónur. Eins gott að það gangi vel.
-Loks höfum við hundrað og ein mrð. íslensk krón. Eins gott að það gangi vel.
+Loks höfum við hundrað og einn mrð. íslenskra króna. Eins gott að það gangi vel.
 Loks höfum við tvö hundruð og fjörutíu ma. íslenskar krónur. Eins gott að það gangi vel.
 Loks höfum við átta þúsund og ellefu þús. íslenskar krónur. Eins gott að það gangi vel.
 III. er rómversk tala.
@@ -10953,7 +10954,7 @@ Loks höfum við 23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við 23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við 23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við 23,985,554 1/3. Eins gott að það gangi vel.
-Loks höfum við +5. Eins gott að það gangi vel.
+Loks höfum við +54. Eins gott að það gangi vel.
 Loks höfum við +54,664. Eins gott að það gangi vel.
 Loks höfum við +54.664. Eins gott að það gangi vel.
 Loks höfum við +54½. Eins gott að það gangi vel.
@@ -10993,7 +10994,6 @@ Loks höfum við +23,985,554¼. Eins gott að það gangi vel.
 Loks höfum við +23,985,554 ½. Eins gott að það gangi vel.
 Loks höfum við +23,985,554 ¼. Eins gott að það gangi vel.
 Loks höfum við +23,985,554 1/3. Eins gott að það gangi vel.
-
 Loks höfum við -54. Eins gott að það gangi vel.
 Loks höfum við -54,664. Eins gott að það gangi vel.
 Loks höfum við -54.664. Eins gott að það gangi vel.
@@ -11296,6 +11296,8 @@ Myndin tekur á sig blá-, gul-, rauð- og grænleitan blæ.
 Þar voru þingkonur og -menn.
 Nágrannalönd og -þjóðir rífast um peninga.
 Hér sjá framsóknar-/sjálfstæðismenn um vélina.
+Viltu hamborgara m/osti og sitja v/vatnið til að borða?
+Sjáðu til að þetta b/t viðtakanda.
 Notum hægri/vinstri-regluna til að rata.
 Applesýningin gekk vel. 
 Það gekk heldur verr á Teslasýningunni í gær.

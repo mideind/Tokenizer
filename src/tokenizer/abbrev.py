@@ -51,9 +51,12 @@ class Abbreviations:
 
     # Dictionary of abbreviations and their meanings
     DICT = defaultdict(set)
+    WRONGDICT = defaultdict(set)    # Containing wrong versions of abbreviations
     MEANINGS = set()  # All abbreviation meanings
     # Single-word abbreviations, i.e. those with only one dot at the end
     SINGLES = set()
+    # Single-word abbreviations, i.e. those with only one dot at the end
+    WRONGSINGLES = set()
     # Potential sentence finishers, i.e. those with a dot at the end, marked with an asterisk
     # in the config file
     FINISHERS = set()
@@ -120,6 +123,7 @@ class Abbreviations:
             )
         )
         Abbreviations.MEANINGS.add(meaning)
+        # Adding wrong versions of abbreviations
         if abbrev[-1] == "." and "." not in abbrev[0:-1]:
             # Only one dot, at the end
             Abbreviations.SINGLES.add(abbrev[0:-1])  # Lookup is without the dot
@@ -130,7 +134,7 @@ class Abbreviations:
                 Abbreviations.FINISHERS.add(wabbrev)
 
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
-            Abbreviations.DICT[wabbrev].add(
+            Abbreviations.WRONGDICT[wabbrev].add(
                 (
                     meaning,
                     0,
@@ -147,12 +151,12 @@ class Abbreviations:
             for i in indices:
                 # Removing one dot at a time
                 wabbrev = abbrev[:i]+abbrev[i+1:]
-                if finisher:
-                    Abbreviations.FINISHERS.add(wabbrev)
+                #if finisher:
+                #    Abbreviations.FINISHERS.add(wabbrev)
                 if wabbrev not in Abbreviations.WRONGDOTS:
                    Abbreviations.WRONGDOTS[wabbrev] = []
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
-                Abbreviations.DICT[wabbrev].add(
+                Abbreviations.WRONGDICT[wabbrev].add(
                     (
                         meaning,
                         0,
@@ -175,12 +179,12 @@ class Abbreviations:
                 # 2 and 3 removed
                 wabbrevs.append(abbrev[:i2]+abbrev[i2+1:i3]+abbrev[i3+1:])
                 for wabbrev in wabbrevs:
-                    if finisher:
-                        Abbreviations.FINISHERS.add(wabbrev)
+                    #if finisher:
+                    #    Abbreviations.FINISHERS.add(wabbrev)
                     if wabbrev not in Abbreviations.WRONGDOTS:
                         Abbreviations.WRONGDOTS[wabbrev] = []
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
-                    Abbreviations.DICT[wabbrev].add(
+                    Abbreviations.WRONGDICT[wabbrev].add(
                         (
                             meaning,
                             0,
@@ -192,14 +196,14 @@ class Abbreviations:
                     )
             # Removing all dots
             wabbrev = abbrev.replace(".", "")
-            if wabbrev not in Abbreviations.DICT:
-                Abbreviations.SINGLES.add(wabbrev)
-            if finisher:
-                Abbreviations.FINISHERS.add(wabbrev)
+            if wabbrev not in Abbreviations.WRONGDICT:
+                Abbreviations.WRONGSINGLES.add(wabbrev)
+            #if finisher:
+            #    Abbreviations.FINISHERS.add(wabbrev)
             if wabbrev not in Abbreviations.WRONGDOTS:
                 Abbreviations.WRONGDOTS[wabbrev] = []
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
-            Abbreviations.DICT[wabbrev].add(
+            Abbreviations.WRONGDICT[wabbrev].add(
                 (
                     meaning,
                     0,
@@ -219,7 +223,7 @@ class Abbreviations:
 
     @staticmethod
     def has_meaning(abbrev):
-        return abbrev in Abbreviations.DICT
+        return abbrev in Abbreviations.DICT if abbrev in Abbreviations.DICT else abbrev in Abbreviations.WRONGDICT
 
     @staticmethod
     def has_abbreviation(meaning):
