@@ -474,6 +474,12 @@ defined within the ``TOK`` class:
 | SSN           |    27   | Social security     | | 591213-1480             |
 |               |         | number (*kennitala*)|                           |
 +---------------+---------+---------------------+---------------------------+
+| USERNAME      |    28   | Twitter user handle | | @username_123           |
+|               |         |                     |                           |
++---------------+---------+---------------------+---------------------------+
+| SERIALNUMBER  |    29   | Serial number       | | 394-5388                |
+|               |         |                     | | 12-345-6789             |
++---------------+---------+---------------------+---------------------------+
 | S_BEGIN       |  11001  | Start of sentence   |                           |
 +---------------+---------+---------------------+---------------------------+
 | S_END         |  11002  | End of sentence     |                           |
@@ -572,8 +578,11 @@ the token kind, as follows:
 - For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)``
   tuple, where ``unit`` is a base SI unit (such as ``g``, ``m``,
   ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature in Kelvin).
-- For ``TOK.TELNO``, the ``val`` field contains the phone number
-  in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen.
+- For ``TOK.TELNO``, the ``val`` field contains a tuple: ``(number, cc)``
+  where the first item is the the phone number
+  in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen,
+  and the second item is the country code, eventually prefixed by ``+``.
+  The country code defaults to ``354`` (Iceland).
 
 
 Abbreviations
@@ -624,7 +633,9 @@ Changelog
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
   and ``detokenize()`` functions; removed ``convert_telno`` option;
   splitting of coalesced tokens made more robust;
-  added ``TOK.SSN`` and ``TOK.MOLECULE`` token kinds
+  added ``TOK.SSN``, ``TOK.MOLECULE``, ``TOK.USERNAME`` and
+  ``TOK.SERIALNUMBER`` token kinds; abbreviations can now have multiple
+  meanings
 * Version 1.4.0: Added the ``**options`` parameter to the
   ``tokenize()`` function, giving control over the handling of numbers,
   telephone numbers, and 'kludgy' ordinals

@@ -102,9 +102,6 @@ def main():
     def quote(s):
         """ Return the string s within double quotes, and with any contained
             backslashes and double quotes escaped with a backslash """
-        if type(s) == tuple:
-            # Abbreviation possibly containing many meanings
-            s = "{0},{1},{2},{3},{4},{5}".format(s[0], s[1], s[2], s[3], s[4], s[5])
         return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     def gen(f):
@@ -119,8 +116,11 @@ def main():
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
             if quote_word:
-                return quote(t.val[0][0])
-            return t.val[0][0]
+                # Return a |-delimited list of possible meanings,
+                # joined into a single string
+                return quote("|".join(m[0] for m in t.val))
+            # Return a list of all possible meanings
+            return [m[0] for m in t.val]
         if t.kind == TOK.PERCENT or t.kind == TOK.NUMBER:
             return t.val[0]
         if t.kind == TOK.S_BEGIN:

@@ -68,7 +68,7 @@ class Abbreviations:
     NAME_FINISHERS = set()
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS = {}
+    WRONGDOTS = defaultdict(list)
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
@@ -126,13 +126,11 @@ class Abbreviations:
         # Adding wrong versions of abbreviations
         if abbrev[-1] == "." and "." not in abbrev[0:-1]:
             # Only one dot, at the end
-            Abbreviations.SINGLES.add(abbrev[0:-1])  # Lookup is without the dot
+            # Lookup is without the dot
             wabbrev = abbrev[0:-1]
-            if wabbrev not in Abbreviations.WRONGDOTS:
-               Abbreviations.WRONGDOTS[wabbrev] = []
+            Abbreviations.SINGLES.add(wabbrev)
             if finisher:
                 Abbreviations.FINISHERS.add(wabbrev)
-
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
                 (
@@ -140,21 +138,20 @@ class Abbreviations:
                     0,
                     gender,
                     "skst" if fl is None else fl,
-                    wabbrev,                            # TODO STILLING Bæta við normalized útgáfu?
+                    wabbrev,
                     "-",
                 )
             )
 
-        elif "." in abbrev:     # Only multiple dots, checked single dots above
+        elif "." in abbrev:
+            # Only multiple dots, checked single dots above
             # Want to see versions with each one deleted, and one where all are deleted
-            indices = ( [pos for pos, char in enumerate(abbrev) if char == "."])
+            indices = [pos for pos, char in enumerate(abbrev) if char == "."]
             for i in indices:
                 # Removing one dot at a time
-                wabbrev = abbrev[:i]+abbrev[i+1:]
+                wabbrev = abbrev[:i] + abbrev[i+1:]
                 #if finisher:
                 #    Abbreviations.FINISHERS.add(wabbrev)
-                if wabbrev not in Abbreviations.WRONGDOTS:
-                   Abbreviations.WRONGDOTS[wabbrev] = []
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
                     (
@@ -162,11 +159,12 @@ class Abbreviations:
                         0,
                         gender,
                         "skst" if fl is None else fl,
-                        wabbrev,                            # TODO STILLING Bæta við normalized útgáfu?
+                        wabbrev,
                         "-",
                     )
                 )
-            if len(indices) > 2:   # 3 or 4 dots currently in vocabulary
+            if len(indices) > 2:
+                # 3 or 4 dots currently in vocabulary
                 # Not all cases with 4 dots are handled.
                 i1 = indices[0]
                 i2 = indices[1]
@@ -181,8 +179,6 @@ class Abbreviations:
                 for wabbrev in wabbrevs:
                     #if finisher:
                     #    Abbreviations.FINISHERS.add(wabbrev)
-                    if wabbrev not in Abbreviations.WRONGDOTS:
-                        Abbreviations.WRONGDOTS[wabbrev] = []
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                     Abbreviations.WRONGDICT[wabbrev].add(
                         (
@@ -190,7 +186,7 @@ class Abbreviations:
                             0,
                             gender,
                             "skst" if fl is None else fl,
-                            wabbrev,                           # TODO STILLING Bæta við normalized útgáfu?
+                            wabbrev,
                             "-",
                         )
                     )
@@ -200,8 +196,6 @@ class Abbreviations:
                 Abbreviations.WRONGSINGLES.add(wabbrev)
             #if finisher:
             #    Abbreviations.FINISHERS.add(wabbrev)
-            if wabbrev not in Abbreviations.WRONGDOTS:
-                Abbreviations.WRONGDOTS[wabbrev] = []
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
                 (
@@ -209,7 +203,7 @@ class Abbreviations:
                     0,
                     gender,
                     "skst" if fl is None else fl,
-                    wabbrev,                                # TODO STILLING Bæta við normalized útgáfu?
+                    wabbrev,
                     "-",
                 )
             )
@@ -223,7 +217,7 @@ class Abbreviations:
 
     @staticmethod
     def has_meaning(abbrev):
-        return abbrev in Abbreviations.DICT if abbrev in Abbreviations.DICT else abbrev in Abbreviations.WRONGDICT
+        return abbrev in Abbreviations.DICT or abbrev in Abbreviations.WRONGDICT
 
     @staticmethod
     def has_abbreviation(meaning):

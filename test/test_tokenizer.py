@@ -68,7 +68,7 @@ def test_single_tokens():
         (
             "17.6.",
             [
-                Tok(TOK.DATEREL, "17.6", (0, 6, 17)),
+                Tok(TOK.NUMBER, "17.6", (17.6, None, None)),
                 Tok(TOK.PUNCTUATION, ".", None),
             ]
         ),
@@ -82,7 +82,7 @@ def test_single_tokens():
         (
             "30.9.",
             [
-                Tok(TOK.DATEREL, "30.9", (0, 9, 30)),
+                Tok(TOK.NUMBER, "30.9", (30.9, None, None)),
                 Tok(TOK.PUNCTUATION, ".", None),
             ]
         ),
@@ -268,7 +268,13 @@ def test_single_tokens():
                 Tok(TOK.PUNCTUATION, ".", None),
             ],
         ),
-        ("t.d.", TOK.WORD, [("til dæmis", 0, "ao", "frasi", "t.d.", "-")]),
+        (
+            "t.d.",
+            [
+                Tok(TOK.WORD, "t.d", [("til dæmis", 0, "ao", "frasi", "t.d.", "-")]),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
         ("hr.", TOK.WORD, [("herra", 0, "kk", "skst", "hr.", "-")]),
         (
             "dags. 10/7",
@@ -277,7 +283,6 @@ def test_single_tokens():
                     [
                         ('dagsetja', 0, 'so', 'skst', 'dags.', '-'),
                         ('dagsettur', 0, 'lo', 'skst', 'dags.', '-'),
-                        ('dagsetning', 0, 'kvk', 'skst', 'dags.', '-'),
                     ]
                 ),
                 Tok(TOK.DATEREL, "10/7", (0, 7, 10)),
@@ -310,76 +315,36 @@ def test_single_tokens():
             ],
         ),
         ("BSRB", TOK.WORD),
-        (
-            "stjórnskipunar- og eftirlitsnefnd",
-            [
-                Tok(TOK.WORD, "stjórnskipunar-", None),
-                Tok(TOK.WORD, "og", None),
-                Tok(TOK.WORD, "eftirlitsnefnd", None),
-            ]
-        ),
-        (
-            "dómsmála-, viðskipta- og iðnaðarráðherra",
-            [
-                Tok(TOK.WORD, "dómsmála-", None),
-                Tok(TOK.PUNCTUATION, ",", None),
-                Tok(TOK.WORD, "viðskipta-", None),
-                Tok(TOK.WORD, "og", None),
-                Tok(TOK.WORD, "iðnaðarráðherra", None),
-            ]
-        ),
-        (
-            "dómsmála- viðskipta- og iðnaðarráðherra",
-            [
-                Tok(TOK.WORD, "dómsmála-", None),
-                Tok(TOK.WORD, "viðskipta-", None),
-                Tok(TOK.WORD, "og", None),
-                Tok(TOK.WORD, "iðnaðarráðherra", None),
-            ]
-        ),
-        (
-            "ferðamála- dómsmála- viðskipta- og iðnaðarráðherra",
-            [
-                Tok(TOK.WORD, "ferðamála-", None),
-                Tok(TOK.WORD, "dómsmála-", None),
-                Tok(TOK.WORD, "viðskipta-", None),
-                Tok(TOK.WORD, "og", None),
-                Tok(TOK.WORD, "iðnaðarráðherra", None),
-            ]
-        ),
-        (
-            "ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra",
-            [
-                Tok(TOK.WORD, "ferðamála-", None),
-                Tok(TOK.PUNCTUATION, ",", None),
-                Tok(TOK.WORD, "dómsmála-", None),
-                Tok(TOK.PUNCTUATION, ",", None),
-                Tok(TOK.WORD, "viðskipta-", None),
-                Tok(TOK.WORD, "og", None),
-                Tok(TOK.WORD, "iðnaðarráðherra", None),
-            ]
-        ),
+        ("stjórnskipunar- og eftirlitsnefnd", TOK.WORD),
+        ("dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("ferðamála- dómsmála- viðskipta- og iðnaðarráðherra", TOK.WORD),
+        ("ferðamála-, dómsmála-, viðskipta- og iðnaðarráðherra", TOK.WORD),
         # Test backoff if composition is not successful
         (
             "ferðamála- ráðherra",
             [
-                Tok(TOK.WORD, "ferðamála-", None),
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
                 Tok(TOK.WORD, "ráðherra", None),
             ],
         ),
         (
             "ferðamála-, iðnaðar- ráðherra",
             [
-                Tok(TOK.WORD, "ferðamála-", None),
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
                 Tok(TOK.PUNCTUATION, ",", None),
-                Tok(TOK.WORD, "iðnaðar-", None),
+                Tok(TOK.WORD, "iðnaðar", None),
+                Tok(TOK.PUNCTUATION, "-", None),
                 Tok(TOK.WORD, "ráðherra", None),
             ],
         ),
         (
             "ferðamála- og 500",
             [
-                Tok(TOK.WORD, "ferðamála-", None),
+                Tok(TOK.WORD, "ferðamála", None),
+                Tok(TOK.PUNCTUATION, "-", None),
                 Tok(TOK.WORD, "og", None),
                 Tok(TOK.NUMBER, "500", (500, None, None)),
             ],
@@ -403,9 +368,11 @@ def test_single_tokens():
         ),
         ("9000000", TOK.NUMBER),
         ("1234567", TOK.NUMBER),
-        ("525-4764", [Tok(TOK.TELNO, "525-4764", "525-4764")]),
-        ("4204200", [Tok(TOK.TELNO, "4204200", "420-4200")]),
-        ("699 2422", [Tok(TOK.TELNO, "699 2422", "699-2422")]),
+        ("525-4764", [Tok(TOK.TELNO, "525-4764", ("525-4764", "354"))]),
+        ("4204200", [Tok(TOK.TELNO, "4204200", ("420-4200", "354"))]),
+        ("699 2422", [Tok(TOK.TELNO, "699 2422", ("699-2422", "354"))]),
+        ("354 699 2422", [Tok(TOK.TELNO, "354 699 2422", ("699-2422", "354"))]),
+        ("+354 699 2422", [Tok(TOK.TELNO, "+354 699 2422", ("699-2422", "+354"))]),
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3 %", (12.3, None, None))]),
         ("http://www.greynir.is", TOK.URL),
@@ -501,6 +468,12 @@ def test_single_tokens():
         ("B5", TOK.MOLECULE),
         ("H2SO4", TOK.MOLECULE),
 
+        ("350-6678", TOK.SERIALNUMBER),
+        ("123-456-7890", TOK.SERIALNUMBER),
+        ("1-45-7890", TOK.SERIALNUMBER),
+        ("1-800-1234", TOK.SERIALNUMBER),
+        ("1-800-1234-545566", TOK.SERIALNUMBER),
+
     ]
 
     TEST_CASES_KLUDGY_MODIFY = [
@@ -519,9 +492,11 @@ def test_single_tokens():
 
     TEST_CASES_CONVERT_TELNOS = [
         ("525-4764", TOK.TELNO),
-        ("4204200", [Tok(TOK.TELNO, "4204200", "420-4200")]),
-        ("699 2422", [Tok(TOK.TELNO, "699 2422", "699-2422")]),
-        ("699 2012", [Tok(TOK.TELNO, "699 2012", "699-2012")]),
+        ("4204200", [Tok(TOK.TELNO, "4204200", ("420-4200", "354"))]),
+        ("699 2422", [Tok(TOK.TELNO, "699 2422", ("699-2422", "354"))]),
+        ("699 2012", [Tok(TOK.TELNO, "699 2012", ("699-2012", "354"))]),
+        ("354 699 2012", [Tok(TOK.TELNO, "354 699 2012", ("699-2012", "354"))]),
+        ("+354 699 2012", [Tok(TOK.TELNO, "+354 699 2012", ("699-2012", "+354"))]),
     ]
 
     TEST_CASES_CONVERT_NUMBERS = [
@@ -582,11 +557,12 @@ def test_single_tokens():
                     if check.kind == TOK.WORD:
                         # Test set equivalence, since the order of word meanings
                         # is not deterministic
-                        assert set(tok.val) == set(check.val), repr(tok.val) + " != " + repr(check.val)
+                        assert set(tok.val or []) == set(check.val or []), repr(tok.val) + " != " + repr(check.val)
                     else:
                         assert tok.val == check.val, repr(tok.val) + " != " + repr(check.val)
 
     run_test(TEST_CASES)
+    run_test(TEST_CASES_CONVERT_TELNOS)
     run_test(
         TEST_CASES_KLUDGY_MODIFY,
         handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY
@@ -595,7 +571,6 @@ def test_single_tokens():
         TEST_CASES_KLUDGY_TRANSLATE,
         handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE
     )
-    run_test(TEST_CASES_CONVERT_TELNOS)
     run_test(
         TEST_CASES_CONVERT_NUMBERS,
         convert_numbers=True
@@ -649,7 +624,7 @@ def test_sentences():
     test_sentence(
         "  Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
         "skv. 3. gr. XVII. kafla laga nr. 10/2007 þann 3. janúar 2010.",
-        "B W      W   W     W   W               W  W                "
+        "B W      W   W     W   W                                   "
         "W    O  W   O     W     W    W   N P Y   W    DA            P E",
     )
 
@@ -683,7 +658,7 @@ def test_sentences():
     test_sentence(
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015 nk. Ál-verið notar 60 MWst á ári.",
-        "B W   W  W    W    W            W   W               W  W                W O   W    "
+        "B W   W  W    W    W            W   W                                   W O   W    "
         "W    O     W     W    DA                 W P E B W    W     ME      W W  P E",
     )
 
@@ -774,12 +749,12 @@ def test_sentences():
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W        P W          W  W               W    DA           P E",
+        "B W    W       W         W           W   W      W                                        W    DA           P E",
     )
 
     test_sentence(
         "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
-        "B W    W       W         W           W   W      W          W         W          W  W               W    DA         P E",
+        "B W    W       W         W           W   W      W                                                  W    DA           P E",
     )
 
     test_sentence(
@@ -809,7 +784,7 @@ def test_sentences():
 
     test_sentence(
         "Ég fæddist 15.10. í Skaftárhreppi en systir mín 25.9. Hún var eldri en ég.",
-        "B W W      DR     W W             W  W      W   DR  P E B W W W     W  W P E",
+        "B W W      DR     W W             W  W      W   N   P E B W W W     W  W P E",
     )
 
     test_sentence(

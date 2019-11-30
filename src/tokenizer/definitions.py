@@ -150,7 +150,9 @@ END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
-PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", "-", "–"])  # Period and apostrophes
+PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", "-", "–"])
+# Punctuation symbols that can end words
+PUNCT_ENDING_WORD = frozenset(["'"])
 # Punctuation symbols that may occur together
 PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
 
@@ -166,7 +168,7 @@ TELNO_PREFIXES = "45678"
 
 # Known telephone country codes
 COUNTRY_CODES = frozenset((
-    "354",
+    "354", "+354"
 ))
 # Prefixes that can be applied to adjectives with an intervening hyphen
 ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
