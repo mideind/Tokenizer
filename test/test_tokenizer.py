@@ -779,7 +779,7 @@ def test_sentences():
 
     test_sentence(
         "Ég vildi [...] fara út. [...] Hann sá mig.",
-        "B W W    P     W    W P P     E B W W W  P E",
+        "B W W    P     W    W P P   E B W  W  W  P E",
     )
 
     test_sentence(
@@ -810,6 +810,16 @@ def test_sentences():
     test_sentence(
         "Jón, kt. 301265-5309, vann 301265-53090 kr. H2O var drukkið.",
         "B W P W  K          P W    N     P A      P E B MO W W     P E",
+    )
+
+    test_sentence(
+        "Anna-María var í St. Mary's en prófaði aldrei að fara á Dunkin' Donuts.",
+        "B W        W   W W   W      W  W       W      W  W    W W       W     P E",
+    )
+
+    test_sentence(
+        "Þingmenn og -konur versluðu marg-ítrekað í Tösku- og hanskabúðinni.",
+        "B W      W  W      W        W            W W                      P E",
     )
 
 

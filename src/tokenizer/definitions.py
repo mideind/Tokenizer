@@ -170,8 +170,6 @@ TELNO_PREFIXES = "45678"
 COUNTRY_CODES = frozenset((
     "354", "+354"
 ))
-# Prefixes that can be applied to adjectives with an intervening hyphen
-ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
 
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))

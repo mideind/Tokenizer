@@ -1954,17 +1954,8 @@ def parse_phrases_2(token_stream):
                         next_token = next(token_stream)
                 else:
                     # Incorrect prediction: make amends and continue
-                    if (
-                        token.kind == TOK.WORD
-                        and len(tq) == 2
-                        and tq[1].txt == HYPHEN
-                        and tq[0].txt.lower() in ADJECTIVE_PREFIXES
-                    ):
-                        # hálf-opinberri, marg-ítrekaðri
-                        token = TOK.Word(tq[0].txt + "-" + token.txt)
-                    else:
-                        for t in tq:
-                            yield t
+                    for t in tq:
+                        yield t
 
             # Yield the current token and advance to the lookahead
             yield token
