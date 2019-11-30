@@ -579,7 +579,7 @@ the token kind, as follows:
   tuple, where ``unit`` is a base SI unit (such as ``g``, ``m``,
   ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature in Kelvin).
 - For ``TOK.TELNO``, the ``val`` field contains a tuple: ``(number, cc)``
-  where the first item is the the phone number
+  where the first item is the phone number
   in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen,
   and the second item is the country code, eventually prefixed by ``+``.
   The country code defaults to ``354`` (Iceland).
