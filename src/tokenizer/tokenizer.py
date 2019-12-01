@@ -60,45 +60,78 @@ class TOK:
 
     """ Token types """
 
+    # Punctuation
     PUNCTUATION = 1
+    # Time hh:mm:ss
     TIME = 2
+    # Date yyyy-mm-dd
     DATE = 3
+    # Year, four digits
     YEAR = 4
+    # Number, integer or real
     NUMBER = 5
+    # Word, which may contain hyphens and apostrophes
     WORD = 6
+    # Telephone number: 7 digits, eventually preceded by country code
     TELNO = 7
+    # Percentage (number followed by percent or promille sign)
     PERCENT = 8
+    # A Uniform Resource Locator (URL): https://example.com/path?p=100
     URL = 9
+    # An ordinal number, eventually using Roman numerals (1., XVII.)
     ORDINAL = 10
+    # A timestamp (not emitted by Tokenizer)
     TIMESTAMP = 11
+    # A currency sign or code
     CURRENCY = 12
+    # An amount, i.e. a quantity with a currency code
     AMOUNT = 13
+    # Person name (not used by Tokenizer)
     PERSON = 14
+    # E-mail address (somebody@somewhere.com)
     EMAIL = 15
+    # Entity name (not used by Tokenizer)
     ENTITY = 16
+    # Unknown token type
     UNKNOWN = 17
+    # Absolute date
     DATEABS = 18
+    # Relative date
     DATEREL = 19
+    # Absolute time stamp, yyyy-mm-dd hh:mm:ss
     TIMESTAMPABS = 20
+    # Relative time stamp, yyyy-mm-dd hh:mm:ss
+    # where at least of yyyy, mm or dd is missing
     TIMESTAMPREL = 21
+    # A measured quantity with its unit (220V, 0.5 km)
     MEASUREMENT = 22
+    # Number followed by letter (a-z), often seen in addresses (Skógarstígur 4B)
     NUMWLETTER = 23
+    # Internet domain name (an.example.com)
     DOMAIN = 24
+    # Hash tag (#metoo)
     HASHTAG = 25
-    MOLECULE = 26  # Chemical compound ('H2SO4')
-    SSN = 27  # Social security number ('kennitala')
-    USERNAME = 28 # Social media user name ('@user')
-    SERIALNUMBER = 29   # Serial number ('394-8362')
+    # Chemical compound ('H2SO4')
+    MOLECULE = 26
+    # Social security number ('kennitala')
+    SSN = 27
+    # Social media user name ('@username_123')
+    USERNAME = 28
+    # Serial number ('394-8362')
+    SERIALNUMBER = 29
 
-    S_SPLIT = 10000  # Sentence split token
-
-    P_BEGIN = 10001  # Paragraph begin
-    P_END = 10002  # Paragraph end
-
-    S_BEGIN = 11001  # Sentence begin
-    S_END = 11002  # Sentence end
-
-    X_END = 12001  # End sentinel
+    # Sentence split token
+    S_SPLIT = 10000
+    # Paragraph begin
+    P_BEGIN = 10001
+    # Paragraph end
+    P_END = 10002
+    # Sentence begin
+    S_BEGIN = 11001
+    # Sentence end
+    S_END = 11002
+    # End sentinel
+    X_END = 12001
 
     END = frozenset((P_END, S_END, X_END, S_SPLIT))
     TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
@@ -385,7 +418,8 @@ def parse_digits(w, convert_numbers):
             p = g.split(".")
         y = int(p[2])
         if y <= 99:
-            y += 2000   # ATTN: Should have a cutoff so >40 only adds 1900
+            # 50 means 2050, but 51 means 1951
+            y += 1900 if y > 50 else 2000
         m = int(p[1])
         d = int(p[0])
         if m > 12 >= d:
@@ -481,24 +515,31 @@ def parse_digits(w, convert_numbers):
 
     s = NUM_WITH_CURRENCY_REGEX1.match(w)
     if s:
+        # Icelandic-style number, followed by a currency symbol
         g = s.group()
         n = float(s.group(1).replace(".", "").replace(",", "."))
         iso = CURRENCY_SYMBOLS[s.group()[-1:]]
         return TOK.Amount(s.group(), iso, n), s.end()
+
     s = NUM_WITH_CURRENCY_REGEX2.match(w)
     if s:
+        # English-style number, followed by a currency symbol
         g = s.group()
         n = float(s.group(1).replace(",", ""))
         iso = CURRENCY_SYMBOLS[s.group(4)]
         return TOK.Amount(s.group(), iso, n), s.end()
+
     s = NUM_WITH_CURRENCY_REGEX3.match(w)
     if s:
+        # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½'),
+        # and then by a currency symbol
         g = s.group()
         ln = s.group(1)
         vf = s.group(2)
         n = float(ln) + unicodedata.numeric(vf)
         iso = CURRENCY_SYMBOLS[s.group(3)]
         return TOK.Amount(g, iso, n), s.end()
+
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
@@ -714,7 +755,7 @@ def parse_tokens(txt, **options):
         # Handle each sequence w of non-whitespace characters
 
         if not w:
-            # Signal the presence of an empty line, which splits sentences
+            # An empty string signals an empty line, which splits sentences
             yield TOK.Split_Sentence()
             continue
 
@@ -724,7 +765,10 @@ def parse_tokens(txt, **options):
             continue
 
         if w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX:
-            # Sign ('-' or '+') followed by digit: parse as a number
+            # Digit, preceded by sign (+/-): parse as a number
+            # Note that we can't immediately parse a non-signed number
+            # here since kludges such as '3ja' and domain names such as '4chan.com'
+            # need to be handled separately below
             t, eaten = parse_digits(w, convert_numbers)
             yield t
             w = w[eaten:]
@@ -1130,7 +1174,6 @@ def parse_particles(token_stream, **options):
                 ):
                     # Abbreviation ending with period: make a special token for it
                     # and advance the input stream
-                    clock = token.txt.lower() == CLOCK_ABBREV
                     follow_token = next(token_stream)
                     abbrev = token.txt + "."
 
@@ -1187,11 +1230,9 @@ def parse_particles(token_stream, **options):
 
             # Coalesce 'klukkan'/[kl.] + time or number into a time
             if next_token.kind == TOK.TIME or next_token.kind == TOK.NUMBER:
-                if clock or (
-                    token.kind == TOK.WORD and token.txt.lower() == CLOCK_WORD
-                ):
+                if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     # Match: coalesce and step to next token
-                    txt = CLOCK_ABBREV + "." if clock else token.txt
+                    txt = token.txt
                     if next_token.kind == TOK.NUMBER:
                         # next_token.txt may be a real number, i.e. 13,40,
                         # which may have been converted from 13.40
@@ -1211,10 +1252,8 @@ def parse_particles(token_stream, **options):
 
             # Coalesce 'klukkan/kl. átta/hálfátta' into a time
             elif next_token.txt in CLOCK_NUMBERS:
-                if clock or (
-                    token.kind == TOK.WORD and token.txt.lower() == CLOCK_WORD
-                ):
-                    txt = CLOCK_ABBREV + "." if clock else token.txt
+                if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
+                    txt = token.txt
                     # Match: coalesce and step to next token
                     token = TOK.Time(
                         txt + " " + next_token.txt, *CLOCK_NUMBERS[next_token.txt]
@@ -1759,7 +1798,7 @@ def parse_date_and_time(token_stream):
             # Split TIMESTAMP into TIMESTAMPABS and TIMESTAMPREL
             if token.kind == TOK.TIMESTAMP:
                 if all(x != 0 for x in token.val[0:3]):
-                    # Year, month and date all non-zero (h, m, s can be zero)
+                    # Year, month and day all non-zero (h, m, s can be zero)
                     token = TOK.Timestampabs(token.txt, *token.val)
                 else:
                     token = TOK.Timestamprel(token.txt, *token.val)

@@ -160,8 +160,7 @@ PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
 SQUOTES = "'‚‛‘´"
 DQUOTES = '"“„”«»'
 
-CLOCK_WORD = "klukkan"
-CLOCK_ABBREV = "kl"
+CLOCK_ABBREVS = frozenset(("kl", "kl.", "klukkan"))
 
 # Allowed first digits in Icelandic telephone numbers
 TELNO_PREFIXES = "45678"
@@ -389,11 +388,14 @@ SI_UNITS = {
     "cm": ("m", 1.0e-2),
     "sm": ("m", 1.0e-2),
     "km": ("m", 1.0e3),
+    "ft": ("m", 0.3048),  # feet
+    "mi": ("m", 1609.34),  # miles
     # Area
     "m²": ("m²", 1.0),
     "fm": ("m²", 1.0),
     "km²": ("m²", 1.0e6),
     "cm²": ("m²", 1.0e-2),
+    "ha": ("m²", 1.0e4),
     # Volume
     "m³": ("m³", 1.0),
     "cm³": ("m³", 1.0e-6),
@@ -403,18 +405,22 @@ SI_UNITS = {
     "dl": ("m³", 1.0e-4),
     "cl": ("m³", 1.0e-5),
     "ml": ("m³", 1.0e-6),
+    "gal": ("m³", 3.78541e-3),
+    "bbl": ("m³", 158.987294928e-3),
     # Temperature
     "K": ("K", 1.0),
     "°K": ("K", 1.0),  # Strictly speaking this should be K, not °K
     "°C": ("K", lambda x: x + 273.15),
     "°F": ("K", lambda x: (x + 459.67) * 5 / 9),
     # Mass
-    "g": ("g", 1.0),
-    "gr": ("g", 1.0),
-    "kg": ("g", 1.0e3),
-    "t": ("g", 1.0e6),
-    "mg": ("g", 1.0e-3),
-    "μg": ("g", 1.0e-6),
+    "g": ("kg", 1.0e-3),
+    "gr": ("kg", 1.0e-3),
+    "kg": ("kg", 1.0),
+    "t": ("kg", 1.0e3),
+    "mg": ("kg", 1.0e-6),
+    "μg": ("kg", 1.0e-9),
+    "tn": ("kg", 1.0e3),
+    "lb": ("kg", 0.453592),
     # Duration
     "s": ("s", 1.0),
     "ms": ("s", 1.0e-3),

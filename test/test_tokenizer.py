@@ -457,7 +457,7 @@ def test_single_tokens():
         ("32 ° F", [Tok(TOK.MEASUREMENT, "32 ° F", ("K", 273.15))]),
         ("180°", [Tok(TOK.MEASUREMENT, "180°", ("°", 180))]),
         ("180 °", [Tok(TOK.MEASUREMENT, "180 °", ("°", 180))]),
-        ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("g", 6.5e6))]),
+        ("6.500 kg", [Tok(TOK.MEASUREMENT, "6.500 kg", ("kg", 6.5e3))]),
         ("690 MW", [Tok(TOK.MEASUREMENT, "690 MW", ("W", 690e6))]),
         ("1800 MWst", [Tok(TOK.MEASUREMENT, "1800 MWst", ("J", 6480e9))]),
         ("1976kWst", [Tok(TOK.MEASUREMENT, "1976kWst", ("J", 7113.6e6))]),
