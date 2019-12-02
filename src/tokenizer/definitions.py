@@ -98,8 +98,7 @@ UNICODE_REGEX = re.compile(
     r"|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))), re.UNICODE
 )
 
-# Hyphens that are cast to '-' for parsing and then re-cast
-# to normal hyphens, en or em dashes in final rendering
+# Hyphens are normalized to '-'
 HYPHEN = "-"  # Normal hyphen
 EN_DASH = "\u2013"  # "–"
 EM_DASH = "\u2014"  # "—"
@@ -150,7 +149,8 @@ END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
-PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", "-", "–"])
+# Note that an EM_DASH is not allowed inside a word and will split words if present
+PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", HYPHEN, EN_DASH])
 # Punctuation symbols that can end words
 PUNCT_ENDING_WORD = frozenset(["'"])
 # Punctuation symbols that may occur together

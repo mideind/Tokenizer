@@ -1024,8 +1024,8 @@ def parse_tokens(txt, **options):
                 w[0].isalpha() or (w[0] in HYPHENS and len(w) >= 2 and w[1].isalpha())
             ):
                 ate = True
-                i = 1
                 lw = len(w)
+                i = 2 if w[0] in HYPHENS else 1
                 while i < lw and (
                     w[i].isalpha()
                     or (
@@ -1036,7 +1036,7 @@ def parse_tokens(txt, **options):
                 ):
                     # We allow dots to occur inside words in the case of
                     # abbreviations; also apostrophes are allowed within
-                    # words and at the end
+                    # words and at the end (albeit not consecutively)
                     # (O'Malley, Mary's, it's, childrens', O‘Donnell)
                     i += 1
                 if i < lw and w[i] in PUNCT_ENDING_WORD:
@@ -1949,7 +1949,6 @@ def parse_phrases_2(token_stream):
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
-            # 'marg-ítrekaðri'
             tq = []
             while (
                 token.kind == TOK.WORD
