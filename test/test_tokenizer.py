@@ -759,7 +759,7 @@ def test_sentences():
 
     test_sentence(
         "#MeToo-byltingin er til staðar á Íslandsmóti #1. #12stig í Eurovision en #égerekkiaðfílaþað! #ruv50.",
-        "B HT  W          W  W   W      W W           O P E B HT  W W          W  HT                P E B HT P E",
+        "B HT  P W        W  W   W      W W           O P E B HT  W W          W  HT                P E B HT P E",
     )
 
     test_sentence(

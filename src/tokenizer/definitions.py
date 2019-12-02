@@ -489,24 +489,6 @@ SI_UNITS_REGEX_STRING = r"|".join(
 )
 SI_UNITS_REGEX = re.compile(r"({0})".format(SI_UNITS_REGEX_STRING), re.UNICODE)
 
-# Icelandic-style number, followed by a unit
-NUM_WITH_SI_UNITS_REGEX1 = re.compile(
-    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(SI_UNITS_REGEX_STRING),
-    re.UNICODE
-)
-
-# English-style number, followed by a unit
-NUM_WITH_SI_UNITS_REGEX2 = re.compile(
-    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(SI_UNITS_REGEX_STRING),
-    re.UNICODE
-)
-
-# One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
-NUM_WITH_SI_UNITS_REGEX3 = re.compile(
-    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(SI_UNITS_REGEX_STRING),
-    re.UNICODE
-)
-
 CURRENCY_REGEX_STRING = r"|".join(
     map(
         # Sort in descending order by length, so that longer strings
@@ -516,21 +498,25 @@ CURRENCY_REGEX_STRING = r"|".join(
     )
 )
 
-# Icelandic-style number, followed by a currency symbol
-NUM_WITH_CURRENCY_REGEX1 = re.compile(
-    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(CURRENCY_REGEX_STRING),
+# Combined pattern regex for SI units, percentage, promille and currency symbols
+UNIT_REGEX_STRING = SI_UNITS_REGEX_STRING + r"|" + CURRENCY_REGEX_STRING
+
+# Icelandic-style number, followed by a unit
+NUM_WITH_UNIT_REGEX1 = re.compile(
+    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(UNIT_REGEX_STRING),
     re.UNICODE
 )
 
-# English-style number, followed by a currency symbol
-NUM_WITH_CURRENCY_REGEX2 = re.compile(
-    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(CURRENCY_REGEX_STRING),
+# English-style number, followed by a unit
+NUM_WITH_UNIT_REGEX2 = re.compile(
+    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(UNIT_REGEX_STRING),
     re.UNICODE
 )
 
 # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
-NUM_WITH_CURRENCY_REGEX3 = re.compile(
-    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(CURRENCY_REGEX_STRING),
+# and a unit (SI, percent or currency symbol)
+NUM_WITH_UNIT_REGEX3 = re.compile(
+    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(UNIT_REGEX_STRING),
     re.UNICODE
 )
 

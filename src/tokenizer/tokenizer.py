@@ -461,31 +461,44 @@ def parse_digits(w, convert_numbers):
             n = int(g[:-1])
             return TOK.NumberWithLetter(g, n, l), s.end()
 
-    s = NUM_WITH_SI_UNITS_REGEX1.match(w)
+    s = NUM_WITH_UNIT_REGEX1.match(w)
     if s:
-        # Icelandic-style number followed by an SI unit, or degree/percentage
+        # Icelandic-style number followed by an SI unit, or degree/percentage,
+        # or currency symbol
+        g = s.group()
         val = float(s.group(1).replace(".", "").replace(",", "."))
-        unit, factor = SI_UNITS[s.group(4)]
+        unit = s.group(4)
+        if unit in CURRENCY_SYMBOLS:
+            # This is an amount with a currency symbol at the end
+            iso = CURRENCY_SYMBOLS[unit]
+            return TOK.Amount(g, iso, val), s.end()
+        unit, factor = SI_UNITS[unit]
         if callable(factor):
             val = factor(val)
         else:
             # Simple scaling factor
             val *= factor
         if unit in ("%", "‰"):
-            return TOK.Percent(s.group(), val), s.end()
-        return TOK.Measurement(s.group(), unit, val), s.end()
+            return TOK.Percent(g, val), s.end()
+        return TOK.Measurement(g, unit, val), s.end()
 
-    s = NUM_WITH_SI_UNITS_REGEX2.match(w)
+    s = NUM_WITH_UNIT_REGEX2.match(w)
     if s:
-        # English-style number followed by an SI unit, or degree/percentage
+        # English-style number followed by an SI unit, or degree/percentage,
+        # or currency symbol
+        g = s.group()
         val = float(s.group(1).replace(",", ""))
-        unit, factor = SI_UNITS[s.group(4)]
+        unit = s.group(4)
+        if unit in CURRENCY_SYMBOLS:
+            # This is an amount with a currency symbol at the end
+            iso = CURRENCY_SYMBOLS[unit]
+            return TOK.Amount(g, iso, val), s.end()
+        unit, factor = SI_UNITS[unit]
         if callable(factor):
             val = factor(val)
         else:
             # Simple scaling factor
             val *= factor
-        g = s.group()
         if convert_numbers:
             g = re.sub(",", "x", g)  # Change thousands separator to 'x'
             g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
@@ -494,15 +507,20 @@ def parse_digits(w, convert_numbers):
             return TOK.Percent(g, val), s.end()
         return TOK.Measurement(g, unit, val), s.end()
 
-    s = NUM_WITH_SI_UNITS_REGEX3.match(w)
+    s = NUM_WITH_UNIT_REGEX3.match(w)
     if s:
         # One or more digits, followed by a unicode
-        # vulgar fraction char (e.g. '2½') and an SI unit
+        # vulgar fraction char (e.g. '2½') and an SI unit,
+        # percent/promille, or currency code
         g = s.group()
         ln = s.group(1)
         vf = s.group(2)
         orig_unit = s.group(3)
         value = float(ln) + unicodedata.numeric(vf)
+        if orig_unit in CURRENCY_SYMBOLS:
+            # This is an amount with a currency symbol at the end
+            iso = CURRENCY_SYMBOLS[orig_unit]
+            return TOK.Amount(g, iso, value), s.end()
         unit, factor = SI_UNITS[orig_unit]
         if callable(factor):
             value = factor(value)
@@ -512,33 +530,6 @@ def parse_digits(w, convert_numbers):
         if unit in ("%", "‰"):
             return TOK.Percent(g, value), s.end()
         return TOK.Measurement(g, unit, value), s.end()
-
-    s = NUM_WITH_CURRENCY_REGEX1.match(w)
-    if s:
-        # Icelandic-style number, followed by a currency symbol
-        g = s.group()
-        n = float(s.group(1).replace(".", "").replace(",", "."))
-        iso = CURRENCY_SYMBOLS[s.group()[-1:]]
-        return TOK.Amount(s.group(), iso, n), s.end()
-
-    s = NUM_WITH_CURRENCY_REGEX2.match(w)
-    if s:
-        # English-style number, followed by a currency symbol
-        g = s.group()
-        n = float(s.group(1).replace(",", ""))
-        iso = CURRENCY_SYMBOLS[s.group(4)]
-        return TOK.Amount(s.group(), iso, n), s.end()
-
-    s = NUM_WITH_CURRENCY_REGEX3.match(w)
-    if s:
-        # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½'),
-        # and then by a currency symbol
-        g = s.group()
-        ln = s.group(1)
-        vf = s.group(2)
-        n = float(ln) + unicodedata.numeric(vf)
-        iso = CURRENCY_SYMBOLS[s.group(3)]
-        return TOK.Amount(g, iso, n), s.end()
 
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
@@ -733,16 +724,17 @@ def parse_tokens(txt, **options):
     )
 
     # This code proceeds roughly as follows:
-    # 1) The text is split into raw tokens on whitespace boundaries
+    # 1) The text is split into raw tokens on whitespace boundaries.
     # 2) (By far the most common case:) Raw tokens that are purely
     #    alphabetic are yielded as word tokens.
-    # 3) (Common case:) Tokens starting with a digit (eventually preceded
+    # 3) Punctuation from the front of the remaining raw token is identified
+    #    and yielded. A special case applies for quotes.
+    # 4) A set of checks is applied to the rest of the raw token, identifying
+    #    tokens such as e-mail addresses, domains and @usernames. These can
+    #    start with digits, so the checks must occur before step 5.
+    # 5) Tokens starting with a digit (eventually preceded
     #    by a + or - sign) are sent off to a separate function that identifies
     #    integers, real numbers, dates, telephone numbers, etc. via regexes.
-    # 4) Punctuation from the front of the remaining raw token is identified
-    #    and yielded.
-    # 5) A set of checks is applied to the rest of the raw token, identifying
-    #    tokens such as e-mail addresses, domains and @usernames.
     # 6) After such checks, alphabetic sequences (words) at the start of the
     #    raw token are identified. Such a sequence can, by the way, also
     #    contain embedded apostrophes and hyphens (Dunkin' Donuts, Mary's,
@@ -764,16 +756,24 @@ def parse_tokens(txt, **options):
             yield TOK.Word(w, None)
             continue
 
-        if w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX:
-            # Digit, preceded by sign (+/-): parse as a number
-            # Note that we can't immediately parse a non-signed number
-            # here since kludges such as '3ja' and domain names such as '4chan.com'
-            # need to be handled separately below
-            t, eaten = parse_digits(w, convert_numbers)
-            yield t
-            w = w[eaten:]
-            if not w:
-                continue
+        if len(w) > 1:
+            if w[0] in SIGN_PREFIX and w[1] in DIGITS_PREFIX:
+                # Digit, preceded by sign (+/-): parse as a number
+                # Note that we can't immediately parse a non-signed number
+                # here since kludges such as '3ja' and domain names such as '4chan.com'
+                # need to be handled separately below
+                t, eaten = parse_digits(w, convert_numbers)
+                yield t
+                w = w[eaten:]
+                if not w:
+                    continue
+            elif w[0] in COMPOSITE_HYPHENS and w[1].isalpha():
+                # This may be something like '-menn' in 'þingkonur og -menn'
+                i = 2
+                while i < len(w) and w[i].isalpha():
+                    i += 1
+                yield TOK.Word(w[:i], None)
+                w = w[i:]
 
         # Shortcut for quotes around a single word
         if len(w) >= 3:
@@ -857,11 +857,6 @@ def parse_tokens(txt, **options):
                         yield TOK.End_Paragraph()
                     w = w[2:]
                 elif w[0] in HYPHENS:
-                    if lw >= 2 and w[1].isalpha():
-                        # This is a hyphen at the start of something like '-buxur':
-                        # will be handled below, in the alphabetic letter loop
-                        ate = False
-                        break
                     # Normalize all hyphens the same way
                     yield TOK.Punctuation(w[0], normalized=HYPHEN)
                     w = w[1:]
@@ -1020,12 +1015,10 @@ def parse_tokens(txt, **options):
             # Alphabetic characters
             # (or a hyphen immediately followed by alphabetic characters,
             # such as in 'þingkonur og -menn')
-            if w and (
-                w[0].isalpha() or (w[0] in HYPHENS and len(w) >= 2 and w[1].isalpha())
-            ):
+            if w and w[0].isalpha():
                 ate = True
                 lw = len(w)
-                i = 2 if w[0] in HYPHENS else 1
+                i = 1
                 while i < lw and (
                     w[i].isalpha()
                     or (
