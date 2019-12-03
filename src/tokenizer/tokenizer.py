@@ -808,7 +808,6 @@ def parse_tokens(txt, **options):
 
         # More complex case of mixed punctuation, letters and numbers
         while w:
-
             # Handle punctuation
             ate = False
             while w and w[0] in PUNCTUATION:
@@ -1011,6 +1010,17 @@ def parse_tokens(txt, **options):
                         yield TOK.Molecule(g)
                         ate = True
                         w = w[r.end():]
+            # Check for currency abbreviations immediately followed by a number
+            if w and len(w) > 3 and w[:3] in CURRENCY_ABBREV and w[3].isdigit():
+                t, eaten = parse_digits(w[3:], convert_numbers)
+                if t.kind == TOK.NUMBER:
+                    yield(
+                        TOK.Amount(
+                            w[:3+eaten], w[:3], t.val[0]
+                        )
+                    )
+                    ate = True
+                    w = w[3+eaten:]
 
             # Alphabetic characters
             # (or a hyphen immediately followed by alphabetic characters,
@@ -1030,7 +1040,8 @@ def parse_tokens(txt, **options):
                     # We allow dots to occur inside words in the case of
                     # abbreviations; also apostrophes are allowed within
                     # words and at the end (albeit not consecutively)
-                    # (O'Malley, Mary's, it's, childrens', O‘Donnell)
+                    # (O'Malley, Mary's, it's, childrens', O‘Donnell).
+                    # The same goes for ² and ³
                     i += 1
                 if i < lw and w[i] in PUNCT_ENDING_WORD:
                     i += 1

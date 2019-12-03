@@ -152,7 +152,7 @@ SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]
 # Note that an EM_DASH is not allowed inside a word and will split words if present
 PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", HYPHEN, EN_DASH])
 # Punctuation symbols that can end words
-PUNCT_ENDING_WORD = frozenset(["'"])
+PUNCT_ENDING_WORD = frozenset(["'", "²", "³"])
 # Punctuation symbols that may occur together
 PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
 
@@ -519,6 +519,7 @@ NUM_WITH_UNIT_REGEX3 = re.compile(
     r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(UNIT_REGEX_STRING),
     re.UNICODE
 )
+
 
 # If the handle_kludgy_ordinals option is set to
 # KLUDGY_ORDINALS_PASS_THROUGH, we do not convert
