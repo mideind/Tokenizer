@@ -665,8 +665,8 @@ abbreviations, their definitions and explanatory comments.
 
 When an abbreviation is encountered, it is recognized as a word token
 (i.e. having its ``kind`` field equal to ``TOK.WORD``).
-Its expansion is included in the token's
-``val`` field as a list containing a single tuple of the format
+Its expansion(s) are included in the token's
+``val`` field as a list containing tuples of the format
 ``(ordmynd, utg, ordfl, fl, stofn, beyging)``.
 An example is *o.s.frv.*, which results in a ``val`` field equal to
 ``[('og svo framvegis', 0, 'ao', 'frasi', 'o.s.frv.', '-')]``.
