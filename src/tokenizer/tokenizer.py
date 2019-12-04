@@ -342,6 +342,21 @@ class TOK:
         return Tok(TOK.S_SPLIT, None, None)
 
 
+def normalized_text(token):
+    """ Returns token text after normalizing punctuation """
+    return token.val[1] if token.kind == TOK.PUNCTUATION else token.txt
+
+
+def text_from_tokens(tokens):
+    """ Return text from a list of tokens, without normalization """
+    return " ".join(t.txt for t in tokens if t.txt)
+
+
+def normalized_text_from_tokens(tokens):
+    """ Return text from a list of tokens, without normalization """
+    return " ".join(filter(None, map(normalized_text, tokens)))
+
+
 def is_valid_date(y, m, d):
     """ Returns True if y, m, d is a valid date """
     if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
@@ -2046,7 +2061,7 @@ def split_into_sentences(text_or_gen, **options):
         This function returns a generator of strings, where each string
         is a sentence, and tokens are separated by spaces. """
     if options.pop("normalize", False):
-        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+        to_text = normalized_text
     else:
         to_text = lambda t: t.txt
     curr_sent = []
@@ -2174,7 +2189,7 @@ def detokenize(tokens, normalize=False):
         to a correctly spaced string. If normalized is True,
         punctuation is normalized before assembling the string. """
     if normalize:
-        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+        to_text = normalized_text
     else:
         to_text = lambda t: t.txt
     return correct_spaces(" ".join(filter(None, map(to_text, tokens))))

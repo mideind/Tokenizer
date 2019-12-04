@@ -46,13 +46,15 @@ by spaces.
 the token type and further information extracted from the token, for example
 a *(year, month, day)* tuple in the case of date tokens.
 
-In shallow tokenization, tokens are maximally split. The strings
-"800 MW", "21. janúar" and "800 7000" (as well as the coalesced versions
-"800MW" and "21.janúar") are thus two tokens each.
+In shallow tokenization, tokens are in most cases kept intact, although
+consecutive white space is always coalesced. The input strings
+``"800 MW"``, ``"21. janúar"`` and ``"800 7000"`` thus become
+two tokens each, output with a single space between them.
 
 In deep tokenization, the same strings are represented by single token objects,
 of type ``TOK.MEASUREMENT``, ``TOK.DATEREL`` and ``TOK.TELNO``, respectively.
-The text associated with a single token object may contain one or more spaces.
+The text associated with a single token object may contain one or more spaces,
+although consecutive space is always coalesced.
 
 By default, the command line tool performs shallow tokenization. If you
 want deep tokenization with the command line tool, use the ``--json`` or
@@ -98,7 +100,8 @@ on the command line:
 
 +-------------------+---------------------------------------------------+
 | | ``--csv``       | Deep tokenization. Output token objects in CSV    |
-|                   | format, one per line.                             |
+|                   | format, one per line. Sentences are separated by  |
+|                   | lines containing ``0,"",""``                      |
 +-------------------+---------------------------------------------------+
 | | ``--json``      | Deep tokenization. Output token objects in JSON   |
 |                   | format, one per line.                             |
@@ -117,9 +120,40 @@ Example
 .. code-block:: console
 
     $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize
-    3. janúar sl. keypti ég 64 kWst rafbíl .
+    3. janúar sl. keypti ég 64kWst rafbíl .
     Hann kostaði €30.000 .
 
+    $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --csv
+    19,"3. janúar","0|1|3"
+    6,"sl.","síðastliðinn"
+    6,"keypti",""
+    6,"ég",""
+    22,"64kWst","J|230400000.0"
+    6,"rafbíl",""
+    1,".","."
+    0,"",""
+    6,"Hann",""
+    6,"kostaði",""
+    13,"€30.000","30000|EUR"
+    1,".","."
+    0,"",""
+
+    $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --json
+    {"k":"BEGIN SENT"}
+    {"k":"DATEREL","t":"3. janúar","v":[0,1,3]}
+    {"k":"WORD","t":"sl.","v":["síðastliðinn"]}
+    {"k":"WORD","t":"keypti"}
+    {"k":"WORD","t":"ég"}
+    {"k":"MEASUREMENT","t":"64kWst","v":["J",230400000.0]}
+    {"k":"WORD","t":"rafbíl"}
+    {"k":"PUNCTUATION","t":".","v":"."}
+    {"k":"END SENT"}
+    {"k":"BEGIN SENT"}
+    {"k":"WORD","t":"Hann"}
+    {"k":"WORD","t":"kostaði"}
+    {"k":"AMOUNT","t":"€30.000","v":[30000,"EUR"]}
+    {"k":"PUNCTUATION","t":".","v":"."}
+    {"k":"END SENT"}
 
 Python module
 -------------
@@ -154,7 +188,7 @@ An example of shallow tokenization from Python code goes something like this:
 
 The program outputs::
 
-    3., janúar, sl., keypti, ég, 64, kWst, rafbíl, .
+    3., janúar, sl., keypti, ég, 64kWst, rafbíl, .
     Hann, kostaði, €30.000, .
 
 Deep tokenization example
@@ -318,6 +352,43 @@ quotes. Example::
     >>> toklist = list(tokenizer.tokenize("Hann sagði: „Þú ert ágæt!“."))
     >>> tokenizer.detokenize(toklist, normalize=True)
     'Hann sagði: „Þú ert ágæt!“.'
+
+
+The ``normalized_text()`` function
+----------------------------------
+
+The ``tokenizer.normalized_text(token)`` function
+returns the normalized text for a token. This means that the original
+token text is returned except for certain punctuation tokens, where a
+normalized form is returned instead. Specifically, English-type quotes
+are converted to Icelandic ones, and en- and em-dashes are converted
+to regular hyphens.
+
+
+The ``text_from_tokens()`` function
+-----------------------------------
+
+The ``tokenizer.text_from_tokens(tokens)`` function
+returns a concatenation of the text contents of the given token list,
+with spaces between tokens. Example::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    >>> tokenizer.text_from_tokens(toklist)
+    'Hann sagði : " Þú ert ágæt ! " .'
+
+
+The ``normalized_text_from_tokens()`` function
+----------------------------------------------
+
+The ``tokenizer.normalized_text_from_tokens(tokens)`` function
+returns a concatenation of the normalized text contents of the given
+token list, with spaces between tokens. Example (note the double quotes)::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    >>> tokenizer.normalized_text_from_tokens(toklist)
+    'Hann sagði : „ Þú ert ágæt ! “ .'
 
 
 Tokenization options
