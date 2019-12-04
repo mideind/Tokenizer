@@ -240,6 +240,20 @@ def test_single_tokens():
             ],
         ),
         (
+            "milljón USD.",
+            [
+                Tok(TOK.AMOUNT, "milljón USD", (1e6, "USD", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
+            "hundrað þúsund USD.",
+            [
+                Tok(TOK.AMOUNT, "hundrað þúsund USD", (1e5, "USD", None, None)),
+                Tok(TOK.PUNCTUATION, ".", None),
+            ],
+        ),
+        (
             "m.kr.",
             [
                 Tok(
@@ -525,6 +539,16 @@ def test_single_tokens():
         ("£5.199", [Tok(TOK.AMOUNT, "£5.199", (5199, "GBP", None, None))]),
     ]
 
+    TEST_CASES_COALESCE_PERCENT = [
+        ("12,3prósent", [Tok(TOK.PERCENT, "12,3 prósent", (12.3, None, None))]),
+        ("12,3 prósent", TOK.PERCENT),
+        ("12,3hundraðshlutar",
+            [Tok(TOK.PERCENT, "12,3 hundraðshlutar", (12.3, None, None))]
+        ),
+        ("12,3 hundraðshlutar", TOK.PERCENT),
+        ("12,3 prósentustig", TOK.PERCENT),
+    ]
+
     def run_test(test_cases, **options):
         for test_case in test_cases:
             if len(test_case) == 3:
@@ -575,6 +599,10 @@ def test_single_tokens():
         TEST_CASES_CONVERT_NUMBERS,
         convert_numbers=True
     )
+    run_test(
+        TEST_CASES_COALESCE_PERCENT,
+        coalesce_percent=True
+    )
 
 
 def test_sentences():
@@ -607,10 +635,10 @@ def test_sentences():
         "X": TOK.UNKNOWN,
     }
 
-    def test_sentence(text, expected):
+    def test_sentence(text, expected, **options):
 
         exp = expected.split()
-        s = t.tokenize(text)
+        s = t.tokenize(text, **options)
 
         for token, e in zip(s, exp):
             assert e in KIND
@@ -653,6 +681,13 @@ def test_sentences():
     test_sentence(
         "Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\uFEFFis\u00ADins.",
         "B W                      W  W PC                       W          W        W                  P E",
+        coalesce_percent=True
+    )
+
+    test_sentence(
+        "Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\uFEFFis\u00ADins.",
+        "B W                      W  W N          W             W          W        W                  P E",
+        coalesce_percent=False
     )
 
     test_sentence(

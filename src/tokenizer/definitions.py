@@ -650,7 +650,23 @@ MULTIPLIERS = {
 }
 
 # Recognize words for percentages
-PERCENTAGES = {"prósent": 1, "prósenta": 1, "hundraðshluti": 1, "prósentustig": 1}
+PERCENTAGES = {
+    "prósent": 1,
+    "prósenta": 1,
+    "prósenti": 1,
+    "prósents": 1,
+    "prósentur": 1,
+    "prósentum": 1,
+    "hundraðshluti": 1,
+    "hundraðshluta": 1,
+    "hundraðshlutar": 1,
+    "hundraðshlutum": 1,
+    "prósentustig": 1,
+    "prósentustigi": 1,
+    "prósentustigs": 1,
+    "prósentustigum": 1,
+    "prósentustiga": 1,
+}
 
 # Amount abbreviations including 'kr' for the ISK
 # Corresponding abbreviations are found in Abbrev.conf
