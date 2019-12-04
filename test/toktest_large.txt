@@ -12429,10 +12429,13 @@ Hún borðaði 45 4/7 kökunnar en vildi svo 45 16/339 af kaffi.
 Loks gafst hann upp á pylsuátinu eftir 45 9/39.
 Hvað segirðu,, skemmtirðu þér vel???!
 "Komið með strákana eins og skot!", sagði hann og hló.
-"Komið með strákana eins og skot" "Skal gert, kafteinn!"
+"Komið með strákana eins og skot!" sagði hann og hló.
+"Komið með strákana eins og skot!" "Skal gert, kafteinn!"
 "Hvernig fórstu að því?", spurði barnið stóreygt.
+"Hvernig fórstu að því?" spurði barnið stóreygt.
 "Hvernig fórstu að því?" "Ég hoppaði bara."
-"Hér er gott að vera" sagði rúmenski rithöfundurinn.
+"Hér er gott að vera," sagði rúmenski rithöfundurinn.
+"Hér er gott að vera", sagði rúmenski rithöfundurinn.
 "Hér er gott að vera." "Það finnst mér líka."
 Hér er úrfellingarmerki [...] og setningin heldur áfram.
 Hér er eins dæmi ... með fimmtán doppum.
@@ -12465,6 +12468,7 @@ Hann sagði: Þú ert «fífl»! Ég mótmælti því.
 Hann sagði: ´Þú ert fífl´! Farðu í 3ja sinn.
 Hann sagði: Þú ert (´fífl´)! Ég mótmælti því.
 Öllum stöðum Dunkin‘ Donuts á Íslandi hefur nú verið lokað.
+Öllum stöðum Dunkin' Donuts á Íslandi hefur nú verið lokað.
 Ég fann " hest " áðan.
 Ég fann " hest" áðan.
 Ég fann "hest " áðan.
@@ -12989,6 +12993,7 @@ Netfangið er sdof@sdfir.com. Líklega tekst þetta.
 Netfangið er fake@news.is. Líklega tekst þetta.
 Netfangið er jon.jonsson.99@netfang.is. Líklega tekst þetta.
 Netfangið er valid@my-domain.reallylongtld. Líklega tekst þetta.
+Netfangið er "kaldur@klaki.is". Líklega tekst þetta.
 Vefsíðan er vefur.meira.is og líka vefur.meira.is.
 Vefslóðin er http://www.vefur.is.
 Vefslóðin er https://vefur.is.
