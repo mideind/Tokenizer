@@ -48,8 +48,8 @@ a *(year, month, day)* tuple in the case of date tokens.
 
 In shallow tokenization, tokens are in most cases kept intact, although
 consecutive white space is always coalesced. The input strings
-``"800 MW"``, ``"21. janúar"`` and ``"800    7000"`` thus become two tokens each,
-output with a single space between them.
+``"800 MW"``, ``"21. janúar"`` and ``"800 7000"`` thus become
+two tokens each, output with a single space between them.
 
 In deep tokenization, the same strings are represented by single token objects,
 of type ``TOK.MEASUREMENT``, ``TOK.DATEREL`` and ``TOK.TELNO``, respectively.
@@ -352,6 +352,43 @@ quotes. Example::
     >>> toklist = list(tokenizer.tokenize("Hann sagði: „Þú ert ágæt!“."))
     >>> tokenizer.detokenize(toklist, normalize=True)
     'Hann sagði: „Þú ert ágæt!“.'
+
+
+The ``normalized_text()`` function
+----------------------------------
+
+The ``tokenizer.normalized_text(token)`` function
+returns the normalized text for a token. This means that the original
+token text is returned except for certain punctuation tokens, where a
+normalized form is returned instead. Specifically, English-type quotes
+are converted to Icelandic ones, and en- and em-dashes are converted
+to regular hyphens.
+
+
+The ``text_from_tokens()`` function
+-----------------------------------
+
+The ``tokenizer.text_from_tokens(tokens)`` function
+returns a concatenation of the text contents of the given token list,
+with spaces between tokens. Example::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    >>> tokenizer.text_from_tokens(toklist)
+    'Hann sagði : " Þú ert ágæt ! " .'
+
+
+The ``normalized_text_from_tokens()`` function
+----------------------------------------------
+
+The ``tokenizer.normalized_text_from_tokens(tokens)`` function
+returns a concatenation of the normalized text contents of the given
+token list, with spaces between tokens. Example (note the double quotes)::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    >>> tokenizer.normalized_text_from_tokens(toklist)
+    'Hann sagði : „ Þú ert ágæt ! “ .'
 
 
 Tokenization options

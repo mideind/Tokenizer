@@ -1073,6 +1073,15 @@ def test_split_sentences():
     assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
 
 
+def test_normalization():
+    toklist = list(t.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    assert t.text_from_tokens(toklist) == "Hann sagði : \" Þú ert ágæt ! \" ."
+    assert (
+        t.normalized_text_from_tokens(toklist) ==
+        "Hann sagði : „ Þú ert ágæt ! “ ."
+    )
+
+
 if __name__ == "__main__":
 
     test_single_tokens()
@@ -1082,3 +1091,4 @@ if __name__ == "__main__":
     test_abbrev()
     test_overlap()
     test_split_sentences()
+    test_normalization()
