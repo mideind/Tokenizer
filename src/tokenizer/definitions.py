@@ -167,7 +167,7 @@ TELNO_PREFIXES = "45678"
 
 # Known telephone country codes
 COUNTRY_CODES = frozenset((
-    "354", "+354"
+    "354", "+354", "00354",
 ))
 
 # Words that can precede a year number; will be assimilated into the year token
