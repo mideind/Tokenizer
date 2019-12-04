@@ -16509,19 +16509,26 @@ Tvö hundruð og fjörutíu ma. var náð í gær .
 Almennt verð er krónur 9.900 , - en kr. 8.000 , - fyrir félagsmenn .
 Almennt verð er krónur 9.900 , - .
 9.900 , - fyrir félagsmenn .
-3 / 7 kökunnar féllu í hans hlut .
-Hún borðaði 4 / 7 kökunnar en vildi svo 16 / 339 af kaffi .
-Loks gafst hann upp á pylsuátinu eftir 4959 / 39. 45 3 / 7 kökunnar féllu í hans hlut .
-Hún borðaði 45 4 / 7 kökunnar en vildi svo 45 16 / 339 af kaffi .
+3/7 kökunnar féllu í hans hlut .
+Hún borðaði 4/7 kökunnar en vildi svo 16 / 339 af kaffi .
+Loks gafst hann upp á pylsuátinu eftir 4959 / 39. 45 3/7 kökunnar féllu í hans hlut .
+Hún borðaði 45 4/7 kökunnar en vildi svo 45 16 / 339 af kaffi .
 Loks gafst hann upp á pylsuátinu eftir 45 9 / 39 .
 Hvað segirðu ,, skemmtirðu þér vel ???!
-" Komið með strákana eins og skot ! " , sagði hann og hló .
-" Komið með strákana eins og skot "
+" Komið með strákana eins og skot ! "
+, sagði hann og hló .
+" Komið með strákana eins og skot ! "
+sagði hann og hló .
+" Komið með strákana eins og skot ! "
 " Skal gert , kafteinn ! "
-" Hvernig fórstu að því ? " , spurði barnið stóreygt .
+" Hvernig fórstu að því ? "
+, spurði barnið stóreygt .
+" Hvernig fórstu að því ? "
+spurði barnið stóreygt .
 " Hvernig fórstu að því ? "
 " Ég hoppaði bara . "
-" Hér er gott að vera " sagði rúmenski rithöfundurinn .
+" Hér er gott að vera , " sagði rúmenski rithöfundurinn .
+" Hér er gott að vera " , sagði rúmenski rithöfundurinn .
 " Hér er gott að vera . "
 " Það finnst mér líka . "
 Hér er úrfellingarmerki [...] og setningin heldur áfram .
@@ -16532,10 +16539,10 @@ Hér er gaman ...
 Og hér er gaman ...
 Ég vildi [...] fara út . [...]
 Hann sá mig .
-Er hann nokkuð ...?
-Er hann nokkuð ...?
-Er hann nokkuð ...?
-Er hann nokkuð ...?
+Er hann nokkuð ... ?
+Er hann nokkuð ... ?
+Er hann nokkuð ... ?
+Er hann nokkuð ... ?
 Hann er helv ... leiðindagaur .
 Hér er úrfellingarmerki […] og setningin heldur áfram .
 Hér er eins dæmi … með fimmtán doppum .
@@ -16566,7 +16573,8 @@ Hann sagði : ´ Þú ert fífl ´ !
 Farðu í 3ja sinn .
 Hann sagði : Þú ert ( ´ fífl ´ ) !
 Ég mótmælti því .
-Öllum stöðum Dunkin‘ Donuts á Íslandi hefur nú verið lokað .
+Öllum stöðum Dunkin ‘ Donuts á Íslandi hefur nú verið lokað .
+Öllum stöðum Dunkin' Donuts á Íslandi hefur nú verið lokað .
 Ég fann " hest " áðan .
 Ég fann " hest " áðan .
 Ég fann " hest " áðan .
@@ -16626,8 +16634,8 @@ Hann sagði : Þú ert ( ´ fífl ´ ) !
 Ég fann „ hest „ áðan .
 Hún sagði : ' Ekki koma með hundinn hingað inn !
 ' Farðu ...
-Í lögum nr. 66/2003 er gengið að því vísu .
-Þetta sést í lögum nr. 66/2003 .
+Í lögum nr. 66 / 2003 er gengið að því vísu .
+Þetta sést í lögum nr. 66 / 2003 .
 Þar er gengið að því vísu .
 En í 2. mgr. 29. gr. laganna kemur það fram .
 867-6998 er símanúmerið hans .
@@ -16637,11 +16645,11 @@ Síminn er 849-2454 .
 Hún hringdi í 420-8888 en fékk ekkert svar .
 Síminn er 550-2454 .
 00354-867-6998 er símanúmerið hans .
-Hún hringdi í 00354 - 696-8888 en fékk ekkert svar .
-Síminn er 00354 - 849-2454 .
-00354 - 567-6998 er símanúmerið hans .
-Hún hringdi í 00354 - 420-8888 en fékk ekkert svar .
-Síminn er 00354 - 550-2454 .
+Hún hringdi í 00354-696-8888 en fékk ekkert svar .
+Síminn er 00354-849-2454 .
+00354-567-6998 er símanúmerið hans .
+Hún hringdi í 00354-420-8888 en fékk ekkert svar .
+Síminn er 00354-550-2454 .
 +354 867-6998 er símanúmerið hans .
 Hún hringdi í +354 696-8888 en fékk ekkert svar .
 Síminn er +354 849-2454 .
@@ -16684,7 +16692,7 @@ Hún hringdi í +354 4208888 en fékk ekkert svar .
 Síminn er +354 5502454 .
 Reyndu að hringja í 999-8989 .
 Íbúar voru 844 2019 .
-Skoðaðu vörunúmerin 000 -1224 eða 121-2233 .
+Skoðaðu vörunúmerin 000-1224 eða 121-2233 .
 Þeir voru 313 2012 en 916 2013 .
 Þetta voru 300 1000 kílóa pokar , og 4000 500 kílóa pokar .
 Einnig 932 800 kílóa pokar , svo og 177 4455 millilítra skammtar .
@@ -16708,19 +16716,15 @@ Bíllinn var grænn - traktorinn var blár .
 Bíllinn var grænn - traktorinn var blár .
 Bíllinn var grænn – traktorinn var blár .
 Bíllinn var grænn — traktorinn var blár .
-Bíllinn var grænn -
-Traktorinn var blár .
-Bíllinn var grænn -
-Traktorinn var blár .
-Bíllinn var grænn –
-Traktorinn var blár .
-Bíllinn var grænn —
-Traktorinn var blár .
+Bíllinn var grænn - Traktorinn var blár .
+Bíllinn var grænn - Traktorinn var blár .
+Bíllinn var grænn – Traktorinn var blár .
+Bíllinn var grænn — Traktorinn var blár .
 Bíllinn var grænn - að ofan .
 Bíllinn var grænn - að ofan .
 Bíllinn var grænn – að ofan .
 Bíllinn var grænn — að ofan .
-Jón- sem var formaður — mótmælti málinu .
+Jón - sem var formaður — mótmælti málinu .
 Apple-sýningin gekk vel .
 Það gekk heldur verr á Tesla-sýningunni í gær .
 Verst gekk þó á Ford-sýningunni .
@@ -16734,17 +16738,17 @@ Tyrkja-Gudda var hörð af sér .
 Enn er talað um Tyrkja-Guddu .
 Skalla-Grím reiddi enginn .
 Mörgum þótti vænt um Skalla-Grím .
-Ph.D. -gráða er ágæt .
-Þó er M.A. -gráða einnig brúkleg .
-Auðveldast er að fá B.A. -gráðu .
+Ph.D. - gráða er ágæt .
+Þó er M.A. - gráða einnig brúkleg .
+Auðveldast er að fá B.A. - gráðu .
 Hann marg-ítrekaði skilyrðin .
 Skilyrðin voru marg-ítrekuð .
 Tösku- og hanskaframleiðslan hefur stækkað .
 Gengið var í sýningar- og skemmtisalinn .
-Sameiningar- , yfirráða- og dómsvaldsstjórnin gekk út .
-Hringt var í þjóðvalds- , auðvalds- og dávaldssérfræðinginn .
-Gaman- , drama- , spennu- og hasarmyndir eru í boði .
-Myndin tekur á sig blá- , gul- , rauð- og grænleitan blæ .
+Sameiningar-, yfirráða- og dómsvaldsstjórnin gekk út .
+Hringt var í þjóðvalds-, auðvalds- og dávaldssérfræðinginn .
+Gaman-, drama-, spennu- og hasarmyndir eru í boði .
+Myndin tekur á sig blá-, gul-, rauð- og grænleitan blæ .
 Þar voru þingkonur og -menn .
 Nágrannalönd og -þjóðir rífast um peninga .
 Hér sjá framsóknar - / sjálfstæðismenn um vélina .
@@ -16915,48 +16919,54 @@ Nú saknar Helgi Björns .
 Það var þriðji 2. þegar við lentum .
 Það var 3. desember þegar við lentum .
 Það var 3. des. þegar við lentum .
-Það var 3.12. þegar við lentum .
+Það var 3.12 .
+þegar við lentum .
 Það var 3.12 þegar við lentum .
-Það var 3.2. þegar við lentum .
+Það var 3.2 .
+þegar við lentum .
 Það var 3.2 þegar við lentum .
 Það var 23. desember þegar við lentum .
 Það var 23. des. þegar við lentum .
 Það var 23.12. þegar við lentum .
 Það var 23.12 þegar við lentum .
-Það var 23.2. þegar við lentum .
+Það var 23.2 .
+þegar við lentum .
 Það var 23.2 þegar við lentum .
 Það var 3/12 þegar við lentum .
 Það var 23/12 þegar við lentum .
 Það var 3/2 þegar við lentum .
 Það var 23/2 þegar við lentum .
-Það var 3-12 þegar við lentum .
-Það var 23-12 þegar við lentum .
-Það var 3-2 þegar við lentum .
-Það var 23-2 þegar við lentum .
+Það var 3 - 12 þegar við lentum .
+Það var 23 - 12 þegar við lentum .
+Það var 3 - 2 þegar við lentum .
+Það var 23 - 2 þegar við lentum .
 Það var þriðjudagurinn þriðji desember þegar við lentum .
 Það var þriðjudagurinn þriðji des. þegar við lentum .
 Það var þriðjudagurinn þriðji 12. þegar við lentum .
 Það var þriðjudagurinn þriðji 2. þegar við lentum .
 Það var þriðjudagurinn 3. desember þegar við lentum .
 Það var þriðjudagurinn 3. des. þegar við lentum .
-Það var þriðjudagurinn 3.12. þegar við lentum .
+Það var þriðjudagurinn 3.12 .
+þegar við lentum .
 Það var þriðjudagurinn 3.12 þegar við lentum .
-Það var þriðjudagurinn 3.2. þegar við lentum .
+Það var þriðjudagurinn 3.2 .
+þegar við lentum .
 Það var þriðjudagurinn 3.2 þegar við lentum .
 Það var þriðjudagurinn 23. desember þegar við lentum .
 Það var þriðjudagurinn 23. des. þegar við lentum .
 Það var þriðjudagurinn 23.12. þegar við lentum .
 Það var þriðjudagurinn 23.12 þegar við lentum .
-Það var þriðjudagurinn 23.2. þegar við lentum .
+Það var þriðjudagurinn 23.2 .
+þegar við lentum .
 Það var þriðjudagurinn 23.2 þegar við lentum .
 Það var þriðjudagurinn 3/12 þegar við lentum .
 Það var þriðjudagurinn 23/12 þegar við lentum .
 Það var þriðjudagurinn 3/2 þegar við lentum .
 Það var þriðjudagurinn 23/2 þegar við lentum .
-Það var þriðjudagurinn 3-12 þegar við lentum .
-Það var þriðjudagurinn 23-12 þegar við lentum .
-Það var þriðjudagurinn 3-2 þegar við lentum .
-Það var þriðjudagurinn 23-2 þegar við lentum .
+Það var þriðjudagurinn 3 - 12 þegar við lentum .
+Það var þriðjudagurinn 23 - 12 þegar við lentum .
+Það var þriðjudagurinn 3 - 2 þegar við lentum .
+Það var þriðjudagurinn 23 - 2 þegar við lentum .
 Það var 2024 þegar við lentum .
 Það var ' 98 þegar við lentum .
 Það var 98 þegar við lentum .
@@ -16988,7 +16998,7 @@ Nú saknar Helgi Björns .
 Það var 12.98 þegar við lentum .
 Það var 12.1998 þegar við lentum .
 Það var 12-2024 þegar við lentum .
-Það var 12-98 þegar við lentum .
+Það var 12 - 98 þegar við lentum .
 Það var 12-1998 þegar við lentum .
 Það var þriðji desember 2024 þegar við lentum .
 Það var þriðji desember ' 98 þegar við lentum .
@@ -17066,12 +17076,13 @@ Hér komum við 1978 .
 04.15 til að breyta heiminum .
 Hér komum við 1978/04/15 til að breyta heiminum .
 Hér komum við 1978-04-15 til að breyta heiminum .
-Hér komum við 1978.4.15 til að breyta heiminum .
+Hér komum við 1978 .
+4.15 til að breyta heiminum .
 Hér komum við 1978 / 4/15 til að breyta heiminum .
 Hér komum við 1978 - 4 - 15 til að breyta heiminum .
 Hér komum við á áttunda áratugnum til að breyta heiminum .
 Hér komum við á 8. áratugnum til að breyta heiminum .
-Hér komum við 4. maí 2002-2022 til að breyta heiminum .
+Hér komum við 4. maí 2002 - 2022 til að breyta heiminum .
 Hér komum við á 20. öld til að breyta heiminum .
 Hér komum við árið 20 til að breyta heiminum .
 Hér komum við árið 20 f.Kr. til að breyta heiminum .
@@ -17081,7 +17092,7 @@ Hér komum við 20 e.Kr. til að breyta heiminum .
 Hér komum við áramótin 2014 - 2015 til að breyta heiminum .
 Hér komum við áramótin 2014 - 15 til að breyta heiminum .
 Hér komum við mánaðamótin mars-apríl til að breyta heiminum .
-Hér komum við mánaðamótin nóv. -des. til að breyta heiminum .
+Hér komum við mánaðamótin nóv. - des. til að breyta heiminum .
 Hér komum við milli klukkan 13:00 og 15:00 alla virka daga til að breyta heiminum .
 Bréfið var dagsett 19/5 til að allt gengi upp .
 Bréfið var dags. 19/5 til að allt gengi upp .
@@ -17104,6 +17115,8 @@ Netfangið er jon.jonsson.99@netfang.is .
 Líklega tekst þetta .
 Netfangið er valid@my-domain.reallylongtld .
 Líklega tekst þetta .
+Netfangið er " kaldur@klaki.is " .
+Líklega tekst þetta .
 Vefsíðan er vefur.meira.is og líka vefur.meira.is .
 Vefslóðin er http://www.vefur.is .
 Vefslóðin er https://vefur.is .
@@ -17116,7 +17129,8 @@ Vefslóðin er https://docs.google.com/spreadsheets/d/1LjAl3RTxHqEL-FoS5vNRGHHcE
 Vefslóðin er https://www.facebook.com/groups/maltaeknierfrabaer/?multi_permalinks=2515242103567086&notif_id=1572959359594650&notif_t=group_highlights .
 Vefslóðin er https://www.facebook.com/events/545271046499879/?acontext=%7B%22ref%22%3A%223%22%2C%22ref_newsfeed_story_type%22%3A%22regular%22%2C%22feed_story_type%22%3A%22361%22%2C%22action_history%22%3A%22%5B%7B%5C%22surface%5C%22%3A%5C%22newsfeed%5C%22%2C%5C%22mechanism%5C%22%3A%5C%22feed_story%5C%22%2C%5C%22extra_data%5C%22%3A%5B%5D%7D%5D%22%7D .
 Vefslóðin er https://l.facebook.com/l.php?u=https%3A%2F%2Fbuff.ly%2F32isgSM%3Ffbclid%3DIwAR3a-DCOwwdAqB2RhVFQ4zYL7jGiqe87wWaA5h7r9tqesX0yYAgaOh6fgJY&h=AT3v1q25-ehcvTBmfAalEa8tX41m5_KGNrB_f7Z5l9GuPW74Lu_muHwFKg2lF8fj0sGuyjYozehraCCek1glg7gj4JcH74lGzNQWi31IhysJzaIaSvVksuGzqcGtfbOXzAhu8yZxSlr_3T63XwV11pERbm6jC1l-3Nnip5URyBNXbY_WTDX9kHcb2VxDXlNIcYpllaVbs21yjad_0i6lhuFtw3HMW341dOqZQ6hLHYF5_w0nEt6tjj5nUzN6bxQlr8qVWogMH89ccLaNCcFxnYssfjOt80ikN0HXQ9nFJMconHHisu6rMZwaSrGfSn75BpHvYLI1taPEWkuhXDFWCoIVm0_GqF5a22tiN_BQoQ3TXlQk9RYQnQPPm-vZW1r_4-UmVf6ZZpcn9efmlanBaKpgX8i_slVUqEng2Yljxk4uWmk3Scf5d4Z7k4I_HYkz-aMJxQ4E7I5cSW7ab2hfHc4_NivV9ruwaWPDkxoNkhPI6_k5a1MIcLHaDSM9SkbVMomGmbejXPKYc6P1S13CzBT-qu4GEqR03J8GZtueoS4prvlZQJLHBcv6J1s3AsjdiCK7gIIJyzehLG1iQV3wM7ClrIbqILdGvUHWnW9poQ4looSEaS3ZmFni9Q .
-Farðu á www.mbl.is?return=false .
+Farðu á www.mbl.is ?
+return = false .
 Efnasambandið H2O er til staðar .
 Efnasambandið 2O er til staðar .
 Efnasambandið CO2 er til staðar .
@@ -17131,20 +17145,16 @@ Hér er H2S04 .
 @notandi er frábær .
 @notandi2 er betri en @notandi1 .
 Langbestur er þó @notandi239 .
-#MeToo -byltingin er til staðar á Íslandsmóti #1 .
+#MeToo - byltingin er til staðar á Íslandsmóti #1 .
 #12stig í Eurovision en #égerekkiaðfílaþað !
 #ruv50 .
-Hér er #lifidergott og #mnmlsm -hreyfingin og #égermeðíslenskastafi .
-Hann lék Nc6 en þá lék mótherjinn Rxc6 .
+Hér er #lifidergott og #mnmlsm - hreyfingin og #égermeðíslenskastafi .
+Hann lék Nc 6 en þá lék mótherjinn Rxc 6 .
 Skák og mát .
-5/6^4 .
-√4 .
-12³ .
-5/6ˆ3 .
-√3 .
+5/6 ^ 4. √ 4. 12 ³ .
+5/6 ˆ 3. √ 3. 100,8 / 2 = 50.4 .
 100,8 / 2 = 50.4 .
-100,8 / 2 = 50.4 .
-Það á að geyma mjólkina við 20 ± 3° C .
+Það á að geyma mjólkina við 20 ± 3 ° C .
 Atburðurinn verður í stofu 101 .
 Atburðurinn verður í herbergi 293 .
 Ég bý í 52° 22 ' N 3° 54 ' E , Húsagötu 15 , 108 Rvk. , íbúð 104 , Þjóðvegi 66 .
@@ -17159,31 +17169,28 @@ Hús 33B er til vinstri .
 Hús 1129c er til vinstri .
 Lagið er í C # .
 Slóðin er / usr / local .
-Ég keypti Android 43.1 , 5.3. alpha .
+Ég keypti Android 43.1 , 5.3 .
+alpha .
 Ég keypti Intel Xeon E 5 - 2609 2,4GHz 32 nm 15 MB .
 Ég keypti Boeing 747 .
-Ég keypti Pentium i5 .
+Ég keypti Pentium i 5 .
 Ég keypti A 4 .
 Pin-númerið er 0000 .
 CVC-númerið er 000 .
-Kreditkortanúmerið er 0000 - 0000 - 0000 - 0000 .
+Kreditkortanúmerið er 0000-0000-0000-0000 .
 Kreditkortanúmerið er 0000 0000 0000 0000 .
 Flug AAL 12 er á leiðinni .
 Flug 495 er á leiðinni .
-Ýttu bara á Ctrl+C og það bjargar málunum .
+Ýttu bara á Ctrl + C og það bjargar málunum .
 S02 E 04 er besti þátturinn .
 Í H & M er margt að finna .
 Það er skárra að skrifa sh * t en hitt .
 Sú fullyrðing að tunglið sé úr osti er sönn ( Gissur Ísleifsson , 1837 ) .
 Þetta er ekki sniðugt dæmi .
 ( Friðrik Maríusson , 1849 ) Hann heldur því einnig fram að dæmið sé slæmt .
-Til hammó með ammó <3
-Til hamingju með afmælið :)
-Hér er gjöfin ;-)
-Á meðal HTML-tákna eru &lt; , &amp; og &quot; .
-< meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-Dæmi um kyrillíska stafi eru АБВГҐДЂЃЕЁЄЖZheЗЗ ́ ЅИІЇЙЈКЛЉМEmНЊОПРСС ́ ТЋЌУЎФХЦЧЏШЩЪЫЬЭЮYЯ .
-Lands\u00ADbank\u00ADinn er í 98\u200B,2 pró\u00ADsent eigu\u200B íslenska rík\uFEFFis\u00ADins .
+Til hammó með ammó < 3 Til hamingju með afmælið : ) Hér er gjöfin ; - ) Á meðal HTML-tákna eru & lt ; , & amp ; og & quot ; .
+< meta http-equiv = " Content-Type " content = " text / html ; charset = utf - 8 " > Dæmi um kyrillíska stafi eru АБВГҐДЂЃЕЁЄЖZheЗЗ ́ ЅИІЇЙЈКЛЉМEmНЊОПРСС ́ ТЋЌУЎФХЦЧЏШЩЪЫЬЭЮYЯ .
+Lands \ u 00 ADbank \ u 00 ADinn er í 98 \ u 200B , 2 pró \ u 00 ADsent eigu \ u 200B íslenska rík \ uFEFFis \ u 00 ADins .
 Hlutföllin eru 2 : 3 vatn á móti hveiti .
 Hlutföllin eru 2,5 : 1 vatn á móti hveiti .
 Hún gaf myndinni 4,5 / 5 mögulegum .
