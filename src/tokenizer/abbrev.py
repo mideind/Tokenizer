@@ -38,6 +38,7 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from threading import Lock
+from collections import defaultdict
 
 
 class ConfigError(Exception):
@@ -49,10 +50,13 @@ class Abbreviations:
     """ Wrapper around dictionary of abbreviations, initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT = {}
+    DICT = defaultdict(set)
+    WRONGDICT = defaultdict(set)    # Containing wrong versions of abbreviations
     MEANINGS = set()  # All abbreviation meanings
     # Single-word abbreviations, i.e. those with only one dot at the end
     SINGLES = set()
+    # Single-word abbreviations, i.e. those with only one dot at the end
+    WRONGSINGLES = set()
     # Potential sentence finishers, i.e. those with a dot at the end, marked with an asterisk
     # in the config file
     FINISHERS = set()
@@ -62,6 +66,9 @@ class Abbreviations:
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
     NAME_FINISHERS = set()
+    # Wrong versions of abbreviations with possible corrections
+    # wrong version : [correction1, correction2, ...]
+    WRONGDOTS = defaultdict(list)
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
@@ -104,22 +111,102 @@ class Abbreviations:
                 "!, * and ^ modifiers are mutually exclusive on abbreviations"
             )
         # Append the abbreviation and its meaning in tuple form
-        if abbrev in Abbreviations.DICT:
-            raise ConfigError(
-                "Abbreviation '{0}' is defined more than once".format(abbrev)
+        # Multiple meanings are supported for each abbreviation
+        Abbreviations.DICT[abbrev].add(
+            (
+                meaning,
+                0,
+                gender,
+                "skst" if fl is None else fl,
+                abbrev,
+                "-",
             )
-        Abbreviations.DICT[abbrev] = (
-            meaning,
-            0,
-            gender,
-            "skst" if fl is None else fl,
-            abbrev,
-            "-",
         )
         Abbreviations.MEANINGS.add(meaning)
+        # Adding wrong versions of abbreviations
         if abbrev[-1] == "." and "." not in abbrev[0:-1]:
             # Only one dot, at the end
-            Abbreviations.SINGLES.add(abbrev[0:-1])  # Lookup is without the dot
+            # Lookup is without the dot
+            wabbrev = abbrev[0:-1]
+            Abbreviations.SINGLES.add(wabbrev)
+            if finisher:
+                Abbreviations.FINISHERS.add(wabbrev)
+            Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+            Abbreviations.WRONGDICT[wabbrev].add(
+                (
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,
+                    "-",
+                )
+            )
+
+        elif "." in abbrev:
+            # Only multiple dots, checked single dots above
+            # Want to see versions with each one deleted, and one where all are deleted
+            indices = [pos for pos, char in enumerate(abbrev) if char == "."]
+            for i in indices:
+                # Removing one dot at a time
+                wabbrev = abbrev[:i] + abbrev[i+1:]
+                #if finisher:
+                #    Abbreviations.FINISHERS.add(wabbrev)
+                Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+                Abbreviations.WRONGDICT[wabbrev].add(
+                    (
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
+                )
+            if len(indices) > 2:
+                # 3 or 4 dots currently in vocabulary
+                # Not all cases with 4 dots are handled.
+                i1 = indices[0]
+                i2 = indices[1]
+                i3 = indices[2]
+                wabbrevs = []
+                # 1 and 2 removed
+                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i2]+abbrev[i2+1:])
+                # 1 and 3 removed
+                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i3]+abbrev[i3+1:])
+                # 2 and 3 removed
+                wabbrevs.append(abbrev[:i2]+abbrev[i2+1:i3]+abbrev[i3+1:])
+                for wabbrev in wabbrevs:
+                    #if finisher:
+                    #    Abbreviations.FINISHERS.add(wabbrev)
+                    Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+                    Abbreviations.WRONGDICT[wabbrev].add(
+                        (
+                            meaning,
+                            0,
+                            gender,
+                            "skst" if fl is None else fl,
+                            wabbrev,
+                            "-",
+                        )
+                    )
+            # Removing all dots
+            wabbrev = abbrev.replace(".", "")
+            if wabbrev not in Abbreviations.WRONGDICT:
+                Abbreviations.WRONGSINGLES.add(wabbrev)
+            #if finisher:
+            #    Abbreviations.FINISHERS.add(wabbrev)
+            Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+            Abbreviations.WRONGDICT[wabbrev].add(
+                (
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,
+                    "-",
+                )
+            )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
         if not_finisher or name_finisher:
@@ -130,7 +217,7 @@ class Abbreviations:
 
     @staticmethod
     def has_meaning(abbrev):
-        return abbrev in Abbreviations.DICT
+        return abbrev in Abbreviations.DICT or abbrev in Abbreviations.WRONGDICT
 
     @staticmethod
     def has_abbreviation(meaning):
@@ -138,10 +225,9 @@ class Abbreviations:
 
     @staticmethod
     def get_meaning(abbrev):
-        """ Lookup meaning of abbreviation, if available """
-        return (
-            None if abbrev not in Abbreviations.DICT else Abbreviations.DICT[abbrev][0]
-        )
+        """ Lookup meaning(s) of abbreviation, if available. """
+        m = Abbreviations.DICT.get(abbrev)
+        return list(m) if m else None
 
     @staticmethod
     def _handle_abbreviations(s):
