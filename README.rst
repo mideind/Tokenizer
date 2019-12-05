@@ -25,12 +25,11 @@ in the file ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/mideind/Reynir>`_), by the same authors.
-Note that Tokenizer is licensed under the MIT license while Greynir is licensed
-under GPLv3.
+The `Greynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
+uses Tokenizer on its input.
 
-You might also find the
-`Reynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
-interesting. The Reynir parser uses Tokenizer on its input.
+Note that Tokenizer is licensed under the *MIT* license
+while Greynir is licensed under *GPLv3*.
 
 
 Deep vs. shallow tokenization
