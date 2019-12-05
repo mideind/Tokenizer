@@ -675,44 +675,6 @@ The tuple format is designed to be compatible with the
 *Database of Modern Icelandic Inflection* (*DMII*),
 *Beygingarlýsing íslensks nútímamáls*.
 
-Test suite
-----------
-Tokenizer comes with a large test suite.
-The file test/test_tokenizer.py contains built-in tests for pytest.
-
-To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`_,
-``cd`` to your ``Tokenizer`` subdirectory (and optionally
-activate your virtualenv), then run:
-
-.. code-block:: console
-
-    $ python -m pytest
-
-The file ``toktest_large.txt`` contains a test set of 13,075 lines. The lines test sentence detection, 
-token detection and token classification. For analysis, ``toktest_large_gold_perfect.txt`` contains
-the expected output of a perfect shallow tokenization, and ``toktest_large_gold_acceptable.txt`` contains
-the current output of the shallow tokenization.
-
-The file ``Overview.txt`` (only in Icelandic) contains a description of the test set, 
-including line numbers for each part in both ``toktest_large.txt`` and ``toktest_large_gold_acceptable.txt``, 
-and a tag describing what is being tested in each part.
-
-It also contains a description of a perfect shallow tokenization for each part, acceptable tokenization and the current behaviour. 
-As such, the description is an analysis of which edge cases the tokenizer can handle and which it can not.
-
-To test the tokenizer on the large test set the following needs to be typed in the command line:
-
-.. code-block:: console
-    $ tokenize toktest_large.txt toktest_large_out.txt
-
-To compare it to the acceptable behaviour:
-
-.. code-block:: console
-    $ diff toktest_large_out.txt toktest_large_gold_acceptable.txt > toktest_large.diff
-
-The file ``toktest_normal.txt`` contains a running text from recent news articles, containing no edge cases.
-The gold standard can be found in the file ``toktest_normal_gold_expected.txt``.
-
 
 Development installation
 ------------------------
@@ -727,6 +689,55 @@ modify the source files (assuming you have ``git`` available):
     $ # [ Activate your virtualenv here, if you have one ]
     $ pip install -e .
 
+
+Test suite
+----------
+
+Tokenizer comes with a large test suite.
+The file ``test/test_tokenizer.py`` contains built-in tests that
+run under ``pytest``.
+
+To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`_,
+``cd`` to your ``Tokenizer`` subdirectory (and optionally
+activate your virtualenv), then run:
+
+.. code-block:: console
+
+    $ python -m pytest
+
+The file ``test/toktest_large.txt`` contains a test set of 13,075 lines.
+The lines test sentence detection, token detection and token classification.
+For analysis, ``test/toktest_large_gold_perfect.txt`` contains
+the expected output of a perfect shallow tokenization, and
+``test/toktest_large_gold_acceptable.txt`` contains the current output of the
+shallow tokenization.
+
+The file ``test/Overview.txt`` (only in Icelandic) contains a description
+of the test set, including line numbers for each part in both
+``test/toktest_large.txt`` and ``test/toktest_large_gold_acceptable.txt``,
+and a tag describing what is being tested in each part.
+
+It also contains a description of a perfect shallow tokenization for each part,
+acceptable tokenization and the current behaviour.
+As such, the description is an analysis of which edge cases the tokenizer
+can handle and which it can not.
+
+To test the tokenizer on the large test set the following needs to be typed
+in the command line:
+
+.. code-block:: console
+
+    $ tokenize test/toktest_large.txt test/toktest_large_out.txt
+
+To compare it to the acceptable behaviour:
+
+.. code-block:: console
+
+    $ diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt > diff.txt
+
+The file ``test/toktest_normal.txt`` contains a running text from recent
+news articles, containing no edge cases. The gold standard for that file
+can be found in the file ``test/toktest_normal_gold_expected.txt``.
 
 
 Changelog
