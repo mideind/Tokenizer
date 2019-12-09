@@ -227,6 +227,8 @@ class Abbreviations:
     def get_meaning(abbrev):
         """ Lookup meaning(s) of abbreviation, if available. """
         m = Abbreviations.DICT.get(abbrev)
+        if not m:
+            m = Abbreviations.WRONGDICT.get(abbrev)
         return list(m) if m else None
 
     @staticmethod
