@@ -1024,8 +1024,9 @@ def parse_tokens(txt, **options):
                         yield TOK.Molecule(g)
                         ate = True
                         w = w[r.end():]
+
             # Check for currency abbreviations immediately followed by a number
-            if w and len(w) > 3 and w[:3] in CURRENCY_ABBREV and w[3].isdigit():
+            if w and len(w) > 3 and w[0:3] in CURRENCY_ABBREV and w[3].isdigit():
                 t, eaten = parse_digits(w[3:], convert_numbers)
                 if t.kind == TOK.NUMBER:
                     yield(
@@ -1434,23 +1435,29 @@ def parse_particles(token_stream, **options):
                 next_token = next(token_stream)
 
             # Special case for measurement abbreviations
-            # erroneously containing a period
+            # erroneously ending with a period.
+            # We only allow this for measurements that end with
+            # an alphabetic character, i.e. not for ², ³, °, %, ‰.
+            # [ Uncomment the last condition for this behavior:
+            # We don't do this for measurement units which
+            # have other meanings - such as 'gr' (grams), as
+            # 'gr.' is probably the abbreviation for 'grein'. ]
             if (
                 token.kind == TOK.MEASUREMENT
                 and next_token.kind == TOK.PUNCTUATION 
                 and next_token.txt == "."
+                and token.txt[-1].isalpha()
+                # and token.txt.split()[-1] + "." not in Abbreviations.DICT
             ):
                 puncttoken = next_token
                 next_token = next(token_stream)
                 if could_be_end_of_sentence(next_token):
-                    # Wrong, should be end of sentence
-                    # Need to back up
+                    # We are at the end of the current sentence; back up
                     yield token
-                    yield puncttoken
-                    token = next_token
-                    next_token = next(token_stream)
-
+                    token = puncttoken
                 else:
+                    unit, value = token.val
+                    # Add the period to the token text
                     token = TOK.Measurement(
                         token.txt + ".", unit, value
                     )
@@ -1464,12 +1471,9 @@ def parse_particles(token_stream, **options):
                 puncttoken = next_token
                 next_token = next(token_stream)
                 if could_be_end_of_sentence(next_token):
-                    # Wrong, should be end of sentence
-                    # Need to back up
+                    # We are at the end of the current sentence; back up
                     yield token
-                    yield puncttoken
-                    token = next_token
-                    next_token = next(token_stream)
+                    token = puncttoken
                 else:
                     token = TOK.Currency(
                         token.txt + ".", token.txt

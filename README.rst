@@ -742,6 +742,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.0.1: Order of abbreviation meanings within the ``token.val`` field
+  made deterministic; fixed bug in measurement unit handling
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
   and ``detokenize()`` functions; removed ``convert_telno`` option;
   splitting of coalesced tokens made more robust;

@@ -38,30 +38,56 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from threading import Lock
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 
 class ConfigError(Exception):
+
     pass
+
+
+class OrderedSet:
+
+    """ Shim class to provide an ordered set API on top
+        of an OrderedDict. This is necessary to make abbreviation
+        lookups predictable and repeatable, which they would not be
+        if a standard Python set() was used. """
+
+    def __init__(self):
+        self._dict = OrderedDict()
+
+    def add(self, item):
+        """ Add an item at the end of the ordered set """
+        if item not in self._dict:
+            self._dict[item] = None
+
+    def __contains__(self, item):
+        return item in self._dict
+
+    def __iter__(self):
+        return self._dict.__iter__()
 
 
 class Abbreviations:
 
-    """ Wrapper around dictionary of abbreviations, initialized from the config file """
+    """ Wrapper around dictionary of abbreviations,
+        initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT = defaultdict(set)
-    WRONGDICT = defaultdict(set)    # Containing wrong versions of abbreviations
-    MEANINGS = set()  # All abbreviation meanings
+    DICT = defaultdict(OrderedSet)
+    # Wrong versions of abbreviations
+    WRONGDICT = defaultdict(OrderedSet)
+    # All abbreviation meanings
+    MEANINGS = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
     SINGLES = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
     WRONGSINGLES = set()
-    # Potential sentence finishers, i.e. those with a dot at the end, marked with an asterisk
-    # in the config file
+    # Potential sentence finishers, i.e. those with a dot at the end,
+    # marked with an asterisk in the config file
     FINISHERS = set()
-    # Abbreviations that should not be seen as such at the end of sentences, marked with
-    # an exclamation mark in the config file
+    # Abbreviations that should not be seen as such at the end of sentences,
+    # marked with an exclamation mark in the config file
     NOT_FINISHERS = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
@@ -75,7 +101,8 @@ class Abbreviations:
 
     @staticmethod
     def add(abbrev, meaning, gender, fl=None):
-        """ Add an abbreviation to the dictionary. Called from the config file handler. """
+        """ Add an abbreviation to the dictionary.
+            Called from the config file handler. """
         # Check for sentence finishers
         finisher = False
         not_finisher = False
@@ -95,16 +122,19 @@ class Abbreviations:
             abbrev = abbrev[0:-1]
             if not abbrev.endswith("."):
                 raise ConfigError(
-                    "Only abbreviations ending with periods can be marked as not-finishers"
+                    "Only abbreviations ending with periods "
+                    "can be marked as not-finishers"
                 )
         elif abbrev.endswith("^"):
-            # This abbreviation can be followed by a name; in other aspects it is like a not-finisher
+            # This abbreviation can be followed by a name;
+            # in other aspects it is like a not-finisher
             # (Example: 'próf.')
             name_finisher = True
             abbrev = abbrev[0:-1]
             if not abbrev.endswith("."):
                 raise ConfigError(
-                    "Only abbreviations ending with periods can be marked as name finishers"
+                    "Only abbreviations ending with periods "
+                    "can be marked as name finishers"
                 )
         if abbrev.endswith("!") or abbrev.endswith("*") or abbrev.endswith("^"):
             raise ConfigError(
@@ -145,7 +175,8 @@ class Abbreviations:
 
         elif "." in abbrev:
             # Only multiple dots, checked single dots above
-            # Want to see versions with each one deleted, and one where all are deleted
+            # Want to see versions with each one deleted,
+            # and one where all are deleted
             indices = [pos for pos, char in enumerate(abbrev) if char == "."]
             for i in indices:
                 # Removing one dot at a time
