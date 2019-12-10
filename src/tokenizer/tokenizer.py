@@ -1736,7 +1736,7 @@ def parse_date_and_time(token_stream):
             if (
                 token.kind == TOK.ORDINAL
                 or token.kind == TOK.NUMBER
-                or (token.txt and token.txt.lower() in DAYS_OF_MONTH)
+                # or (token.txt and token.txt.lower() in DAYS_OF_MONTH)
             ) and next_token.kind == TOK.WORD:
                 month = month_for_token(next_token, True)
                 if month is not None:
@@ -1748,8 +1748,8 @@ def parse_date_and_time(token_stream):
                             token.val
                             if token.kind == TOK.ORDINAL
                             else token.val[0]
-                            if token.kind == TOK.NUMBER
-                            else DAYS_OF_MONTH[token.txt.lower()]
+                            # if token.kind == TOK.NUMBER
+                            # else DAYS_OF_MONTH[token.txt.lower()]
                         ),
                     )
                     # Eat the month name token

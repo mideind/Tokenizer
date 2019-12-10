@@ -112,19 +112,32 @@ def test_single_tokens():
                 Tok(TOK.NUMBER, "19180", (19180, None, None)),
             ]
         ),
-        ("sautjánda júní", [Tok(TOK.DATEREL, "sautjánda júní", (0, 6, 17))]),
+        (
+            "sautjánda júní",
+            [
+                Tok(TOK.WORD, "sautjánda", None),
+                Tok(TOK.DATEREL, "júní", (0, 6, 0)),
+            ]
+        ),
         (
             "sautjánda júní 1811",
-            [Tok(TOK.DATEABS, "sautjánda júní 1811", (1811, 6, 17))],
+            [
+                Tok(TOK.WORD, "sautjánda", None),
+                Tok(TOK.DATEREL, "júní 1811", (1811, 6, 0))
+            ]
         ),
         (
             "Sautjánda júní árið 1811",
-            [Tok(TOK.DATEABS, "Sautjánda júní árið 1811", (1811, 6, 17))],
+            [
+                Tok(TOK.WORD, "Sautjánda", None),
+                Tok(TOK.DATEREL, "júní árið 1811", (1811, 6, 0))
+            ]
         ),
         (
             "Fimmtánda mars árið 44 f.Kr.",
             [
-                Tok(TOK.DATEABS, "Fimmtánda mars árið 44 f.Kr", (-44, 3, 15)),
+                Tok(TOK.WORD, "Fimmtánda", None),
+                Tok(TOK.DATEREL, "mars árið 44 f.Kr", (-44, 3, 0)),
                 Tok(TOK.PUNCTUATION, ".", None),
             ],
         ),
@@ -739,7 +752,7 @@ def test_sentences():
         "Skrifað var undir friðarsamninga í nóvember 1918. Júlíus Sesar var myrtur "
         "þann fimmtánda mars árið 44 f.Kr. og þótti harmdauði.",
         "B W     W   W     W              W DR           P E B W  W     W   W "
-        "W    DA                           W  W     W        P E",
+        "W    W         DR                 W  W     W        P E",
     )
 
     test_sentence(
@@ -749,7 +762,7 @@ def test_sentences():
 
     test_sentence(
         "Maður var lagður inn á deild 33C eftir handtöku á Bárugötu 14a þann nítjánda júlí 2016.",
-        "B W   W   W      W   W W     NL  W     W        W W        NL  W    DA                P E",
+        "B W   W   W      W   W W     NL  W     W        W W        NL  W    W        DR       P E",
     )
 
     test_sentence(

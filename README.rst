@@ -517,6 +517,7 @@ defined within the ``TOK`` class:
 | DATEREL       |    19   | Relative date       | | 15. mars                |
 |               |         |                     | | 15/3                    |
 |               |         |                     | | 15.3.                   |
+|               |         |                     | | mars 1911               |
 +---------------+---------+---------------------+---------------------------+
 | TIMESTAMPABS  |    20   | Absolute timestamp  | | 30. desember 1965 11:34 |
 |               |         |                     | | 1965-12-30 kl. 13:00    |
@@ -621,7 +622,7 @@ the token kind, as follows:
 - For ``TOK.DATEREL``, the ``val`` field contains a
   ``(year, month, day)`` tuple (all 1-based),
   except that a least one of the tuple fields is missing and set to 0.
-  Example: *þriðja júní* becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)``
+  Example: *3. júní* becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)``
   as the year is missing.
 - For ``TOK.YEAR``, the ``val`` field contains the year as an integer.
   A negative number indicates that the year is BCE (*fyrir Krist*),
@@ -742,6 +743,10 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.0.2: Spelled-out day ordinals are no longer included as a part of
+  ``TOK.DATEREL`` tokens. Thus, *þriðji júní* is now a ``TOK.WORD``
+  followed by a ``TOK.DATEREL``. *3. júní* continues to be parsed as
+  a single ``TOK.DATEREL``.
 * Version 2.0.1: Order of abbreviation meanings within the ``token.val`` field
   made deterministic; fixed bug in measurement unit handling
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
