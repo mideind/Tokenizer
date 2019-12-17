@@ -2195,8 +2195,28 @@ def detokenize(tokens, normalize=False):
     """ Utility function to convert an iterable of tokens back
         to a correctly spaced string. If normalize is True,
         punctuation is normalized before assembling the string. """
-    if normalize:
-        to_text = normalized_text
-    else:
-        to_text = lambda t: t.txt
-    return correct_spaces(" ".join(filter(None, map(to_text, tokens))))
+    to_text = normalized_text if normalize else lambda t: t.txt
+    r = []
+    last = TP_NONE
+    for t in tokens:
+        w = to_text(t)
+        if not w:
+            continue
+        this = TP_WORD
+        if t.kind == TOK.PUNCTUATION:
+            if len(w) > 1:
+                pass
+            elif w in LEFT_PUNCTUATION:
+                this = TP_LEFT
+            elif w in RIGHT_PUNCTUATION:
+                this = TP_RIGHT
+            elif w in NONE_PUNCTUATION:
+                this = TP_NONE
+            elif w in CENTER_PUNCTUATION:
+                this = TP_CENTER
+        if TP_SPACE[last - 1][this - 1] and r:
+            r.append(" " + w)
+        else:
+            r.append(w)
+        last = this
+    return "".join(r)
