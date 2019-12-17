@@ -743,7 +743,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
-* Version 2.0.3: Fixed bug in detokenize() where abbreviations, domains
+* Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains
   and e-mails containing periods were wrongly split
 * Version 2.0.2: Spelled-out day ordinals are no longer included as a part of
   ``TOK.DATEREL`` tokens. Thus, *þriðji júní* is now a ``TOK.WORD``
