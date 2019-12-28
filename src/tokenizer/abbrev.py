@@ -81,7 +81,7 @@ class Abbreviations:
     MEANINGS = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
     SINGLES = set()
-    # Single-word abbreviations, i.e. those with only one dot at the end
+    # Set of abbreviations without periods, e.g. "td", "osfrv"
     WRONGSINGLES = set()
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
@@ -223,8 +223,7 @@ class Abbreviations:
                     )
             # Removing all dots
             wabbrev = abbrev.replace(".", "")
-            if wabbrev not in Abbreviations.WRONGDICT:
-                Abbreviations.WRONGSINGLES.add(wabbrev)
+            Abbreviations.WRONGSINGLES.add(wabbrev)
             #if finisher:
             #    Abbreviations.FINISHERS.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
