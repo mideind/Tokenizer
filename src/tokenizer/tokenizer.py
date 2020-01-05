@@ -49,6 +49,7 @@ import datetime
 import unicodedata
 
 from .abbrev import Abbreviations
+# pylint: disable=unused-wildcard-import
 from .definitions import *
 
 
@@ -1153,7 +1154,6 @@ def parse_particles(token_stream, **options):
         while True:
             next_token = next(token_stream)
             # Make the lookahead checks we're interested in
-            clock = False
             # Check for currency symbol followed by number, e.g. $10
             if token.txt in CURRENCY_SYMBOLS:
                 for symbol, currabbr in items(CURRENCY_SYMBOLS):
