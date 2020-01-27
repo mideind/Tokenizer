@@ -13011,7 +13011,7 @@ Efnasambandið H2O er til staðar.
 Efnasambandið 2O er til staðar.
 Efnasambandið CO2 er til staðar.
 Efnasambandið CsCl er til staðar.
-Efnasambandið H2S04 er til staðar.
+Efnasambandið H2SO4 er til staðar.
 Hér er H2O.
 Hér er 2O.
 Hér er CO2.
