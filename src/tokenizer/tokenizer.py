@@ -1270,14 +1270,32 @@ def parse_particles(token_stream, **options):
                     next_token = next(token_stream)
 
             # Coalesce 'klukkan/kl. átta/hálfátta' into a time
-            elif next_token.txt in CLOCK_NUMBERS:
+            elif next_token.kind == TOK.WORD and next_token.txt.lower() in CLOCK_NUMBERS:
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     txt = token.txt
                     # Match: coalesce and step to next token
                     token = TOK.Time(
-                        txt + " " + next_token.txt, *CLOCK_NUMBERS[next_token.txt]
+                        txt + " " + next_token.txt, *CLOCK_NUMBERS[next_token.txt.lower()]
                     )
                     next_token = next(token_stream)
+
+            # Coalesce 'klukkan/kl. hálf átta' into a time
+            elif next_token.kind == TOK.WORD and next_token.txt.lower() == "hálf":
+                if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
+                    time_token = next(token_stream)
+                    time_txt = time_token.txt.lower()
+                    if time_txt in CLOCK_NUMBERS and not time_txt.startswith("hálf"):
+                        # Match
+                        token = TOK.Time(
+                            token.txt + " " + next_token.txt + " " + time_token.txt,
+                            *CLOCK_NUMBERS["hálf" + time_txt]
+                        )
+                        next_token = next(token_stream)
+                    else:
+                        # Not a match: must retreat
+                        yield token
+                        token = next_token
+                        next_token = time_token
 
             # Words like 'hálftólf' are only used in temporal expressions
             # so can stand alone

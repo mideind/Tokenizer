@@ -63,7 +63,15 @@ def test_single_tokens():
         ("Klukkan 13:45", [Tok(TOK.TIME, "Klukkan 13:45", (13, 45, 0))]),
         ("hálftólf", [Tok(TOK.TIME, "hálftólf", (11, 30, 0))]),
         ("kl. hálfátta", [Tok(TOK.TIME, "kl. hálfátta", (7, 30, 0))]),
+        ("kl. hálf átta", [Tok(TOK.TIME, "kl. hálf átta", (7, 30, 0))]),
+        ("klukkan hálfátta", [Tok(TOK.TIME, "klukkan hálfátta", (7, 30, 0))]),
+        ("klukkan hálf átta", [Tok(TOK.TIME, "klukkan hálf átta", (7, 30, 0))]),
         ("klukkan þrjú", [Tok(TOK.TIME, "klukkan þrjú", (3, 00, 0))]),
+        ("Kl. hálfátta", [Tok(TOK.TIME, "Kl. hálfátta", (7, 30, 0))]),
+        ("Kl. hálf átta", [Tok(TOK.TIME, "Kl. hálf átta", (7, 30, 0))]),
+        ("Klukkan hálfátta", [Tok(TOK.TIME, "Klukkan hálfátta", (7, 30, 0))]),
+        ("Klukkan hálf átta", [Tok(TOK.TIME, "Klukkan hálf átta", (7, 30, 0))]),
+        ("Klukkan þrjú", [Tok(TOK.TIME, "Klukkan þrjú", (3, 00, 0))]),
         ("17/6", [Tok(TOK.DATEREL, "17/6", (0, 6, 17))]),
         (
             "17.6.",
@@ -868,6 +876,16 @@ def test_sentences():
     test_sentence(
         "Þingmenn og -konur versluðu marg-ítrekað í Tösku- og hanskabúðinni.",
         "B W      W  W      W        W            W W                      P E",
+    )
+
+    test_sentence(
+        "Friðgeir fór út kl. hálf átta en var hálf slompaður.",
+        "B W      W   W  T             W  W   W    W        P E",
+    )
+
+    test_sentence(
+        "Klukkan hálf sjö fór Friðgeir út.",
+        "B T              W   W        W P E",
     )
 
 
