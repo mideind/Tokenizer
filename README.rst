@@ -743,12 +743,14 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.0.4: Added imperfect abbreviations (*amk.*, *osfrv.*); recognized
+  *klukkan hálf tvö* as a ``TOK.TIME``
 * Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains
   and e-mails containing periods were wrongly split
 * Version 2.0.2: Spelled-out day ordinals are no longer included as a part of
   ``TOK.DATEREL`` tokens. Thus, *þriðji júní* is now a ``TOK.WORD``
   followed by a ``TOK.DATEREL``. *3. júní* continues to be parsed as
-  a single ``TOK.DATEREL``.
+  a single ``TOK.DATEREL``
 * Version 2.0.1: Order of abbreviation meanings within the ``token.val`` field
   made deterministic; fixed bug in measurement unit handling
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
