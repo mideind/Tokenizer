@@ -3,7 +3,7 @@
 
     Definitions used for tokenization of Icelandic text
 
-    Copyright(C) 2019 Miðeind ehf.
+    Copyright (C) 2020 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -57,10 +57,6 @@ else:
     is_str = lambda s: isinstance(s, (unicode, str))
 
 
-# TODO: These options will become settable configuration switches
-# Auto-convert numbers to Icelandic format (1,234.56 -> 1.234,56)?
-CONVERT_NUMBERS = False
-
 ACCENT = unicode_chr(769)
 UMLAUT = unicode_chr(776)
 SOFT_HYPHEN = unicode_chr(173)
@@ -102,8 +98,7 @@ UNICODE_REGEX = re.compile(
     r"|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))), re.UNICODE
 )
 
-# Hyphens that are cast to '-' for parsing and then re-cast
-# to normal hyphens, en or em dashes in final rendering
+# Hyphens are normalized to '-'
 HYPHEN = "-"  # Normal hyphen
 EN_DASH = "\u2013"  # "–"
 EM_DASH = "\u2014"  # "—"
@@ -154,19 +149,26 @@ END_OF_SENTENCE = frozenset([".", "?", "!", "…"])  # Removed […]
 # Punctuation symbols that may additionally occur at the end of a sentence
 SENTENCE_FINISHERS = frozenset([")", "]", "“", "»", "”", "’", '"', "[…]"])
 # Punctuation symbols that may occur inside words
-PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’"])  # Period and apostrophes
+# Note that an EM_DASH is not allowed inside a word and will split words if present
+PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", HYPHEN, EN_DASH])
+# Punctuation symbols that can end words
+PUNCT_ENDING_WORD = frozenset(["'", "²", "³"])
+# Punctuation symbols that may occur together
+PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
 
 # Single and double quotes
 SQUOTES = "'‚‛‘´"
 DQUOTES = '"“„”«»'
 
-CLOCK_WORD = "klukkan"
-CLOCK_ABBREV = "kl"
+CLOCK_ABBREVS = frozenset(("kl", "kl.", "klukkan"))
 
+# Allowed first digits in Icelandic telephone numbers
 TELNO_PREFIXES = "45678"
 
-# Prefixes that can be applied to adjectives with an intervening hyphen
-ADJECTIVE_PREFIXES = frozenset(("hálf", "marg", "semí", "full"))
+# Known telephone country codes
+COUNTRY_CODES = frozenset((
+    "354", "+354", "00354",
+))
 
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
@@ -240,50 +242,50 @@ AMBIGUOUS_MONTH_NAMES = frozenset(
 DAYS_IN_MONTH = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
 # Days of the month spelled out
-DAYS_OF_MONTH = {
-    "fyrsti": 1,
-    "fyrsta": 1,
-    "annar": 2,
-    "annan": 2,
-    "þriðji": 3,
-    "þriðja": 3,
-    "fjórði": 4,
-    "fjórða": 4,
-    "fimmti": 5,
-    "fimmta": 5,
-    "sjötti": 6,
-    "sjötta": 6,
-    "sjöundi": 7,
-    "sjöunda": 7,
-    "áttundi": 8,
-    "áttunda": 8,
-    "níundi": 9,
-    "níunda": 9,
-    "tíundi": 10,
-    "tíunda": 10,
-    "ellefti": 11,
-    "ellefta": 11,
-    "tólfti": 12,
-    "tólfta": 12,
-    "þrettándi": 13,
-    "þrettánda": 13,
-    "fjórtándi": 14,
-    "fjórtánda": 14,
-    "fimmtándi": 15,
-    "fimmtánda": 15,
-    "sextándi": 16,
-    "sextánda": 16,
-    "sautjándi": 17,
-    "sautjánda": 17,
-    "átjándi": 18,
-    "átjánda": 18,
-    "nítjándi": 19,
-    "nítjánda": 19,
-    "tuttugasti": 20,
-    "tuttugasta": 20,
-    "þrítugasti": 30,
-    "þrítugasta": 30,
-}
+# DAYS_OF_MONTH = {
+#     "fyrsti": 1,
+#     "fyrsta": 1,
+#     "annar": 2,
+#     "annan": 2,
+#     "þriðji": 3,
+#     "þriðja": 3,
+#     "fjórði": 4,
+#     "fjórða": 4,
+#     "fimmti": 5,
+#     "fimmta": 5,
+#     "sjötti": 6,
+#     "sjötta": 6,
+#     "sjöundi": 7,
+#     "sjöunda": 7,
+#     "áttundi": 8,
+#     "áttunda": 8,
+#     "níundi": 9,
+#     "níunda": 9,
+#     "tíundi": 10,
+#     "tíunda": 10,
+#     "ellefti": 11,
+#     "ellefta": 11,
+#     "tólfti": 12,
+#     "tólfta": 12,
+#     "þrettándi": 13,
+#     "þrettánda": 13,
+#     "fjórtándi": 14,
+#     "fjórtánda": 14,
+#     "fimmtándi": 15,
+#     "fimmtánda": 15,
+#     "sextándi": 16,
+#     "sextánda": 16,
+#     "sautjándi": 17,
+#     "sautjánda": 17,
+#     "átjándi": 18,
+#     "átjánda": 18,
+#     "nítjándi": 19,
+#     "nítjánda": 19,
+#     "tuttugasti": 20,
+#     "tuttugasta": 20,
+#     "þrítugasti": 30,
+#     "þrítugasta": 30,
+# }
 
 # Time of day expressions spelled out
 CLOCK_NUMBERS = {
@@ -386,11 +388,14 @@ SI_UNITS = {
     "cm": ("m", 1.0e-2),
     "sm": ("m", 1.0e-2),
     "km": ("m", 1.0e3),
+    "ft": ("m", 0.3048),  # feet
+    "mi": ("m", 1609.34),  # miles
     # Area
     "m²": ("m²", 1.0),
     "fm": ("m²", 1.0),
     "km²": ("m²", 1.0e6),
     "cm²": ("m²", 1.0e-2),
+    "ha": ("m²", 1.0e4),
     # Volume
     "m³": ("m³", 1.0),
     "cm³": ("m³", 1.0e-6),
@@ -400,17 +405,22 @@ SI_UNITS = {
     "dl": ("m³", 1.0e-4),
     "cl": ("m³", 1.0e-5),
     "ml": ("m³", 1.0e-6),
+    "gal": ("m³", 3.78541e-3),
+    "bbl": ("m³", 158.987294928e-3),
     # Temperature
+    "K": ("K", 1.0),
+    "°K": ("K", 1.0),  # Strictly speaking this should be K, not °K
     "°C": ("K", lambda x: x + 273.15),
     "°F": ("K", lambda x: (x + 459.67) * 5 / 9),
-    "K": ("K", 1.0),
     # Mass
-    "g": ("g", 1.0),
-    "gr": ("g", 1.0),
-    "kg": ("g", 1.0e3),
-    "t": ("g", 1.0e6),
-    "mg": ("g", 1.0e-3),
-    "μg": ("g", 1.0e-6),
+    "g": ("kg", 1.0e-3),
+    "gr": ("kg", 1.0e-3),
+    "kg": ("kg", 1.0),
+    "t": ("kg", 1.0e3),
+    "mg": ("kg", 1.0e-6),
+    "μg": ("kg", 1.0e-9),
+    "tn": ("kg", 1.0e3),
+    "lb": ("kg", 0.453592),
     # Duration
     "s": ("s", 1.0),
     "ms": ("s", 1.0e-3),
@@ -457,23 +467,59 @@ SI_UNITS = {
     "hPa": ("Pa", 1.0e2),
     # Angle
     "°": ("°", 1.0),  # Degree
+    # Percentage and promille
+    "%": ("%", 1.0),
+    "‰": ("‰", 0.1),
+}
+
+DIRECTIONS = {
+    "N": "Norður",
 }
 
 SI_UNITS_SET = frozenset(keys(SI_UNITS))
-
-SI_UNITS_REGEX = re.compile(
-    r"({0})".format(
-        r"|".join(
-            map(
-                re.escape,
-                # Sort in descending order by length, so that longer strings
-                # are matched before shorter ones
-                sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
-            )
-        )
-    ),
-    re.UNICODE,
+SI_UNITS_REGEX_STRING = r"|".join(
+    map(
+        # If the unit ends with a letter, don't allow the next character
+        # after it to be a letter (i.e. don't match '220Volts' as '220V')
+        lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit,
+        # Sort in descending order by length, so that longer strings
+        # are matched before shorter ones
+        sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+    )
 )
+SI_UNITS_REGEX = re.compile(r"({0})".format(SI_UNITS_REGEX_STRING), re.UNICODE)
+
+CURRENCY_REGEX_STRING = r"|".join(
+    map(
+        # Sort in descending order by length, so that longer strings
+        # are matched before shorter ones
+        re.escape,
+        sorted(keys(CURRENCY_SYMBOLS), key=lambda s: len(s), reverse=True)
+    )
+)
+
+# Combined pattern regex for SI units, percentage, promille and currency symbols
+UNIT_REGEX_STRING = SI_UNITS_REGEX_STRING + r"|" + CURRENCY_REGEX_STRING
+
+# Icelandic-style number, followed by a unit
+NUM_WITH_UNIT_REGEX1 = re.compile(
+    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(UNIT_REGEX_STRING),
+    re.UNICODE
+)
+
+# English-style number, followed by a unit
+NUM_WITH_UNIT_REGEX2 = re.compile(
+    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(UNIT_REGEX_STRING),
+    re.UNICODE
+)
+
+# One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
+# and a unit (SI, percent or currency symbol)
+NUM_WITH_UNIT_REGEX3 = re.compile(
+    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(UNIT_REGEX_STRING),
+    re.UNICODE
+)
+
 
 # If the handle_kludgy_ordinals option is set to
 # KLUDGY_ORDINALS_PASS_THROUGH, we do not convert
@@ -651,6 +697,8 @@ AMOUNT_ABBREV = {
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
+# URL prefixes. Note that this list should not contain www since
+# www.something.com is a domain token, not a URL token.
 URL_PREFIXES = ("http://", "https://", "file://")
 
 TOP_LEVEL_DOMAINS = frozenset(
@@ -940,7 +988,7 @@ TOP_LEVEL_DOMAINS = frozenset(
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
 DOMAIN_REGEX = re.compile(
     r"({0})({1}*)$".format(
-        r"|".join([r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)]),
+        r"|".join(r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)),
         PUNCTUATION_REGEX,
     ),
     re.UNICODE,

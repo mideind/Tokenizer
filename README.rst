@@ -25,12 +25,11 @@ in the file ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/mideind/Greynir>`_), by the same authors.
-Note that Tokenizer is licensed under the MIT license while Greynir is licensed
-under GPLv3.
+The `Greynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
+uses Tokenizer on its input.
 
-You might also find the
-`Reynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
-interesting. The Reynir parser uses Tokenizer on its input.
+Note that Tokenizer is licensed under the *MIT* license
+while Greynir is licensed under *GPLv3*.
 
 
 Deep vs. shallow tokenization
@@ -46,13 +45,15 @@ by spaces.
 the token type and further information extracted from the token, for example
 a *(year, month, day)* tuple in the case of date tokens.
 
-In shallow tokenization, tokens are maximally split. The strings
-"800 MW", "21. janúar" and "800 7000" (as well as the coalesced versions
-"800MW" and "21.janúar") are thus two tokens each.
+In shallow tokenization, tokens are in most cases kept intact, although
+consecutive white space is always coalesced. The input strings
+``"800 MW"``, ``"21. janúar"`` and ``"800 7000"`` thus become
+two tokens each, output with a single space between them.
 
 In deep tokenization, the same strings are represented by single token objects,
 of type ``TOK.MEASUREMENT``, ``TOK.DATEREL`` and ``TOK.TELNO``, respectively.
-The text associated with a single token object may contain one or more spaces.
+The text associated with a single token object may contain one or more spaces,
+although consecutive space is always coalesced.
 
 By default, the command line tool performs shallow tokenization. If you
 want deep tokenization with the command line tool, use the ``--json`` or
@@ -98,7 +99,8 @@ on the command line:
 
 +-------------------+---------------------------------------------------+
 | | ``--csv``       | Deep tokenization. Output token objects in CSV    |
-|                   | format, one per line.                             |
+|                   | format, one per line. Sentences are separated by  |
+|                   | lines containing ``0,"",""``                      |
 +-------------------+---------------------------------------------------+
 | | ``--json``      | Deep tokenization. Output token objects in JSON   |
 |                   | format, one per line.                             |
@@ -117,9 +119,40 @@ Example
 .. code-block:: console
 
     $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize
-    3. janúar sl. keypti ég 64 kWst rafbíl .
+    3. janúar sl. keypti ég 64kWst rafbíl .
     Hann kostaði €30.000 .
 
+    $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --csv
+    19,"3. janúar","0|1|3"
+    6,"sl.","síðastliðinn"
+    6,"keypti",""
+    6,"ég",""
+    22,"64kWst","J|230400000.0"
+    6,"rafbíl",""
+    1,".","."
+    0,"",""
+    6,"Hann",""
+    6,"kostaði",""
+    13,"€30.000","30000|EUR"
+    1,".","."
+    0,"",""
+
+    $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --json
+    {"k":"BEGIN SENT"}
+    {"k":"DATEREL","t":"3. janúar","v":[0,1,3]}
+    {"k":"WORD","t":"sl.","v":["síðastliðinn"]}
+    {"k":"WORD","t":"keypti"}
+    {"k":"WORD","t":"ég"}
+    {"k":"MEASUREMENT","t":"64kWst","v":["J",230400000.0]}
+    {"k":"WORD","t":"rafbíl"}
+    {"k":"PUNCTUATION","t":".","v":"."}
+    {"k":"END SENT"}
+    {"k":"BEGIN SENT"}
+    {"k":"WORD","t":"Hann"}
+    {"k":"WORD","t":"kostaði"}
+    {"k":"AMOUNT","t":"€30.000","v":[30000,"EUR"]}
+    {"k":"PUNCTUATION","t":".","v":"."}
+    {"k":"END SENT"}
 
 Python module
 -------------
@@ -154,7 +187,7 @@ An example of shallow tokenization from Python code goes something like this:
 
 The program outputs::
 
-    3., janúar, sl., keypti, ég, 64, kWst, rafbíl, .
+    3., janúar, sl., keypti, ég, 64kWst, rafbíl, .
     Hann, kostaði, €30.000, .
 
 Deep tokenization example
@@ -320,6 +353,43 @@ quotes. Example::
     'Hann sagði: „Þú ert ágæt!“.'
 
 
+The ``normalized_text()`` function
+----------------------------------
+
+The ``tokenizer.normalized_text(token)`` function
+returns the normalized text for a token. This means that the original
+token text is returned except for certain punctuation tokens, where a
+normalized form is returned instead. Specifically, English-type quotes
+are converted to Icelandic ones, and en- and em-dashes are converted
+to regular hyphens.
+
+
+The ``text_from_tokens()`` function
+-----------------------------------
+
+The ``tokenizer.text_from_tokens(tokens)`` function
+returns a concatenation of the text contents of the given token list,
+with spaces between tokens. Example::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    >>> tokenizer.text_from_tokens(toklist)
+    'Hann sagði : " Þú ert ágæt ! " .'
+
+
+The ``normalized_text_from_tokens()`` function
+----------------------------------------------
+
+The ``tokenizer.normalized_text_from_tokens(tokens)`` function
+returns a concatenation of the normalized text contents of the given
+token list, with spaces between tokens. Example (note the double quotes)::
+
+    >>> import tokenizer
+    >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
+    >>> tokenizer.normalized_text_from_tokens(toklist)
+    'Hann sagði : „ Þú ert ágæt ! “ .'
+
+
 Tokenization options
 --------------------
 
@@ -447,6 +517,7 @@ defined within the ``TOK`` class:
 | DATEREL       |    19   | Relative date       | | 15. mars                |
 |               |         |                     | | 15/3                    |
 |               |         |                     | | 15.3.                   |
+|               |         |                     | | mars 1911               |
 +---------------+---------+---------------------+---------------------------+
 | TIMESTAMPABS  |    20   | Absolute timestamp  | | 30. desember 1965 11:34 |
 |               |         |                     | | 1965-12-30 kl. 13:00    |
@@ -473,6 +544,12 @@ defined within the ``TOK`` class:
 +---------------+---------+---------------------+---------------------------+
 | SSN           |    27   | Social security     | | 591213-1480             |
 |               |         | number (*kennitala*)|                           |
++---------------+---------+---------------------+---------------------------+
+| USERNAME      |    28   | Twitter user handle | | @username_123           |
+|               |         |                     |                           |
++---------------+---------+---------------------+---------------------------+
+| SERIALNUMBER  |    29   | Serial number       | | 394-5388                |
+|               |         |                     | | 12-345-6789             |
 +---------------+---------+---------------------+---------------------------+
 | S_BEGIN       |  11001  | Start of sentence   |                           |
 +---------------+---------+---------------------+---------------------------+
@@ -545,7 +622,7 @@ the token kind, as follows:
 - For ``TOK.DATEREL``, the ``val`` field contains a
   ``(year, month, day)`` tuple (all 1-based),
   except that a least one of the tuple fields is missing and set to 0.
-  Example: *þriðja júní* becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)``
+  Example: *3. júní* becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)``
   as the year is missing.
 - For ``TOK.YEAR``, the ``val`` field contains the year as an integer.
   A negative number indicates that the year is BCE (*fyrir Krist*),
@@ -572,8 +649,11 @@ the token kind, as follows:
 - For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)``
   tuple, where ``unit`` is a base SI unit (such as ``g``, ``m``,
   ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature in Kelvin).
-- For ``TOK.TELNO``, the ``val`` field contains the phone number
-  in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen.
+- For ``TOK.TELNO``, the ``val`` field contains a tuple: ``(number, cc)``
+  where the first item is the phone number
+  in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen,
+  and the second item is the country code, eventually prefixed by ``+``.
+  The country code defaults to ``354`` (Iceland).
 
 
 Abbreviations
@@ -585,8 +665,8 @@ abbreviations, their definitions and explanatory comments.
 
 When an abbreviation is encountered, it is recognized as a word token
 (i.e. having its ``kind`` field equal to ``TOK.WORD``).
-Its expansion is included in the token's
-``val`` field as a list containing a single tuple of the format
+Its expansion(s) are included in the token's
+``val`` field as a list containing tuples of the format
 ``(ordmynd, utg, ordfl, fl, stofn, beyging)``.
 An example is *o.s.frv.*, which results in a ``val`` field equal to
 ``[('og svo framvegis', 0, 'ao', 'frasi', 'o.s.frv.', '-')]``.
@@ -609,6 +689,14 @@ modify the source files (assuming you have ``git`` available):
     $ # [ Activate your virtualenv here, if you have one ]
     $ pip install -e .
 
+
+Test suite
+----------
+
+Tokenizer comes with a large test suite.
+The file ``test/test_tokenizer.py`` contains built-in tests that
+run under ``pytest``.
+
 To run the built-in tests, install `pytest <https://docs.pytest.org/en/latest/>`_,
 ``cd`` to your ``Tokenizer`` subdirectory (and optionally
 activate your virtualenv), then run:
@@ -617,14 +705,60 @@ activate your virtualenv), then run:
 
     $ python -m pytest
 
+The file ``test/toktest_large.txt`` contains a test set of 13,075 lines.
+The lines test sentence detection, token detection and token classification.
+For analysis, ``test/toktest_large_gold_perfect.txt`` contains
+the expected output of a perfect shallow tokenization, and
+``test/toktest_large_gold_acceptable.txt`` contains the current output of the
+shallow tokenization.
+
+The file ``test/Overview.txt`` (only in Icelandic) contains a description
+of the test set, including line numbers for each part in both
+``test/toktest_large.txt`` and ``test/toktest_large_gold_acceptable.txt``,
+and a tag describing what is being tested in each part.
+
+It also contains a description of a perfect shallow tokenization for each part,
+acceptable tokenization and the current behaviour.
+As such, the description is an analysis of which edge cases the tokenizer
+can handle and which it can not.
+
+To test the tokenizer on the large test set the following needs to be typed
+in the command line:
+
+.. code-block:: console
+
+    $ tokenize test/toktest_large.txt test/toktest_large_out.txt
+
+To compare it to the acceptable behaviour:
+
+.. code-block:: console
+
+    $ diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt > diff.txt
+
+The file ``test/toktest_normal.txt`` contains a running text from recent
+news articles, containing no edge cases. The gold standard for that file
+can be found in the file ``test/toktest_normal_gold_expected.txt``.
+
 
 Changelog
 ---------
 
+* Version 2.0.4: Added imperfect abbreviations (*amk.*, *osfrv.*); recognized
+  *klukkan hálf tvö* as a ``TOK.TIME``
+* Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains
+  and e-mails containing periods were wrongly split
+* Version 2.0.2: Spelled-out day ordinals are no longer included as a part of
+  ``TOK.DATEREL`` tokens. Thus, *þriðji júní* is now a ``TOK.WORD``
+  followed by a ``TOK.DATEREL``. *3. júní* continues to be parsed as
+  a single ``TOK.DATEREL``
+* Version 2.0.1: Order of abbreviation meanings within the ``token.val`` field
+  made deterministic; fixed bug in measurement unit handling
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
   and ``detokenize()`` functions; removed ``convert_telno`` option;
   splitting of coalesced tokens made more robust;
-  added ``TOK.SSN`` and ``TOK.MOLECULE`` token kinds
+  added ``TOK.SSN``, ``TOK.MOLECULE``, ``TOK.USERNAME`` and
+  ``TOK.SERIALNUMBER`` token kinds; abbreviations can now have multiple
+  meanings
 * Version 1.4.0: Added the ``**options`` parameter to the
   ``tokenize()`` function, giving control over the handling of numbers,
   telephone numbers, and 'kludgy' ordinals

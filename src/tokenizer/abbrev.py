@@ -3,7 +3,7 @@
 
     Abbreviations module for tokenization of Icelandic text
 
-    Copyright(C) 2019 Miðeind ehf.
+    Copyright (C) 2020 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -38,37 +38,71 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 from threading import Lock
+from collections import defaultdict, OrderedDict
 
 
 class ConfigError(Exception):
+
     pass
+
+
+class OrderedSet:
+
+    """ Shim class to provide an ordered set API on top
+        of an OrderedDict. This is necessary to make abbreviation
+        lookups predictable and repeatable, which they would not be
+        if a standard Python set() was used. """
+
+    def __init__(self):
+        self._dict = OrderedDict()
+
+    def add(self, item):
+        """ Add an item at the end of the ordered set """
+        if item not in self._dict:
+            self._dict[item] = None
+
+    def __contains__(self, item):
+        return item in self._dict
+
+    def __iter__(self):
+        return self._dict.__iter__()
 
 
 class Abbreviations:
 
-    """ Wrapper around dictionary of abbreviations, initialized from the config file """
+    """ Wrapper around dictionary of abbreviations,
+        initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT = {}
-    MEANINGS = set()  # All abbreviation meanings
+    DICT = defaultdict(OrderedSet)
+    # Wrong versions of abbreviations
+    WRONGDICT = defaultdict(OrderedSet)
+    # All abbreviation meanings
+    MEANINGS = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
     SINGLES = set()
-    # Potential sentence finishers, i.e. those with a dot at the end, marked with an asterisk
-    # in the config file
+    # Set of abbreviations without periods, e.g. "td", "osfrv"
+    WRONGSINGLES = set()
+    # Potential sentence finishers, i.e. those with a dot at the end,
+    # marked with an asterisk in the config file
     FINISHERS = set()
-    # Abbreviations that should not be seen as such at the end of sentences, marked with
-    # an exclamation mark in the config file
+    # Abbreviations that should not be seen as such at the end of sentences,
+    # marked with an exclamation mark in the config file
     NOT_FINISHERS = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
     NAME_FINISHERS = set()
+    # Wrong versions of abbreviations with possible corrections
+    # wrong version : [correction1, correction2, ...]
+    WRONGDOTS = defaultdict(list)
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
 
     @staticmethod
     def add(abbrev, meaning, gender, fl=None):
-        """ Add an abbreviation to the dictionary. Called from the config file handler. """
+        """ Add an abbreviation to the dictionary.
+            Called from the config file handler. """
         # Check for sentence finishers
         finisher = False
         not_finisher = False
@@ -88,38 +122,121 @@ class Abbreviations:
             abbrev = abbrev[0:-1]
             if not abbrev.endswith("."):
                 raise ConfigError(
-                    "Only abbreviations ending with periods can be marked as not-finishers"
+                    "Only abbreviations ending with periods "
+                    "can be marked as not-finishers"
                 )
         elif abbrev.endswith("^"):
-            # This abbreviation can be followed by a name; in other aspects it is like a not-finisher
+            # This abbreviation can be followed by a name;
+            # in other aspects it is like a not-finisher
             # (Example: 'próf.')
             name_finisher = True
             abbrev = abbrev[0:-1]
             if not abbrev.endswith("."):
                 raise ConfigError(
-                    "Only abbreviations ending with periods can be marked as name finishers"
+                    "Only abbreviations ending with periods "
+                    "can be marked as name finishers"
                 )
         if abbrev.endswith("!") or abbrev.endswith("*") or abbrev.endswith("^"):
             raise ConfigError(
                 "!, * and ^ modifiers are mutually exclusive on abbreviations"
             )
         # Append the abbreviation and its meaning in tuple form
-        if abbrev in Abbreviations.DICT:
-            raise ConfigError(
-                "Abbreviation '{0}' is defined more than once".format(abbrev)
+        # Multiple meanings are supported for each abbreviation
+        Abbreviations.DICT[abbrev].add(
+            (
+                meaning,
+                0,
+                gender,
+                "skst" if fl is None else fl,
+                abbrev,
+                "-",
             )
-        Abbreviations.DICT[abbrev] = (
-            meaning,
-            0,
-            gender,
-            "skst" if fl is None else fl,
-            abbrev,
-            "-",
         )
         Abbreviations.MEANINGS.add(meaning)
+        # Adding wrong versions of abbreviations
         if abbrev[-1] == "." and "." not in abbrev[0:-1]:
             # Only one dot, at the end
-            Abbreviations.SINGLES.add(abbrev[0:-1])  # Lookup is without the dot
+            # Lookup is without the dot
+            wabbrev = abbrev[0:-1]
+            Abbreviations.SINGLES.add(wabbrev)
+            if finisher:
+                Abbreviations.FINISHERS.add(wabbrev)
+            Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+            Abbreviations.WRONGDICT[wabbrev].add(
+                (
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,
+                    "-",
+                )
+            )
+
+        elif "." in abbrev:
+            # Only multiple dots, checked single dots above
+            # Want to see versions with each one deleted,
+            # and one where all are deleted
+            indices = [pos for pos, char in enumerate(abbrev) if char == "."]
+            for i in indices:
+                # Removing one dot at a time
+                wabbrev = abbrev[:i] + abbrev[i+1:]
+                #if finisher:
+                #    Abbreviations.FINISHERS.add(wabbrev)
+                Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+                Abbreviations.WRONGDICT[wabbrev].add(
+                    (
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
+                )
+            if len(indices) > 2:
+                # 3 or 4 dots currently in vocabulary
+                # Not all cases with 4 dots are handled.
+                i1 = indices[0]
+                i2 = indices[1]
+                i3 = indices[2]
+                wabbrevs = []
+                # 1 and 2 removed
+                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i2]+abbrev[i2+1:])
+                # 1 and 3 removed
+                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i3]+abbrev[i3+1:])
+                # 2 and 3 removed
+                wabbrevs.append(abbrev[:i2]+abbrev[i2+1:i3]+abbrev[i3+1:])
+                for wabbrev in wabbrevs:
+                    #if finisher:
+                    #    Abbreviations.FINISHERS.add(wabbrev)
+                    Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+                    Abbreviations.WRONGDICT[wabbrev].add(
+                        (
+                            meaning,
+                            0,
+                            gender,
+                            "skst" if fl is None else fl,
+                            wabbrev,
+                            "-",
+                        )
+                    )
+            # Removing all dots
+            wabbrev = abbrev.replace(".", "")
+            Abbreviations.WRONGSINGLES.add(wabbrev)
+            #if finisher:
+            #    Abbreviations.FINISHERS.add(wabbrev)
+            Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
+            Abbreviations.WRONGDICT[wabbrev].add(
+                (
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,
+                    "-",
+                )
+            )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
         if not_finisher or name_finisher:
@@ -130,7 +247,7 @@ class Abbreviations:
 
     @staticmethod
     def has_meaning(abbrev):
-        return abbrev in Abbreviations.DICT
+        return abbrev in Abbreviations.DICT or abbrev in Abbreviations.WRONGDICT
 
     @staticmethod
     def has_abbreviation(meaning):
@@ -138,10 +255,11 @@ class Abbreviations:
 
     @staticmethod
     def get_meaning(abbrev):
-        """ Lookup meaning of abbreviation, if available """
-        return (
-            None if abbrev not in Abbreviations.DICT else Abbreviations.DICT[abbrev][0]
-        )
+        """ Lookup meaning(s) of abbreviation, if available. """
+        m = Abbreviations.DICT.get(abbrev)
+        if not m:
+            m = Abbreviations.WRONGDICT.get(abbrev)
+        return list(m) if m else None
 
     @staticmethod
     def _handle_abbreviations(s):

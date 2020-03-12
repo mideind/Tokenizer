@@ -1,0 +1,393 @@
+Bil eða hástaf vantar [SS,TS] [1-3|1-5]
+	#A: Finnur nýja setningu þó að bil vanti eða hástaf.
+	#B: Finnur nýja setningu nema þegar hástaf vantar á eftir skammstöfun í lok setningar.
+	#C: Eins og #B.
+Skammstafanir\setningastaða [SS,TS,TF] [4-89] 
+	Án punkts; acronyms [SS,TS] [4-8|6-12]
+		#A: Heldur hástafa orðum saman, líka með bandstriki. Leyfir lágstafa stafi á eftir, heldur saman. 
+		#B: Sama
+		#C: Sama
+	Einn punktur; styttingar fyrir beygjanleg orð [SS, TS, TF] [9-20|13-27]
+		#A: Heldur skammstöfunum saman með punktinum. Skiptir setningum rétt ef aftast í setningu. Ef í lok setningar er punkturinn ekki hluti af skammstöfuninni.
+		#B: Sama
+		#C: Sama
+	Tveir eða fleiri punktar; ao frasar, st frasar [SS, TS, TF] [21-30|28-41]
+		#A: Heldur skammstöfunum saman og lokapunkti. Ef í lok setningar er lokapunkturinn ekki hluti af skammstöfun. Skiptir setningum rétt ef aftast í setningu.
+		#B: Sama
+		#C: Sama
+	Margorða skammstafanir [TS, TF] [31-33|42-45]
+		#A: Hefur ekki áhrif á grunntókun, þekkir "þ." og "m." svo nær grunntókun rétt. Lokapunktur er ekki hluti af skammstöfun í lok setningar.
+		#B: Sama
+		#C: Sama
+	Hástafa skammstafanir [SS, TS, TF] [34-42|46-57]
+		#A: Skiptir rétt í setningar ef aftast í setningu. Lokapunktur ekki hluti af skammstöfun í lok setningar.
+		#B: Sama
+		#C: Sama
+	Skammstafanir með margar merkingar [TF] [43-46|58-61]
+		#A: Hefur ekki áhrif á grunntókun.
+		#B: Sama
+		#C: Sama
+	Óþekktar/erlendar skammstafanir [SS, TS, TF] [47-55|62-77]
+		#A: Nær að skipta rétt í setningar þó aftast í setningu.
+		#B: Þekkir algengar erlendar skammstafanir, annað er ekki hægt að tækla. Skiptir rétt í setningar að mestu, ef lágstafur á eftir. Getur ekki ef t.d. á eftir kemur sérnafn. Ef næsta setning byrjar á tölu skiptir hún því ekki upp.
+		#C: Sama
+	Orð sem lítur út eins og skammstöfun aftast í setningu [SS, TS, TF] [56-57|78-82]
+		#A: Skiptir setningum rétt, annar munur sést ekki í grunntókun. 
+		#B: Skiptir að mestu rétt út frá há-/lágstaf. Ef sérnafn kemur á eftir, skiptir setningu. Ef næsta setning hefst á tölu, skiptir ekki upp.
+		#C: Sama
+	Rangar skammstafanir án punkta [SS, TS, TF] [58-84|83-120] 
+		Var með einum punkti [SS, TS, TF] [58-64|83-91]
+			#A: Skiptir setningum rétt þegar aftast í setningu (enda sést munurinn ekki), hefur annars lítil áhrif á grunntókun.
+			#B: Sama. Greinist sem óþekkt nafnorð.
+			#C: Sama og #B
+		Var með mörgum punktum [SS, TS, TF] [65-84|92-120]
+			#A: Skiptir rétt í setningar þó að sé aftast í setningu. Skiptir ekki upp þegar í miðri setningu. Heldur tókum saman, fyrir utan lokapunkt þegar aftast í setningu.
+			#B: Skiptir að mestu rétt út frá há-/lágstaf. Ef sérnafn kemur á eftir, skiptir setningu. Ef næsta setning hefst á tölu, skiptir ekki upp. Ef öllum punktum er sleppt er þetta sagt óþekkt sérnafn og setningu er alltaf skipt þegar það finnst aftast í setningu. Annars er gert ráð fyrir að þetta sé óþekkt skammstöfun. Jafnvel er hætta á að þetta greinist sem lén (t.om)! TODO skoða hvað hægt að gera hér til að hjálpa málrýni.
+			#C: Sama og #B
+	Skammstafanir ranglega með punktum; acronyms [SS, TS, TF] [84-88|121-125]
+		#A: Heldur tókum saman. Skiptir rétt í setningar þó að sé aftast í setningu. Skiptir ekki setningu þegar tóki birtist í henni miðri.
+		#B: Sama, byrjar nýja setningu á næsta orði ef það hefst á hástaf, skiptir ekki ef hefst á lágstaf eða tölu eða öðru.
+		#C: Sama og #B
+	Skammstafanir með bandstriki (e-a)  [TS, TF] [89|126]
+		#A: Heldur tóka saman. Hefur ekki áhrif á setningaskiptingu.
+		#B: Sama
+		#C: Sama
+Mælieiningar\setn.staða\tölur+útskr.tölur [SS, TS, TF] [90-12004|127-15968] 
+	Fyrir framan með bili [SS, TS, TF] [90-1769|127-2366]
+		Skammstafaðar mælieiningar án punkts [TS, TF] [90-329|127-446]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Sameinar gjaldmiðlatákn tölu á eftir, s.s. tekur bilið. 
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar með punkti [SS, TS, TF] [330-570|447-766]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. 
+			#C:  Sama og #B.
+		Skammstafaðar mælieiningar ranglega án punkts [TS, TF] [571-809|767-1086]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. 
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir [SS, TS, TF] [810-1049|1087-1406]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. 
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega án punkts [TS, TF] [1050-1289|1407-1726]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. 
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega með punkti [SS, TS, TF] [1290-1529|1727-2046]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. 
+			#C: Sama og #B.
+		Gjaldmiðlatákn [TS, TF] [1530-1769|2047-2366]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. 
+			#C: Sama og #B.
+	Fyrir framan án bils [SS, TS, TF] [1770-3289|2367-4446]
+		Skammstafaðar mælieiningar án punkts [TS, TF] [1770-2009|2367-2686]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Rífur mælieiningu framan af, ef það er formerki á tölunni er það haft sér (kg + 54).
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar með punkti [SS, TS, TF] [2010-2249|2687-3006]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Rífur mælieiningu framan af, ef það er formerki á tölunni er það haft sér (klst. + 54).
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar ranglega án punkts [TS, TF] [2250-2489|3007-3326]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur.
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir [SS, TS, TF] [2490-2729|3327-3646]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Heldur mælieiningunni með tölunni, komið sértilvik fyrir það, nema þegar það er formerki framan á tölu. Þá er allt rifið í sundur (USD + 54)
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega án punkts [TS, TF] [2730-2809|3647-3806]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Rífur gjaldmiðil framan af, ef það er formerki á tölunni er það haft sér (dkr + 54)
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega með punkti [SS, TS, TF] [2810-3049|3807-4126]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Rífur gjaldmiðil framan af, ef það er formerki á tölunni er það haft sér (USD. + 54)
+			#C: Sama og #B.
+		Gjaldmiðlatákn [TS, TF] [3050-3289|4127-4446]
+			#A: Heldur tölu og gjaldmiðli eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Heldur gjaldmiðlinum með tölunni, komið sértilvik fyrir það, nema þegar það er formerki framan á tölu. Þá er allt rifið í sundur ($ + 54)
+			#C: Sama og #B.
+	Fyrir aftan með bili [SS, TS, TF] [3290-8644|4447-11489]
+		Skammstafaðar mælieiningar án punkts [TS, TF] [3290-3568|4447-4818]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars sama og #A.
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar með punkti [SS, TS, TF] [3569-3940|4819-5190]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars sama og #A.
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar ranglega án punkts [TS, TF] [3941-4219|5191-5562]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A.
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar ranglega með punkti [SS, TS, TF] [4220-4498|5563-5960]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Nær ekki að þekkja ranga mælieiningu þegar útskrifuð tala er fyrir framan (tveir dl.), skiptir setningu þar. Annars eins og #A.
+			#C: Sama og #B.
+		Útskrifaðar mælieiningar [TS, TF] [4499-4777|5961-6332]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A.
+			#C: Sama og #B.
+		Mælieiningar með / [ TS, TF] [4778-5056|6333-6704]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Þekkir ekki sameinaða mælieiningu þegar útskrifuð tala kemur á undan, hefur ekki áhrif á setningaskiptingu en skiptir tóka upp (km / klst.). Annars eins og #A.
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir [SS, TS, TF] [5057-5335|6705-7076]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A.
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega án punkts [TS, TF] [5336-5614|7077-7448]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A.
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega með punkti [SS, TS, TF] [5615-5893|7449-7820]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A. Nota bene, höndlar útskrifaðar tölur.
+			#C: Sama og #B.
+		Útskrifaðir gjaldmiðlar [TS, TF] [5894-6172|7821-8192]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A.
+			#C: Sama og #B.
+		Gjaldmiðlatákn [TS, TF] [6173-6451|8193-8564]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur.  Annars eins og #A.
+			#C: Sama og #B.
+		Prósentumerki [TS, TF] [6452-6730|8565-8936]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur.  Annars eins og #A.
+			#C: Sama og #B.
+		Útskrifaðar prósentur [TS, TF] [6731-7009|8937-9308]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur.  Annars eins og #A.
+			#C: Sama og #B.
+		Prómill [TS, TF] [7010-7288|9309-9680]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur.  Annars eins og #A.
+			#C: Sama og #B.
+		Útskrifuð prómill [TS, TF] [7289-7567|9681-10052]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur.  Annars eins og #A.
+			#C: Sama og #B.
+		Tommumerki [TS, TF] [7568-7807|10053-10372]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Heldur í sundur í tókaranum, nota bene breytir í lokandi gæsalappir og dregur að orði á seinni stigum, sem er líklega það skásta í stöðunni. Annars eins og #A.
+			#C: Sama og #B.
+		² og ³ [TS, TF] [7808-8086|10373-10744]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Annars eins og #A.
+			#C: Sama og #B.
+		Gráðumerki [TS, TF] [8087-8644|10745-11488]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Í lok setningar rífur gráðumerkið af C (nær samt að sameina tölu og ° C í einn tóka á seinni stigum). Ef bil er á eftir gráðumerki helst það í sundur, setningaskil eru sett inn á undan hástaf en ekki á undan lágstaf eða tölu. Nota bene þetta er allt sameinað rétt á seinni stigum.
+			#C: Sama og #B.
+	Fyrir aftan án bils [SS, TS, TF] [8645-12004|11489-15968]
+		Skammstafaðar mælieiningar án punkts [TS, TF] [8645-8884|11489-11808]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu. 
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar með punkti [SS, TS, TF] [8885-9124|11809-12128]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu. 
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar ranglega án punkts [TS, TF] [9125-9364|12129-12448]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu. 
+			#C: Sama og #B.
+		Skammstafaðar mælieiningar ranglega með punkti [SS, TS, TF] [9365-9604|12449-12768]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu.  
+			#C: Sama og #B.
+		Mælieiningar með / [TS, TF] [9605-9844|12769-13088]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Þegar bil er á undan broti þekkist talan ekki sem heild. Þegar talan þekkist, næst ekki að greina sameinuðu mælieininguna rétt (af því að klesst upp við tölu) og bara "km" er greint með tölu. Þegar talan þekkist ekki er tala og rest rifið í sundur og mælieiningu er haldið saman en frá tölu.
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir [SS, TS, TF] [9845-10084|13089-13408]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur. Þegar bil er á undan broti þekkist talan ekki sem heild. Setur alltaf bil á undan gjaldmiðli.
+			#C: Sama og #B.
+		Gjaldmiðlaskammstafanir ranglega með punkti [SS, TS, TF] [10085-10324|13409-13728]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Setur alltaf bil á undan gjaldmiðli.
+			#C: Sama og #B.
+		Gjaldmiðlatákn [TS, TF] [10325-10564|13729-14048]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼,½ eða 1/3 fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu.  
+			#C: Sama og #B.
+		Prósentumerki [TS, TF] [10565-10804|14049-14368]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼,½ eða 1/3 fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu.  
+			#C: Sama og #B.
+		Prómill [TS, TF] [10805-11044|14369-14688]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼,½ eða 1/3 fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu.  
+			#C: Sama og #B.
+		Tommumerki [TS, TF] [11045-11284|14689-15008]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Setur alltaf bil á undan tommumerki.
+			#C: Sama og #B.
+		² og ³ [TS, TF] [11285-11524|15009-15328]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼,½ eða 1/3 fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur og bil er sett á undan mælieiningu. Þegar bil er á undan broti þekkist talan ekki sem heild og bil er sett á undan mælieiningu. 
+			#C: Sama og #B.
+		Gráðumerki [TS, TF] [11525-12004|15329-15968]
+			#A: Heldur tölu og mælieiningu eins og er í grunntókun en sameinar í einn tóka í djúptókun.
+			#B: Þekkir ekki háar tölur með ¼,½ eða 1/3 fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Ekki heldur þegar "1/3" fyrir aftan. Skilur þá í sundur. Þegar bil er á undan broti þekkist talan ekki sem heild. Þegar tala þekkist ekki er sett bil á undan og eftir gráðumerki. Ef þetta gerist í lok setningar, s.s. að mælieiningin þekkist ekki, fer skiptingin eftir því hvort hástafur, lágstafur, tala eða annað kemur á eftir. Ath. á eftir "1/3" er "°C" haldið saman en rifið af tölunni.
+			#C: Sama og #B.
+Raðtölur [SS, TS, TF] [12005-12018|15969-15986]
+	#A: Heldur rómverskum tölum saman. Veit hvenær á að skipta setningu fyrir aftan og hvenær ekki. Þekkir blandaðar tölur (4ra, 2svar).
+	#B: Heldur rómverskum tölum saman. Byrjar nýja setningu ef það er hástafur fyrir aftan, ef lágstafur eða tala heldur setningin áfram. Greinir raðtölu aftast í setningu sem tölu.
+	#C:Sama og #B.
+Tölur\setn.staða\formerki\þúsundamerki\brot [SS, TS, TF] [12019-12378|15987-16466]
+	#A: Þekkir tölur á ólíku formi, sameinar í einn tóka í djúptókun en heldur textanum upprunalegum í grunntókun.
+	#B: Þekkir ekki háar tölur með ¼½ fyrir aftan. Ekki heldur lágar þegar formerki (+-) fyrir framan. Skilur þá í sundur. Þekkir annars tölur með formerkjum, erlend þúsunda- og brotamerki o.fl.
+	#C: Sama og #B.
+Útskrifaðar tölur\setn.staða [TS, TF] [12379-12420|16467-16508]
+	#A: Hefur ekki áhrif á setningaskiptingu. Heldur textanum réttum en sameinar í djúptókun.
+	#B: Margorða útskrifaðar tölur eru réttar í grunntókun en ekki næst að sameina allt í djúptókun. 
+	#C: Sama og #B.
+Aðrar tölur [SS, TS, TF] [12421-12429|16509-16516]
+	#A: Öllum tölum haldið rétt saman. Hefur áhrif á tókaskiptingu, því almenn brot t.d. líta oft út eins og dagsetningar.
+	#B: Þekkir ekki 9,- svo rífur greinarmerkin af og í sundur. Tekur almenn brot í sundur nema þegar eru eins og dagsetningar.
+	#C: Sama og #B.
+Greinarmerki [SS, TS, TF] [12430-12529|16517-16636]
+	Ólíkar samsetningar greinarmerkja [] [12430-12439|16517-16533]
+		#A: Greinarmerkjum er haldið saman.
+		#B: Mörg greinarmerki í röð eru sameinuð, staðlaða gildið er gildi fyrsta. Bara gert þegar þau ljúka setningu saman; t.d. ?!? og margir punktar í röð. Skiptir setningu ranglega þegar !", eða ?", eða bara !" og ?" í lok beinnar ræðu. Nær því réttu ef bara ," í lok beinnar ræðu.
+		#C: Sama og #B.
+	Þrípunktur og margir punktar [SS, TS, TF] [12440-12464|16534-16565]
+		#A: Mörgum punktum er haldið saman. Skipt er rétt í setningar í kringum þá.
+		#B: Þekkir úrfellingarmerki og heldur setningu áfram ef við á. Ath. hefur úrfellingarmerkið í lok fyrri setningar ef á eftir kemur ný setning. Sameinar marga punkta, staðlaða gildið í djúptókuninni er þrípunktur. Byrjar nýja setningu á eftir ef á eftir kemur hástafur, heldur áfram í sömu setningu ef á eftir kemur lágstafur eða tala. Sameinar ekki marga punkta eða þrípunkt og svo spurningarmerki í einn tóka. Þekkir ekki úrfellingarmerki í lok orðs til að tákna styttingu.
+		#C: Sama og #B.
+	Gæsalappir [TS, TF] [12465-12529|16566-16636]
+		#A: Gæsalappir þekkjast rétt en þeim er ekki breytt sjálfkrafa.
+		#B: Tekur gæsalappir frá orðum. Íslenskar, einfaldar gæsalappir leyfast ekki sem úrfellingarmerki á erlendum orðum en erlent úrfellingarmerki leyfist. Þekkir erlendar gæsalappir, heldur þeim eins og eru en í djúptókun fá þær staðlað gildi sem er samsvarandi íslenskar gæsalappir. Ef setning endar á beinni ræðu innan einfaldra gæsalappa og á eftir kemur ný setning er aftari gæsalöppunum haldið með síðustu setningunni. 
+		#C: Sama og #B.
+		Erlendar 11279-11283
+		Úrfellingarkomma 11284-11284
+		Ólíkar samsetningar kringum orð 11285-11342
+Lagagreinar  [TS, TF] [12530-12532|16637-16640]
+	#A: Lagagreinar þekkjast, jafnvel er hægt að tengja þær við réttan lagatexta á vefnum.
+	#B: Lagagreinar þekkjast ekki, þeim er skipt upp á skástriki (50 / 2000).
+	#C: Sama og #B.
+Símanúmer\setn.staða\skiptimerki [SS, TS, TF] [12533-12592|16641-16698]
+	#A: Leyfileg símanúmer þekkjast, þeim er ekki skipt upp.
+	#B: Símanúmer sem hefjast á leyfilegum strengjum þekkjast, annað er kallað vörunúmer (SerialNumber). Skiptimerki er ekki staðlað í grunntókun. Íslenskur landskóði þekkist með 00 eða plúsmerki fyrir framan, það þarf að bæta við það safn. Skiptimerki þar getur verið bil eða bandstrik. Ef það er ekkert þekkist símanúmerið ekki, það telst tala og ef næsta setning hefst á tölu skiptist setning ekki þar. Það mætti bæta við stuðningi við 112, en líklega er það of margrætt.
+	#C: Sama og #B.
+	Bandstrik á milli [] [12533-12550|16641-16658]
+		Enginn landskóði [12533-12538|16641-16646]
+		00landskóði [12539-12544|16647-16652]
+		+landskóði [12544-12550|16653-16658]
+	Bil [] [12551-12568|16659-16676]
+		Enginn landskóði [12551-12556|16659-16664]
+		00landskóði [12557-12562|16665-16670]
+		+landskóði [12563-12568|16671-16676]
+	Ekkert bil [] [12569-12586|16677-16698]
+		Enginn landskóði  [12569-12574|16677-16682]
+		00landskóði  [12575-12580|16683-16687]
+		+landskóði  [12581-12586|166|166867-16692]
+	Ógilt  [] [12586-12592|16693-16698]
+Kennitala [TS, TF] [12593-12604|16699-16714]
+	#A: Leyfilegar kennitölur þekkjast og þeim er haldið saman.
+	#B: Kennitölur sem uppfylla skilyrði þekkjast, bæði manneskju og fyrirtækis. Aðrar eru teknar í sundur á bandstriki.
+	#C: Sama og #B.
+	Manneskju 
+	Fyrirtækis
+	Ógild 
+Bandstrik [SS, TF] [12605-12617|16715-16727]
+	#A: Rétt er skipt í setningar í kringum ólík bandstrik.
+	#B: Þeim er haldið í grunntókun eins og eru en eru stöðluð í djúptókun. Ekki næst að greina nýja setningu á eftir þeim þegar við á.
+	#C: Sama og #B.
+Samsett orð [TS, TF] [12618-12657|16728-16767]
+	#A: Samsetningum er haldið saman.
+	#B: Samsetningum með bandstriki er haldið saman, nema þegar fyrri hlutinn er skammstöfun (Ph.D.-gráða verður Ph.D. - gráða). Bandstriki er haldið aftan á styttum fyrri hlutum. Þegar margir fyrri hlutar finnast og komma kemur á milli þeirra er henni haldið með fyrri hlutanum. Munurinn sést ekki í grunntókun en ekki tekst að sameina "þingkonur og -menn". Bandstrikinu er haldið aftan á styttum seinni hlutum. Skammstafanir eða samsetningar með skástriki þekkjast ekki og eru slitnar í sundur á skástriki. Samsetningar með "-/" þekkjast ekki, orðið er slitið í sundur á báðum greinarmerkjum. Munurinn sést ekki í grunntókun en ekki tekst að sameina samsetningar með margorða fyrri hluta í einn tóka.
+	#C: Sama og #B.
+	Bandstrik eða skástrik [12618-12647|16728-16757]
+		Erlent sérnafn fremst [12618-12620|16728-16730]
+		Margorða (erlent) sérnafn fremst  [12621|16731]
+		Sérnafn fremst  [12622|16732]
+		Viðurnefni eða átt framan á sérnafni  [12623-12630|16733-16740]
+		Skammstöfun fremst  [12631-12633|16741-16743]
+		Einn fyrri hluti  [12644-12635|16744-16745]
+		Tveir fyrri hlutar  [12636-12637|16746-16747]
+		Þrír fyrri hlutar  [12638-12639|16748-16749]
+		Fjórir fyrri hlutar  [12640-12641|16750-16751]
+		Einn seinni hluti  [12642-12643|16752-16753]
+		-/ samsetning  [12644|16754]
+		/ samsetning  [12645-12647|16755-16757]
+	Ekkert bandstrik [12648-12657|16758-16767]
+		Erlent sérnafn fremst  [12648-12650|16758-16760]
+		Margorða sérnafn fremst [12651-12652|16761-16762] 
+		Sérnafn fremst  [12653-12654|16763-16764]
+		Einn fyrri hluti  [12655|16765]
+		Margir fyrri hlutar [12656-12657|16766-16767]
+Nöfn [TS, TF] [12658-12664|16768-16774]
+	#A: Hefur ekki áhrif á setningaskiptingu eða tókaskiptingu í grunntókun. Nöfn eru sameinuð rétt í tóka í djúptókun.
+	#B: Sama í grunntókun. Mætti þekkja fleiri mynstur í djúptókun, og koma í veg fyrir of mikla græðgi í sameiningu.
+	#C: Sama og #B.
+Tími [SS, TS, TF] [12665-12991|16775-17109]
+	#A: Allar tegundir tímaliða þekkjast og eru sameinaðar í einn tóka.
+	#B: Margt mætti sameina betur í djúptókun. Það sem hefur áhrif á grunntókun er hér talið upp. MM:SS þekkist ekki og er slitið í sundur á tvípunkti. GMT+4 þekkist ekki og er slitið í sundur á plúsmerki. Sekúndubrot þekkjast en upplýsingar um þau eru ekki komin inn í tókagildið. D.MM, D.MM., D.M og D.M. þekkist ekki þar sem það er svo margrætt, seinna dæmið hefur áhrif á setningaskiptingu. D-MM, DD-MM, D-M og DD-M þekkist ekki þar sem það er of margrætt, er slitið í sundur á bandstriki. 'YY þekkist ekki, er slitið í sundur. MM-YY þekkist ekki því of margrætt, slitið í sundur á bandstriki. YYYY.M.DD þekkist ekki, setningu skipt á undan M.DD. YYYY/M/DD og YYYY-M-DD þekkist ekki, slitið í sundur á fyrra skástriki og báðum bandstrikum. YYYY-YYYY þekkist ekki, slitið í sundur á bandstriki. 'mars-apríl' þekkist sem samsetning, þarf sértilfelli til að greina rétt sem tímabil. 'nóv.-des.' er skipt upp á bandstriki. Erlendu skammstafanirnar BC, AD, AM, PM, am og pm eru slitnar aftan af.
+	#C: Sama og #B.
+	Tímabil [12665-12677|16775-16787]
+	Tímasetning [12678-12802|16788-16912]
+	Dagsetning [12803-12964|167913-17082]
+	Annað [12965-12991|17083-17109]
+Netföng [SS, TS, TF] [12992-12996|17110-17119]
+	#A: Gild netföng greinast rétt með öllum leyfilegum táknum.
+	#B: Greinast rétt, jafnvel í lok setningar.
+	#C: Sama og #B.
+Vefsíður [SS, TS, TF] [12997-13009|17120-17133]
+	#A: Gildar vefsíður greinast rétt með öllum leyfilegum táknum.
+	#B: Greinast rétt, eina sem veldur vandræðum er þegar spurningarmerki og samasemmerki koma fyrir. Þyrfti að bera kennsl á "www" og leyfa flest þar á eftir.
+	#C: Sama og #B.
+Efnasambönd [TS, TF] [13010-13019|17134-17143]
+	#A: Ólíkar gerðir efnasambanda þekkjast.
+	#B: Þekkjast.
+	#C: Sama og #B.
+Twitter-notendanöfn [TS, TF] [13020-13022|17144-17147]
+	#A: Gild notendanöfn með öllum leyfilegum táknum greinast rétt.
+	#B: Þekkjast. Það mætti prófa betur öll tákn sem mega koma fyrir.
+	#C: Sama og #B.
+Myllumerki [TS, TF] [13023-13024|17148-17151]
+	#A: Leyfileg myllumerki með öllum leyfilegum táknum þekkjast. Samsetningar með kassmerki fremst leyfast og er haldið saman.
+	#B: Greinast. Ath. samsetningar með kassmerki fremst þekkjast ekki, eru slitnar í sundur á bandstriki; hægt að bera kennsl á síðar í greiningu.
+	#C: Sama og #B.
+Aðrir flóknir tókar [SS, TS, TF] [13025-13075|17152-17198]
+	#A: Ólíkir tókar þekkjast.
+	#B: Skák þekkist ekki, tölur eru slitnar aftan af. Stærðfræðidæmi eru slitin í sundur á flestum táknum nema skástrikum þegar þetta gæti verið dagsetning. Setningaskiptingin er líka röng á eftir tölu því næsta setning hefst á tölu eða öðru en hástaf, talan og punkturinn greinast því sem raðtala. Hnit eru slitin í sundur á kló og gráðumerki. Nótur með myllumerki t.d. þekkjast ekki. Möppuslóðir þekkjast ekki, er skipt upp á skástriki. Ýmis vörunúmer þekkjast ekki, almennt skipt upp á tölum og greinarmerkjum, hefur áhrif á setningaskiptingu. Pin-númer þekkjast ekki en hefur ekki áhrif á grunntókun. Sama gildir um CVC-númer. Kreditkortanúmer þekkjast ekki en hafa ekki áhrif á grunntókun. Flugnúmer þekkjast ekki. Flýtiskipanir þekkjast ekki, er skipt upp á plúsmerki. Þáttaraðastyttingar þekkjast ekki. Tákn eins og & eða * innan orða þekkjast ekki og skipta orðum. Tilvísanir innan sviga þekkjast ekki en hafa ekki áhrif á grunntókun. Tjákn þekkjast ekki og hafa áhrif á setningaskiptingu ef þau koma aftast í línu. HTML þekkist ekki. Önnur stafróf þekkjast ekki, stöfum er jafnvel skipt upp. Lausnarrunur þekkjast ekki, skipt er á skástriki og tölum. Hlutföll með tvípunkti þekkjast ekki, stjörnugjöf með skástriki eða stjörnum þekkjast ekki, skipt er á greinarmerkjum.
+	#C: Sama og #B.
+	Skák [13025|17152-17153]
+	Stærðfræði [13026-13033|17154-17157]
+	Staðsetning [13034-13045|17158-17169]
+	Nótur [13046|17170]
+	Möppuslóð [13047|17171]
+	Vörunúmer [13048-13052|17172-17177]
+	Fjármálanúmer [13053-13056|17178-17181]
+	Flugnúmer [13057-13058|17182-17183]
+	Flýtiskipanir [13059|17184]
+	Þáttaraðir [13060|17185]
+	Önnur tákn innan orða [13061-13062|17186-18187]
+	Tilvísanir [13063-13064|17188-17190]
+	Tjákn [13065-13066|17191]
+	HTML [13067-13068|17191-17192]
+	Önnur stafróf [13069|17192]
+	Lausnarrunur [13070|17193]
+	Annað [13071-13075|17194-17198]
+
+===========================================
+Setningastaða = framstaða|innstaða|bakstaða
+[SS, TS, TF]
+	SS = Setningaskipting
+	TS = Tókaskipting
+	TF = Tókaflokkun
+[X-X|Y-Y]
+	X = Línutal í toktest_large.txt
+	Y = Línutal í toktest_large_gold_acceptable.txt
+	Línutal í toktest_large_gold_perfect.txt er nánast það sama og í toktest_large_gold_acceptable.txt.
+#A: Hegðun tókara í fullkomnum heimi, skilgreind í toktest_large_gold_perfect.txt
+#B: Ásættanleg hegðun tilreiðara, skilgreind í toktest_large_gold_acceptable.txt
+#C: Núverandi hegðun tilreiðarans skv. úttaki tokenize-skipunarinnar

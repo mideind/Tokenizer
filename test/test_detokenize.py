@@ -1,7 +1,11 @@
 # -*- encoding: utf-8 -*-
 """
 
-    Copyright(C) 2020 Miðeind ehf.
+    test_detokenize.py
+
+    Tests for Tokenizer module
+
+    Copyright (C) 2020 by Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -28,15 +32,26 @@
 """
 
 from __future__ import absolute_import
+from __future__ import unicode_literals
 
-from .tokenizer import (
-    TOK, Tok, tokenize, tokenize_without_annotation, split_into_sentences,
-    parse_tokens, correct_spaces, detokenize, mark_paragraphs, paragraphs,
-    normalized_text, normalized_text_from_tokens, text_from_tokens,
-    TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD,
-    EN_DASH, EM_DASH,
-    KLUDGY_ORDINALS_PASS_THROUGH, KLUDGY_ORDINALS_MODIFY, KLUDGY_ORDINALS_TRANSLATE
-)
-from .abbrev import Abbreviations, ConfigError
+import tokenizer as t
 
-__author__ = u"Miðeind ehf"
+
+def test_detokenize():
+
+    options = { "normalize": True }
+
+    def should_be_equal(s):
+        toklist = t.tokenize(s, **options)
+        assert s == t.detokenize(toklist, **options)
+    
+    should_be_equal("Jón átti 1.234,56 kr. í vasanum t.a.m. og 12. gr. átti ekki við.")
+    should_be_equal("o.s.frv.")
+    should_be_equal("http://www.malfong.is")
+    should_be_equal("Páll skoðaði t.d. http://www.malfong.is.")
+    should_be_equal("Páll var með netfangið palli@einn.i.heiminum.is.")
+    should_be_equal("Páll var með „netfangið“ palli@einn.i.heiminum.is.")
+    should_be_equal("Páll var m.a. [palli@einn.i.heiminum.is] þann 10. 12. 1998.")
+    should_be_equal("Páll var m.a. [palli@einn.i.heiminum.is] þann 10.12.1998.")
+    should_be_equal("Páll veiddi 74 cm. lax í Norðurá þann 1.3.")
+

@@ -5,7 +5,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2019 Miðeind ehf.
+    Copyright (C) 2020 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -46,7 +46,7 @@ import argparse
 import json
 from functools import partial
 
-from .tokenizer import TOK, tokenize_without_annotation
+from .tokenizer import TOK, tokenize
 from .definitions import make_str
 
 
@@ -116,14 +116,31 @@ def main():
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
             if quote_word:
-                return quote(t.val[0][0])
-            return t.val[0][0]
-        if t.kind == TOK.PERCENT or t.kind == TOK.NUMBER:
+                # Return a |-delimited list of possible meanings,
+                # joined into a single string
+                return quote("|".join(m[0] for m in t.val))
+            # Return a list of all possible meanings
+            return [m[0] for m in t.val]
+        if t.kind in {TOK.PERCENT, TOK.NUMBER, TOK.CURRENCY}:
             return t.val[0]
+        if t.kind == TOK.AMOUNT:
+            if quote_word:
+                # Format as "1234.56|USD"
+                return "\"{0}|{1}\"".format(t.val[0], t.val[1])
+            return t.val[0], t.val[1]
         if t.kind == TOK.S_BEGIN:
             return None
         if t.kind == TOK.PUNCTUATION:
             return quote(t.val[1]) if quote_word else t.val[1]
+        if quote_word and t.kind in {
+            TOK.DATE, TOK.TIME, TOK.DATEABS, TOK.DATEREL, TOK.TIMESTAMP,
+            TOK.TIMESTAMPABS, TOK.TIMESTAMPREL, TOK.TELNO, TOK.NUMWLETTER,
+            TOK.MEASUREMENT
+        }:
+            # Return a |-delimited list of numbers
+            return quote("|".join(str(v) for v in t.val))
+        if quote_word and isinstance(t.val, str):
+            return quote(t.val)
         return t.val
 
     if args.normalize:
@@ -135,15 +152,18 @@ def main():
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(',', ':'))
     curr_sent = []
 
-    for t in tokenize_without_annotation(gen(args.infile), **options):
+    for t in tokenize(gen(args.infile), **options):
         if args.csv:
             # Output the tokens in CSV format, one line per token
             if t.txt:
                 print(
                     "{0},{1},{2}"
-                    .format(t.kind, quote(t.txt), val(t, quote_word=True) or ""),
+                    .format(t.kind, quote(t.txt), val(t, quote_word=True) or "\"\""),
                     file=args.outfile
                 )
+            elif t.kind == TOK.S_END:
+                # Indicate end of sentence
+                print("0,\"\",\"\"", file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
             d = dict(k=TOK.descr[t.kind])

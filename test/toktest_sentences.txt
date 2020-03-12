@@ -212,17 +212,17 @@ Hitinn var -7,4 gráður.
 Hún gaf myndinni 4,5/5 mögulegum.
 Hún gaf myndinni 4.5/5 mögulegum.
 Hún gaf myndinni **** og var hæstánægð.
-Hún borðaði 4/7 kökunnar en vildi svo 16/339 af kaffi
+Hún borðaði 4/7 kökunnar en vildi svo 16/339 af kaffi.
 Loks gafst hann upp eftir 34 1/4 pylsur.
 
 Hann lék Nc6 en þá lék mótherjinn Rxc6. Skák og mát.
-5/6^4
-√4
-12³
-5/6ˆ3
-√3
-100,8  /  2  =   50.4
-100,8/2=50.4
+5/6^4.
+√4.
+12³.
+5/6ˆ3.
+√3.
+100,8  /  2  =   50.4.
+100,8/2=50.4.
 Það á að geyma mjólkina við  20 ±  3 °C.
 
 Almennt verð er krónur 9.900,- en kr. 8.000,- fyrir félagsmenn. Maður borgar 99 kr. 10 sinnum.
@@ -305,7 +305,7 @@ Hér eru 3.429.15 fílar.
 Hér eru 2.3843,23 fílar.
 Hér eru 3.284.284.283,449 fílar.
 
-Hér eru -5 fílar
+Hér eru -5 fílar.
 Hér eru -5.45 fílar.
 Hér eru -5,45 fílar.
 Hér eru +4 fílar.
@@ -337,7 +337,7 @@ Um 4ðu jólin varð yngri lundinn 2ja ára.
 Þar varð 123 % hækkun.
 Þar varð 123 prósent hækkun.
 Þar varð 123 prósenta hækkun.
-Hér eru 249% af kökunni. 
+Hér eru 249% af kökunni.
 Hér eru 49 prósent af gleðinni.
 Þar varð -34% hækkun.
 Þar varð -34 % hækkun.
@@ -349,7 +349,7 @@ Hér eru 49 prósent af gleðinni.
 Þar varð 123 ‰ hækkun.
 Þar varð 123 prósent hækkun.
 Þar varð 123 prósenta hækkun.
-Hér eru 249‰ af kökunni. 
+Hér eru 249‰ af kökunni.
 Hér eru 49 prósent af gleðinni.
 Þar varð -34‰ hækkun.
 Þar varð -34 ‰ hækkun.
@@ -406,11 +406,11 @@ Hér er H2S04.
 Eldavélin var 220V, en ofninn var 1500W.
 Lögnin var 10A, en ég átti 16A tengil.
 
-Ég bý í 52°22'N 3°54'E, Húsagötu 15, 108 Rvk., íbúð 104, Þjóðvegi 66
-Ég bý í 109 Reykjavík
-Ég bý í íbúð 201
-Ég bý á Lækjartorgi 3a
-Ég bý á Lækjartorgi 3l
+Ég bý í 52°22'N 3°54'E, Húsagötu 15, 108 Rvk., íbúð 104, Þjóðvegi 66.
+Ég bý í 109 Reykjavík.
+Ég bý í íbúð 201.
+Ég bý á Lækjartorgi 3a.
+Ég bý á Lækjartorgi 3l.
 Húsið er á Lækjartorgi 13A en líka Hlemmi 23f.
 Maður var lagður inn á deild 33C eftir handtöku á Bárugötu 14a þann nítjánda júlí 2016.
 
@@ -524,7 +524,7 @@ Jón- sem var formaður — mótmælti málinu.
 
 
 Grasið óx um 3 msk. punkturinn gleymdist.
-"Þetta er vert íhugunar".Auk þess vantar bil. 
+"Þetta er vert íhugunar".Auk þess vantar bil.
 
 Hún komst í háskólann. þar gleymdist hástafurinn.
 
