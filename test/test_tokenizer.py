@@ -879,6 +879,11 @@ def test_sentences():
     )
 
     test_sentence(
+        "Tösku-og hanskabúðin, sálug, var á Lauga-eða Skothúsvegi.",
+        "B W                 P W    P W   W W                    P E",
+    )
+
+    test_sentence(
         "Friðgeir fór út kl. hálf átta en var hálf slompaður.",
         "B W      W   W  T             W  W   W    W        P E",
     )

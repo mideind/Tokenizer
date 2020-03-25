@@ -1066,7 +1066,8 @@ def parse_tokens(txt, **options):
                 # 'sjávarútvegi.Það'
                 # TODO STILLING Viljum merkja sem villu fyrir málrýni, og hafa
                 # sem mögulega stillingu.
-                a = w[0:i].split(".")
+                ww = w[0:i]
+                a = ww.split(".")
                 if (
                     len(a) == 2
                     and a[0]
@@ -1082,7 +1083,15 @@ def parse_tokens(txt, **options):
                     yield TOK.Punctuation(".")
                     yield TOK.Word(a[1])
                 else:
-                    yield TOK.Word(w[0:i])
+                    if ww.endswith("-og") or ww.endswith("-eða"):
+                        # Handle missing space before 'og'/'eða',
+                        # such as 'fjármála-og efnahagsráðuneyti'
+                        a = ww.split("-")
+                        yield TOK.Word(a[0])
+                        yield TOK.Punctuation("-", normalized=COMPOSITE_HYPHEN)
+                        yield TOK.Word(a[1])
+                    else:
+                        yield TOK.Word(ww)
                 w = w[i:]
                 if w and w[0] in COMPOSITE_HYPHENS:
                     # This is a hyphen or en dash directly appended to a word:
