@@ -162,16 +162,20 @@ class Abbreviations:
             if finisher:
                 Abbreviations.FINISHERS.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
-            Abbreviations.WRONGDICT[wabbrev].add(
-                (
-                    meaning,
-                    0,
-                    gender,
-                    "skst" if fl is None else fl,
-                    wabbrev,
-                    "-",
+            if len(wabbrev) > 1:
+                # We don't add single letters (such as Í and Á)
+                # as abbreviations, even though they are listed as such
+                # in the form 'Í.' and 'Á.' for use within person names
+                Abbreviations.WRONGDICT[wabbrev].add(
+                    (
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
                 )
-            )
 
         elif "." in abbrev:
             # Only multiple dots, checked single dots above
