@@ -743,6 +743,9 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.0.5: Fixed bug where single uppercase letters were erroneously
+  being recognized as abbreviations, causing prepositions such as 'Í' and 'Á'
+  at the beginning of sentences to be misunderstood in ReynirPackage
 * Version 2.0.4: Added imperfect abbreviations (*amk.*, *osfrv.*); recognized
   *klukkan hálf tvö* as a ``TOK.TIME``
 * Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains

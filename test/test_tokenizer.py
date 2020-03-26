@@ -1054,11 +1054,14 @@ def test_correct_spaces():
 
 
 def test_abbrev():
-    tokens = list(t.tokenize("Ég las fréttina um IBM t.d. á Mbl."))
+    tokens = list(t.tokenize("Í dag las ég fréttina um IBM t.d. á Mbl."))
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        # We are testing that 'Í' is not an abbreviation
+        Tok(kind=TOK.WORD, txt="Í", val=None),
+        Tok(kind=TOK.WORD, txt="dag", val=None),
         Tok(kind=TOK.WORD, txt="las", val=None),
+        Tok(kind=TOK.WORD, txt="ég", val=None),
         Tok(kind=TOK.WORD, txt="fréttina", val=None),
         Tok(kind=TOK.WORD, txt="um", val=None),
         Tok(
