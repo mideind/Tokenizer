@@ -44,7 +44,11 @@ def test_detokenize():
     def should_be_equal(s):
         toklist = t.tokenize(s, **options)
         assert s == t.detokenize(toklist, **options)
-    
+
+    def should_be(s1, s2):
+        toklist = t.tokenize(s1, **options)
+        assert s2 == t.detokenize(toklist, **options)
+
     should_be_equal("Jón átti 1.234,56 kr. í vasanum t.a.m. og 12. gr. átti ekki við.")
     should_be_equal("o.s.frv.")
     should_be_equal("http://www.malfong.is")
@@ -54,4 +58,20 @@ def test_detokenize():
     should_be_equal("Páll var m.a. [palli@einn.i.heiminum.is] þann 10. 12. 1998.")
     should_be_equal("Páll var m.a. [palli@einn.i.heiminum.is] þann 10.12.1998.")
     should_be_equal("Páll veiddi 74 cm. lax í Norðurá þann 1.3.")
+
+    should_be(
+        "Páll var með \"netfangið\" palli@einn.i.heiminum.is.",
+        "Páll var með „netfangið“ palli@einn.i.heiminum.is."
+    )
+    # !!! BUG
+    #should_be(
+    #    "Páll var með \"netfangið\", þ.e.a.s. (\"þetta\").",
+    #    "Páll var með „netfangið“, þ.e.a.s. („þetta“).",
+    #)
+
+    options = { "normalize": False }
+
+    should_be_equal("Páll var með „netfangið“, þ.e.a.s. („þetta“).")
+    should_be_equal("Páll var með \"netfangið\" palli@einn.i.heiminum.is.")
+    should_be_equal("Páll var með \"netfangið\", þ.e.a.s. (\"þetta\").")
 

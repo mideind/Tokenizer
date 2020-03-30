@@ -2192,6 +2192,7 @@ def correct_spaces(s):
         with correct spacing between tokens """
     r = []
     last = TP_NONE
+    double_quote_count = 0
     for w in RE_SPLIT.split(s):
         if w is None:
             continue
@@ -2200,6 +2201,11 @@ def correct_spaces(s):
             continue
         if len(w) > 1:
             this = TP_WORD
+        elif w == '"':
+            # For English-type double quotes, we glue them alternatively
+            # to the right and to the left token
+            this = (TP_LEFT, TP_RIGHT)[double_quote_count % 2]
+            double_quote_count += 1
         elif w in LEFT_PUNCTUATION:
             this = TP_LEFT
         elif w in RIGHT_PUNCTUATION:
@@ -2225,6 +2231,7 @@ def detokenize(tokens, normalize=False):
     to_text = normalized_text if normalize else lambda t: t.txt
     r = []
     last = TP_NONE
+    double_quote_count = 0
     for t in tokens:
         w = to_text(t)
         if not w:
@@ -2233,6 +2240,11 @@ def detokenize(tokens, normalize=False):
         if t.kind == TOK.PUNCTUATION:
             if len(w) > 1:
                 pass
+            elif w == '"':
+                # For English-type double quotes, we glue them alternatively
+                # to the right and to the left token
+                this = (TP_LEFT, TP_RIGHT)[double_quote_count % 2]
+                double_quote_count += 1
             elif w in LEFT_PUNCTUATION:
                 this = TP_LEFT
             elif w in RIGHT_PUNCTUATION:
