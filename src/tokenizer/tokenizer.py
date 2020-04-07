@@ -1070,11 +1070,15 @@ def parse_tokens(txt, **options):
                 a = ww.split(".")
                 if (
                     len(a) == 2
-                    and a[0]
-                    and a[0][0].islower()
+                    # First part must be more than one letter for us to split
+                    and len(a[0]) > 1
+                    # The first part may start with an uppercase or lowercase letter
+                    # but the rest of it must be lowercase
+                    and a[0][1:].islower()
                     and a[1]
+                    # The second part must start with an uppercase letter
                     and a[1][0].isupper()
-                    # Corner case: an abbrev such as 'f.Kr.' should not be split
+                    # Corner case: an abbrev such as 'f.Kr' should not be split
                     and w[0:i+1] not in Abbreviations.DICT
                 ):
                     # We have a lowercase word immediately followed by a period

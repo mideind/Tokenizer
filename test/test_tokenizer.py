@@ -1146,6 +1146,19 @@ def test_split_sentences():
     assert sents[0] == "Hún sagði : \" Þú ert leiðinlegur \" !"
     assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
 
+    g = t.split_into_sentences(
+        "Aðalsteinn Jónsson SU á leið til hafnar í "
+        "Reykjavík.Flutningaskipið Selfoss kom til Reykjavíkur.Rósin sigldi með "
+        "ferðamenn í hvalaskoðun."
+    )
+    sents = list(g)
+    assert len(sents) == 3
+    assert sents == [
+        'Aðalsteinn Jónsson SU á leið til hafnar í Reykjavík .',
+        'Flutningaskipið Selfoss kom til Reykjavíkur .',
+        'Rósin sigldi með ferðamenn í hvalaskoðun .'
+    ]
+
 
 def test_normalization():
     toklist = list(t.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
