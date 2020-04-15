@@ -736,6 +736,7 @@ TOP_LEVEL_DOMAINS = frozenset(
         "live",
         "store",
         "gdn",
+        "art",
         # ccTLDs
         "ac",
         "ad",
