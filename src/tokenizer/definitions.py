@@ -43,10 +43,14 @@ if sys.version_info >= (3, 0):
     make_str = lambda s: s
     unicode_chr = lambda c: chr(c)
     is_str = lambda s: isinstance(s, str)
+    if sys.version_info >= (3, 5):
+        # On Python >= 3.5, the typing module is available
+        from typing import Callable
 else:
     items = lambda d: d.iteritems()
     keys = lambda d: d.iterkeys()
 
+    # pylint: disable=undefined-variable
     def make_str(s):
         if isinstance(s, unicode):
             return s
@@ -985,11 +989,14 @@ TOP_LEVEL_DOMAINS = frozenset(
     )
 )
 
+# This is a small hack to satisfy the Mypy type checker
+_escape = lambda s: re.escape(s)  # type: Callable[[str], str]
+
 # Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
 DOMAIN_REGEX = re.compile(
     r"({0})({1}*)$".format(
-        r"|".join(r"\w\." + d for d in map(re.escape, TOP_LEVEL_DOMAINS)),
+        r"|".join(r"\w\." + d for d in map(_escape, TOP_LEVEL_DOMAINS)),
         PUNCTUATION_REGEX,
     ),
     re.UNICODE,

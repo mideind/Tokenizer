@@ -897,6 +897,7 @@ def test_sentences():
 def test_unicode():
     """ Test composite Unicode characters, where a glyph has two code points """
     # Mask away Python 2/3 difference
+    # pylint: disable=undefined-variable
     if sys.version_info >= (3, 0):
         unicode_chr = lambda c: chr(c)
     else:
