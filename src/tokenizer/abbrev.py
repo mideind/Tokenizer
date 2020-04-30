@@ -37,6 +37,10 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+import sys
+if sys.version_info >= (3, 5):
+    from typing import Set, List, Tuple, Dict, Any
+
 from threading import Lock
 from collections import defaultdict, OrderedDict
 
@@ -74,27 +78,27 @@ class Abbreviations:
         initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT = defaultdict(OrderedSet)
+    DICT = defaultdict(OrderedSet)  # type: Dict[str, Any]  # !!! TODO
     # Wrong versions of abbreviations
-    WRONGDICT = defaultdict(OrderedSet)
+    WRONGDICT = defaultdict(OrderedSet)  # type: Dict[str, Any]  # !!! TODO
     # All abbreviation meanings
-    MEANINGS = set()
+    MEANINGS = set()  # type: Set[str]
     # Single-word abbreviations, i.e. those with only one dot at the end
-    SINGLES = set()
+    SINGLES = set()  # type: Set[str]
     # Set of abbreviations without periods, e.g. "td", "osfrv"
-    WRONGSINGLES = set()
+    WRONGSINGLES = set()  # type: Set[str]
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
-    FINISHERS = set()
+    FINISHERS = set()  # type: Set[str]
     # Abbreviations that should not be seen as such at the end of sentences,
     # marked with an exclamation mark in the config file
-    NOT_FINISHERS = set()
+    NOT_FINISHERS = set()  # type: Set[str]
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
-    NAME_FINISHERS = set()
+    NAME_FINISHERS = set()  # type: Set[str]
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS = defaultdict(list)
+    WRONGDOTS = defaultdict(list)  # type: Dict[str, List[str]]
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
