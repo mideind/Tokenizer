@@ -768,7 +768,7 @@ def parse_tokens(txt, **options):
 
         if w.isalpha() or w in SI_UNITS:
             # Shortcut for most common case: pure word
-            yield TOK.Word(w, None)
+            yield TOK.Word(w)
             continue
 
         if len(w) > 1:
@@ -787,7 +787,7 @@ def parse_tokens(txt, **options):
                 i = 2
                 while i < len(w) and w[i].isalpha():
                     i += 1
-                yield TOK.Word(w[:i], None)
+                yield TOK.Word(w[:i])
                 w = w[i:]
 
         # Shortcut for quotes around a single word
@@ -797,7 +797,7 @@ def parse_tokens(txt, **options):
                 # yield TOK.Punctuation("„")
                 if w[1:-1].isalpha():
                     yield TOK.Punctuation(w[0], normalized="„")
-                    yield TOK.Word(w[1:-1], None)
+                    yield TOK.Word(w[1:-1])
                     yield TOK.Punctuation(w[-1], normalized="“")
                     continue
             elif w[0] in SQUOTES and w[-1] in SQUOTES:
@@ -805,7 +805,7 @@ def parse_tokens(txt, **options):
                 # yield TOK.Punctuation("‚")
                 if w[1:-1].isalpha():
                     yield TOK.Punctuation(w[0], normalized="‚")
-                    yield TOK.Word(w[1:-1], None)
+                    yield TOK.Word(w[1:-1])
                     yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
 
@@ -1010,7 +1010,7 @@ def parse_tokens(txt, **options):
                         # immediately following a number, without an intervening space
                         # (note that some of them contain nonalphabetic characters,
                         # so they won't be caught by the isalpha() check below)
-                        yield TOK.Word(unit, None)
+                        yield TOK.Word(unit)
                         w = w[len(unit):]
 
             # Check for molecular formula ('H2SO4')
@@ -2124,14 +2124,14 @@ def mark_paragraphs(txt):
     return "[[ " + " ]] [[ ".join(txt.split("\n")) + " ]]"
 
 
-def paragraphs(toklist):
-    """ Generator yielding paragraphs from a token list. Each paragraph is a list
+def paragraphs(tokens):
+    """ Generator yielding paragraphs from token iterable. Each paragraph is a list
         of sentence tuples. Sentence tuples consist of the index of the first token
         of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
         sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
         tokens. """
 
-    if not toklist:
+    if not tokens:
         return
 
     def valid_sent(sent):
@@ -2146,7 +2146,7 @@ def paragraphs(toklist):
     sent_begin = 0
     current_p = []  # Current paragraph
 
-    for ix, t in enumerate(toklist):
+    for ix, t in enumerate(tokens):
         t0 = t[0]
         if t0 == TOK.S_BEGIN:
             sent = []
