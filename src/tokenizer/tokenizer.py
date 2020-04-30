@@ -681,7 +681,7 @@ def gen_from_string(txt, replace_composite_glyphs=True):
             lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
         )
     # Do a simple split on whitespace and yield the rough tokens
-    for w in re.split("\s+", txt):
+    for w in re.split("\n|\s+", txt):
         yield w
 
 
