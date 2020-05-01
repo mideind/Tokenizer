@@ -1157,7 +1157,55 @@ def test_split_sentences():
     assert sents == [
         'Aðalsteinn Jónsson SU á leið til hafnar í Reykjavík .',
         'Flutningaskipið Selfoss kom til Reykjavíkur .',
+        'Rósin sigldi með ferðamenn í hvalaskoðun .',
+    ]
+
+    g = t.split_into_sentences(
+        s for s in [
+            "Aðalsteinn Jónsson SU á leið til hafnar í ",
+            "Reykjavík.Flutningaskipið Selfoss kom til Reykjavíkur.Rósin sigldi með ",
+            "ferðamenn í hvalaskoðun.",
+        ]
+    )
+    sents = list(g)
+    assert len(sents) == 3
+    assert sents == [
+        'Aðalsteinn Jónsson SU á leið til hafnar í Reykjavík .',
+        'Flutningaskipið Selfoss kom til Reykjavíkur .',
+        'Rósin sigldi með ferðamenn í hvalaskoðun .',
+    ]
+
+    g = t.split_into_sentences(
+        s for s in [
+            "Aðalsteinn Jónsson SU á leið \n til hafnar í ",
+            "Reykjavík.\nFlutningaskipið Selfoss \nkom til Reykjavíkur.Rósin sigldi með ",
+            "ferðamenn í\nhvalaskoðun.\n\n\n",
+        ]
+    )
+    sents = list(g)
+    assert len(sents) == 3
+    assert sents == [
+        'Aðalsteinn Jónsson SU á leið til hafnar í Reykjavík .',
+        'Flutningaskipið Selfoss kom til Reykjavíkur .',
         'Rósin sigldi með ferðamenn í hvalaskoðun .'
+    ]
+
+    g = t.split_into_sentences(
+        s for s in [
+            "Aðalsteinn Jónsson SU á leið \n til hafnar í ",
+            "Reykjavík\n \t  \nFlutningaskipið Selfoss \nkom til Reykjavíkur",
+            "",
+            "Rósin sigldi með ",
+            "ferðamenn í\nhvalaskoðun\n\n\nVigur kom með fullfermi að landi",
+        ]
+    )
+    sents = list(g)
+    assert len(sents) == 4
+    assert sents == [
+        'Aðalsteinn Jónsson SU á leið til hafnar í Reykjavík',
+        'Flutningaskipið Selfoss kom til Reykjavíkur',
+        'Rósin sigldi með ferðamenn í hvalaskoðun',
+        "Vigur kom með fullfermi að landi",
     ]
 
 

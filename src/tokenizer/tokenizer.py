@@ -680,9 +680,19 @@ def gen_from_string(txt, replace_composite_glyphs=True):
         txt = UNICODE_REGEX.sub(
             lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
         )
-    # Do a simple split on whitespace and yield the rough tokens
-    for w in re.split("\n|\s+", txt):
-        yield w
+    # If there are consecutive newlines in the string (i.e. two
+    # newlines separated only by whitespace), we interpret
+    # them as hard sentence boundaries
+    first = True
+    for span in re.split(r"\n\s*\n", txt):
+        if first:
+            first = False
+        else:
+            # Return a sentence splitting token in lieu of the
+            # newline pair that separates the spans
+            yield ""
+        for w in span.split():
+            yield w
 
 
 def gen(text_or_gen, replace_composite_glyphs=True):
