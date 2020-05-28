@@ -413,6 +413,15 @@ functions:
   was ``True``.
 
 
+* ``convert_measurements=[bool]``
+
+  Setting this option to ``True`` causes the tokenizer to convert
+  degrees Kelvin, Celsius and Fahrenheit to a regularized form, i.e.
+  ``200° C`` becomes ``200 °C``.
+
+  The default value for the ``convert_measurements`` option is ``False``.
+
+
 * ``handle_kludgy_ordinals=[value]``
 
   This options controls the way Tokenizer handles 'kludgy' ordinals, such as
