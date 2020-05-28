@@ -1242,21 +1242,18 @@ def parse_particles(token_stream, **options):
                     )
                     if finish:
                         # Potentially at the end of a sentence
-                        if abbrev in Abbreviations.FINISHERS or "." in token.txt:
+                        if abbrev in Abbreviations.FINISHERS:
                             # We see this as an abbreviation even if the next sentence
                             # seems to be starting just after it.
                             # Yield the abbreviation without a trailing dot,
                             # and then an 'extra' period token to end the current sentence.
-                            # We always do this for abbreviations that contain a dot,
-                            # such as 't.d.', regardless of whether they are marked as
-                            # finishers or not.
                             token = TOK.Word(token.txt, lookup(abbrev))
                             yield token
                             # Set token to the period
                             token = next_token
                         elif abbrev in Abbreviations.NOT_FINISHERS:
                             # This is a potential abbreviation that we don't interpret
-                            # as suchif it's at the end of a sentence
+                            # as such if it's at the end of a sentence
                             # ('dags.', 'próf.', 'mín.')
                             yield token
                             token = next_token
