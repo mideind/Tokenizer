@@ -1146,6 +1146,19 @@ def test_abbrev():
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
+    tokens = list(t.tokenize("Ég ræddi við hv. þm. Halldóru Mogensen."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="ræddi", val=None),
+        Tok(kind=TOK.WORD, txt="við", val=None),
+        Tok(kind=TOK.WORD, txt="hv.", val=[('hæstvirtur', 0, 'lo', 'skst', 'hv.', '-'), ('háttvirtur', 0, 'lo', 'skst', 'hv.', '-')]),
+        Tok(kind=TOK.WORD, txt="þm.", val=[('þingmaður', 0, 'kk', 'skst', 'þm.', '-')]),
+        Tok(kind=TOK.WORD, txt="Halldóru", val=None),
+        Tok(kind=TOK.WORD, txt="Mogensen", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
     tokens = list(t.tokenize("Það var snemma dags. Fuglarnir sungu."))
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
