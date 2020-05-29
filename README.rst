@@ -565,7 +565,7 @@ defined within the ``TOK`` class:
 | S_END         |  11002  | End of sentence     |                           |
 +---------------+---------+---------------------+---------------------------+
 
-(*) The token types marked with an asterisk are reserved for the Reynir package
+(*) The token types marked with an asterisk are reserved for the Greynir package
 and not currently returned by the tokenizer.
 
 To obtain a descriptive text for a token kind, use
@@ -752,6 +752,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.0.6: Fixed handling of abbreviations such as *m.v.* (*miðað við*)
+  that should not start a new sentence even if the following word is capitalized
 * Version 2.0.5: Fixed bug where single uppercase letters were erroneously
   being recognized as abbreviations, causing prepositions such as 'Í' and 'Á'
   at the beginning of sentences to be misunderstood in ReynirPackage
