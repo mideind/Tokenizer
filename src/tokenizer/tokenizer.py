@@ -120,7 +120,8 @@ class TOK:
     USERNAME = 28
     # Serial number ('394-8362')
     SERIALNUMBER = 29
-
+    # Company name ('Google Inc.')
+    COMPANY = 30
     # Sentence split token
     S_SPLIT = 10000
     # Paragraph begin
@@ -135,8 +136,8 @@ class TOK:
     X_END = 12001
 
     END = frozenset((P_END, S_END, X_END, S_SPLIT))
-    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE))
-    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE))
+    TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE, COMPANY))
+    TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE, COMPANY))
 
     # Token descriptive names
 
@@ -170,6 +171,7 @@ class TOK:
         SSN: "SSN",
         USERNAME: "USERNAME",
         SERIALNUMBER: "SERIALNUMBER",
+        COMPANY : "COMPANY",
         S_SPLIT: "SPLIT SENT",
         P_BEGIN: "BEGIN PARA",
         P_END: "END PARA",
@@ -317,6 +319,10 @@ class TOK:
     @staticmethod
     def Entity(w):
         return Tok(TOK.ENTITY, w, None)
+
+    @staticmethod
+    def Company(w):
+        return Tok(TOK.COMPANY, w, None)
 
     @staticmethod
     def Begin_Paragraph():
