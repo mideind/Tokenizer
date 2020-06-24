@@ -560,6 +560,8 @@ defined within the ``TOK`` class:
 | SERIALNUMBER  |    29   | Serial number       | | 394-5388                |
 |               |         |                     | | 12-345-6789             |
 +---------------+---------+---------------------+---------------------------+
+| COMPANY *     |    30   | Company name        | [Unused]                  |
++---------------+---------+---------------------+---------------------------+
 | S_BEGIN       |  11001  | Start of sentence   |                           |
 +---------------+---------+---------------------+---------------------------+
 | S_END         |  11002  | End of sentence     |                           |
@@ -752,6 +754,9 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.0.7: Added ``TOK.COMPANY`` token type; fixed a few abbreviations;
+  renamed parameter ``text`` to ``text_or_gen`` in functions that accept a string
+  or a string iterator
 * Version 2.0.6: Fixed handling of abbreviations such as *m.v.* (*miðað við*)
   that should not start a new sentence even if the following word is capitalized
 * Version 2.0.5: Fixed bug where single uppercase letters were erroneously
