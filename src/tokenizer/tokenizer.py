@@ -2076,7 +2076,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
         yield token
 
 
-def tokenize(text, **options):
+def tokenize(text_or_gen, **options):
     """ Tokenize text in several phases, returning a generator
         (iterable sequence) of tokens that processes tokens on-demand. """
 
@@ -2087,7 +2087,7 @@ def tokenize(text, **options):
     with_annotation = options.pop("with_annotation", True)
     coalesce_percent = options.pop("coalesce_percent", False)
 
-    token_stream = parse_tokens(text, **options)
+    token_stream = parse_tokens(text_or_gen, **options)
     token_stream = parse_particles(token_stream, **options)
     token_stream = parse_sentences(token_stream)
     token_stream = parse_phrases_1(token_stream)
@@ -2100,10 +2100,10 @@ def tokenize(text, **options):
     return (t for t in token_stream if t.kind != TOK.X_END)
 
 
-def tokenize_without_annotation(text, **options):
+def tokenize_without_annotation(text_or_gen, **options):
     """ Tokenize without the last pass which can be done more thoroughly if BÍN
         annotation is available, for instance in ReynirPackage. """
-    return tokenize(text, with_annotation=False, **options)
+    return tokenize(text_or_gen, with_annotation=False, **options)
 
 
 def split_into_sentences(text_or_gen, **options):
