@@ -720,7 +720,7 @@ def test_sentences():
     test_sentence(
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
         "http://greynir.is og https://greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi. "
-        "Það er hægt að ná í mig í s 623 7892, eða vinnusíma, 7227979 eða eitthvað.",
+        "Það er hægt að ná í mig í s. 623 7892, eða vinnusíma, 7227979 eða eitthvað.",
         "B W W W    W   W               M            P W "
         "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E "
         "B W W  W    W  W  W W   W W        TEL     P W   W        P  TEL     W   W P E"
@@ -808,7 +808,7 @@ def test_sentences():
     )
 
     test_sentence(
-        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
+        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta-, dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
         "B W    W       W         W           W   W      W                                                  W    DA           P E",
     )
 
@@ -878,7 +878,7 @@ def test_sentences():
     )
 
     test_sentence(
-        "Tösku-og hanskabúðin, sálug, var á Lauga-eða Skothúsvegi.",
+        "Tösku-og hanskabúðin, sálug, var á Lauga- eða Skothúsvegi.",
         "B W                 P W    P W   W W                    P E",
     )
 
@@ -1109,8 +1109,7 @@ def test_abbrev():
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Jón", val=None),
         Tok(kind=TOK.WORD, txt="var", val=None),
-        Tok(kind=TOK.WORD, txt="sérfr", val=[('sérfræðingur', 0, 'kk', 'skst', 'sérfr.', '-')]),
-        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.WORD, txt="sérfr.", val=[('sérfræðingur', 0, 'kk', 'skst', 'sérfr.', '-')]),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Guðmundur", val=None),
@@ -1124,8 +1123,7 @@ def test_abbrev():
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Jón", val=None),
         Tok(kind=TOK.WORD, txt="var", val=None),
-        Tok(kind=TOK.WORD, txt="t.h", val=[('til hægri', 0, 'ao', 'frasi', 't.h.', '-')]),
-        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.WORD, txt="t.h.", val=[('til hægri', 0, 'ao', 'frasi', 't.h.', '-')]),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Guðmundur", val=None),
