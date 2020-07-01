@@ -1222,19 +1222,56 @@ def parse_particles(token_stream, **options):
                 ):
                     # Abbreviation ending with period: make a special token for it
                     # and advance the input stream
-                    abbrev = token.txt + "."
                     follow_token = next(token_stream)
+                    abbrev = token.txt + "."
 
-                    if abbrev in Abbreviations.NOT_FINISHERS and could_be_end_of_sentence(follow_token, TOK.TEXT):
-                        # This is a potential abbreviation that we dont interpret
-                        # as such if it's at the end of a sentence
-                        # ('dags.', 'próf.', 'mín.')
-                        yield token
-                        token = next_token
-                        next_token = follow_token
+                    # Check whether we might be at the end of a sentence, i.e.
+                    # the following token is an end-of-sentence or end-of-paragraph,
+                    # or uppercase (and not a month name misspelled in upper case).
+
+                    if abbrev in Abbreviations.NAME_FINISHERS:
+                        # For name finishers (such as 'próf.') we don't consider a
+                        # following person name as an indicator of an end-of-sentence
+                        # !!! TODO: This does not work as intended because person names
+                        # !!! have not been recognized at this phase in the token pipeline.
+                        # TODO JAÐAR Skoða þetta betur í jaðartilvikum.
+                        test_set = TOK.TEXT_EXCL_PERSON
                     else:
+                        test_set = TOK.TEXT
+
+                    # TODO STILLING í MONTHS eru einhverjar villur eins og "septembers",
+                    # þær þarf að vera hægt að sameina í þessa flóknari tóka en viljum
+                    # geta merkt það sem villu. Ætti líklega að setja í sérlista,
+                    # WRONG_MONTHS, og sérif-lykkju og setja inn villu í tókann.
+                    finish = could_be_end_of_sentence(
+                        follow_token, test_set, abbrev in MULTIPLIERS
+                    )
+                    if finish:
+                        # Potentially at the end of a sentence
+                        if abbrev in Abbreviations.FINISHERS:
+                            # We see this as an abbreviation even if the next sentence
+                            # seems to be starting just after it.
+                            # Yield the abbreviation without a trailing dot,
+                            # and then an 'extra' period token to end the current sentence.
+                            token = TOK.Word(token.txt, lookup(abbrev))
+                            yield token
+                            # Set token to the period
+                            token = next_token
+                        elif abbrev in Abbreviations.NOT_FINISHERS:
+                            # This is a potential abbreviation that we don't interpret
+                            # as such if it's at the end of a sentence
+                            # ('dags.', 'próf.', 'mín.')
+                            yield token
+                            token = next_token
+                        else:
+                            # Substitute the abbreviation and eat the period
+                            token = TOK.Word(abbrev, lookup(abbrev))
+                    else:
+                        # 'Regular' abbreviation in the middle of a sentence:
+                        # Eat the period and yield the abbreviation as a single token
                         token = TOK.Word(abbrev, lookup(abbrev))
-                        next_token = follow_token
+
+                    next_token = follow_token
 
             # Coalesce 'klukkan'/[kl.] + time or number into a time
             if next_token.kind == TOK.TIME or next_token.kind == TOK.NUMBER:
@@ -1522,7 +1559,6 @@ def parse_sentences(token_stream):
         exclamation marks, etc.) """
 
     in_sentence = False
-    found_end = False
     token = None
     tok_begin_sentence = TOK.Begin_Sentence()
     tok_end_sentence = TOK.End_Sentence()
@@ -1532,11 +1568,9 @@ def parse_sentences(token_stream):
         # Maintain a one-token lookahead
         token = next(token_stream)
         while True:
-            #print(token)
             next_token = next(token_stream)
             if token.kind == TOK.P_BEGIN or token.kind == TOK.P_END:
                 # Block start or end: finish the current sentence, if any
-                #print("\t1")
                 if in_sentence:
                     yield tok_end_sentence
                     in_sentence = False
@@ -1548,30 +1582,20 @@ def parse_sentences(token_stream):
                     token = next(token_stream)
                     continue
             elif token.kind == TOK.X_END:
-                #print("\t2")
                 assert not in_sentence
             elif token.kind == TOK.S_SPLIT:
                 # Empty line in input: make sure to finish the current
                 # sentence, if any, even if no ending punctuation has
                 # been encountered
-                #print("\t3")
                 if in_sentence:
                     yield tok_end_sentence
                 in_sentence = False
                 # Swallow the S_SPLIT token
                 token = next_token
                 continue
-            elif token.kind == TOK.WORD and token.txt[-1] == ".":
-                #print(token)
-                #print("\t4")
-                if could_be_end_of_sentence(next_token, TOK.TEXT) and in_sentence and token.txt in Abbreviations.FINISHERS:
-                    #print("\tJá!")
-                    found_end = True
-
             else:
                 if not in_sentence:
                     # This token starts a new sentence
-                    #print("\t5")
                     yield tok_begin_sentence
                     in_sentence = True
                 if (
@@ -1583,7 +1607,6 @@ def parse_sentences(token_stream):
                     )
                 ):
                     # Combining punctuation ('??!!!')
-                    #print("\t6")
                     while (
                         token.val[1] in PUNCT_COMBINATIONS
                         and next_token.txt in PUNCT_COMBINATIONS
@@ -1608,12 +1631,8 @@ def parse_sentences(token_stream):
                     yield token
                     token = tok_end_sentence
                     in_sentence = False
-            #print("\t7")
+
             yield token
-            if found_end:
-                yield tok_end_sentence
-                in_sentence = False
-                found_end = False
             token = next_token
 
     except StopIteration:
@@ -1663,18 +1682,28 @@ def parse_phrases_1(token_stream):
         while True:
 
             next_token = next(token_stream)
+            # Coalesce abbreviations and trailing period
+            if token.kind == TOK.WORD and next_token.txt == ".":
+                abbrev = token.txt + next_token.txt
+                if abbrev in Abbreviations.FINISHERS:
+                    token = TOK.Word(abbrev)
+                    next_token = next(token_stream)
 
             # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
             if token.kind == TOK.YEAR or token.kind == TOK.NUMBER:
                 val = token.val if token.kind == TOK.YEAR else token.val[0]
+                nval = ""
                 if next_token.txt in BCE:  # f.Kr.
                     # Yes, we set year X BCE as year -X ;-)
-                    token = TOK.Year(token.txt + " " + next_token.txt, -val)
-                    next_token = next(token_stream)
+                    nval = -val
                 elif next_token.txt in CE:  # e.Kr.
-                    token = TOK.Year(token.txt + " " + next_token.txt, val)
+                    nval = val
+                if nval:
+                    token = TOK.Year(token.txt + " " + next_token.txt, nval)
                     next_token = next(token_stream)
-
+                    if next_token.txt == ".":
+                        token = TOK.Year(token.txt + next_token.txt, nval)
+                        next_token = next(token_stream)
             # TODO: "5 mars" greinist sem dagsetning, vantar punktinn.
             # Check for [number | ordinal] [month name]
             if (
@@ -1752,6 +1781,7 @@ def parse_date_and_time(token_stream):
         token = next(token_stream)
 
         while True:
+
             next_token = next(token_stream)
 
             # TODO: "5 mars" endar sem dagsetning. Þarf að geta merkt.
