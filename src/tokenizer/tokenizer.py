@@ -1692,13 +1692,13 @@ def parse_phrases_1(token_stream):
             # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
             if token.kind == TOK.YEAR or token.kind == TOK.NUMBER:
                 val = token.val if token.kind == TOK.YEAR else token.val[0]
-                nval = ""
+                nval = None
                 if next_token.txt in BCE:  # f.Kr.
                     # Yes, we set year X BCE as year -X ;-)
                     nval = -val
                 elif next_token.txt in CE:  # e.Kr.
                     nval = val
-                if nval:
+                if nval is not None:
                     token = TOK.Year(token.txt + " " + next_token.txt, nval)
                     next_token = next(token_stream)
                     if next_token.txt == ".":

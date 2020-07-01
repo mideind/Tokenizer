@@ -735,7 +735,7 @@ def test_sentences():
 
     test_sentence(
         "1.030 hPa lægð gengur yfir landið árið 2019 e.Kr. Jógúrtin inniheldur 80 kcal.",
-        "B ME      W    W      W    W      Y              E B W    W          ME     P E",
+        "B ME      W    W      W    W      Y              E B W     W          ME     P E",
     )
 
     test_sentence(
@@ -849,7 +849,12 @@ def test_sentences():
     )
 
     test_sentence(
-        "Tösku-og hanskabúðin, sálug, var á Lauga- eða Skothúsvegi.",
+        "Tösku- og hanskabúðin, sálug, var á Lauga- eða Skothúsvegi.",
+        "B W                 P W    P W   W W                    P E",
+    )
+
+    test_sentence(
+        "Tösku-og hanskabúðin, sálug, var á Lauga-eða Skothúsvegi.",
         "B W                 P W    P W   W W                    P E",
     )
 
