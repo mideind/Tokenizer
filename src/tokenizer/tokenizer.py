@@ -1686,7 +1686,7 @@ def parse_phrases_1(token_stream):
             if token.kind == TOK.WORD and next_token.txt == ".":
                 abbrev = token.txt + next_token.txt
                 if abbrev in Abbreviations.FINISHERS:
-                    token = TOK.Word(abbrev)
+                    token = TOK.Word(abbrev, token.val)
                     next_token = next(token_stream)
 
             # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year

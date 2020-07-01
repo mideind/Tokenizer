@@ -257,10 +257,9 @@ def test_single_tokens():
             [
                 Tok(
                     TOK.WORD,
-                    "m.kr",
+                    "m.kr.",
                     [("milljónir króna", 0, "kvk", "skst", "m.kr.", "-")],
                 ),
-                Tok(TOK.PUNCTUATION, ".", None),
             ],
         ),
         (
@@ -652,7 +651,7 @@ def test_sentences():
         "  Góðan daginn! Ég á 10.000 kr. í vasanum, €100 og $40.Gengi USD er 103,45. "
         "Í dag er 10. júlí. Klukkan er 15:40 núna.Ég fer kl. 13 niður á Hlemm o.s.frv. ",
         "B W     W     P E B W W A       W W      P A    W  A  P E B W W   W  N     P E "
-        "B W W W  DR      P E B W   W  T     W   P E B W W T     W     W W     W      P E",
+        "B W W W  DR      P E B W   W  T     W   P E B W W T    W     W W     W      E",
     )
 
     test_sentence(
@@ -686,15 +685,15 @@ def test_sentences():
         "Málið um BSRB gekk marg-ítrekað til stjórnskipunar- og eftirlitsnefndar í 10. sinn "
         "skv. XVII. kafla þann 24. september 2015 nk. Ál-verið notar 60 MWst á ári.",
         "B W   W  W    W    W            W   W                                   W O   W    "
-        "W    O     W     W    DA                 W P E B W    W     ME      W W  P E",
+        "W    O     W     W    DA                 W E B W    W     ME      W W  P E",
     )
 
     test_sentence(
         "Ég er t.d. með tölvupóstfangið fake@news.com, vefföngin "
         "http://greynir.is og https://greynir.is, og síma 6638999. Hann gaf mér 1000 kr. Ég keypti mér 1/2 kaffi. "
-        "Það er hægt að ná í mig í s. 623 7892, eða vinnusíma, 7227979 eða eitthvað.",
+        "Það er hægt að ná í mig í s 623 7892, eða vinnusíma, 7227979 eða eitthvað.",
         "B W W W    W   W               M            P W "
-        "U                 W  U             P W  W    TEL    P E B W W  W   A      P E B W W   W   N   W    P E "
+        "U                 W  U             P W  W    TEL    P E B W W  W   A       E B W W   W   N   W    P E "
         "B W W  W    W  W  W W   W W        TEL     P W   W        P  TEL     W   W P E"
     )
 
@@ -736,7 +735,7 @@ def test_sentences():
 
     test_sentence(
         "1.030 hPa lægð gengur yfir landið árið 2019 e.Kr. Jógúrtin inniheldur 80 kcal.",
-        "B ME      W    W      W    W      Y             P E B W    W          ME     P E",
+        "B ME      W    W      W    W      Y              E B W    W          ME     P E",
     )
 
     test_sentence(
@@ -780,7 +779,7 @@ def test_sentences():
     )
 
     test_sentence(
-        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta-, dómsmála-, ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
+        "Þórdís Kolbrún Reykfjörð Gylfadóttir var skipuð viðskipta- dómsmála- ferðamála- og iðnaðarráðherra þann 12. mars 2019.",
         "B W    W       W         W           W   W      W                                                  W    DA           P E",
     )
 
@@ -801,7 +800,7 @@ def test_sentences():
 
     test_sentence(
         "Fyrri setningin var í þgf. en sú seinni í nf. Ég stóð í ef. en hann í þf. Hvað ef.",
-        "B W   W         W   W W    W  W  W      W W P E B W  W    W W   W  W    W W P E B W W P E",
+        "B W   W         W   W W    W  W  W      W W E B W  W    W W   W  W    W W E B W W P E",
     )
 
     test_sentence(
@@ -836,7 +835,7 @@ def test_sentences():
 
     test_sentence(
         "Jón, kt. 301265-5309, vann 301265-53090 kr. H2O var drukkið.",
-        "B W P W  K          P W    N     P A      P E B MO W W     P E",
+        "B W P W  K          P W    N     P A       E B MO W W     P E",
     )
 
     test_sentence(
