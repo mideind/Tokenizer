@@ -754,6 +754,9 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.1.0: Changed handling of periods at end of sentences if they are
+  a part of an abbreviation. Now, the period is kept attached to the abbreviation,
+  not split off into a separate period token, as before.
 * Version 2.0.7: Added ``TOK.COMPANY`` token type; fixed a few abbreviations;
   renamed parameter ``text`` to ``text_or_gen`` in functions that accept a string
   or a string iterator
