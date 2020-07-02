@@ -595,15 +595,6 @@ with the following exceptions:
   thousand and decimal separators to Icelandic ones
   (*10,345.67* becomes *10.345,67*).
 
-In the case of abbreviations that end a sentence, the final period
-``"."`` is a separate token, and it is consequently omitted from the
-abbreviation token's ``txt`` field. A sentence ending in *o.s.frv.*
-will thus end with two tokens, the next-to-last one being the tuple
-``(TOK.WORD, "o.s.frv", "og svo framvegis")`` - note the omitted
-period in the ``txt`` field - and the last one being
-``(TOK.PUNCTUATION, ".", (3, "."))`` (this tuple form is further
-explained below).
-
 
 The ``val`` field
 ==================
