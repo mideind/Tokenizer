@@ -1682,18 +1682,28 @@ def parse_phrases_1(token_stream):
         while True:
 
             next_token = next(token_stream)
+            # Coalesce abbreviations and trailing period
+            if token.kind == TOK.WORD and next_token.txt == ".":
+                abbrev = token.txt + next_token.txt
+                if abbrev in Abbreviations.FINISHERS:
+                    token = TOK.Word(abbrev, token.val)
+                    next_token = next(token_stream)
 
             # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
             if token.kind == TOK.YEAR or token.kind == TOK.NUMBER:
                 val = token.val if token.kind == TOK.YEAR else token.val[0]
+                nval = None
                 if next_token.txt in BCE:  # f.Kr.
                     # Yes, we set year X BCE as year -X ;-)
-                    token = TOK.Year(token.txt + " " + next_token.txt, -val)
-                    next_token = next(token_stream)
+                    nval = -val
                 elif next_token.txt in CE:  # e.Kr.
-                    token = TOK.Year(token.txt + " " + next_token.txt, val)
+                    nval = val
+                if nval is not None:
+                    token = TOK.Year(token.txt + " " + next_token.txt, nval)
                     next_token = next(token_stream)
-
+                    if next_token.txt == ".":
+                        token = TOK.Year(token.txt + next_token.txt, nval)
+                        next_token = next(token_stream)
             # TODO: "5 mars" greinist sem dagsetning, vantar punktinn.
             # Check for [number | ordinal] [month name]
             if (
