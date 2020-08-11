@@ -33,6 +33,7 @@
 
 from __future__ import absolute_import
 
+import sys
 import io
 import re
 from glob import glob
@@ -40,7 +41,6 @@ from os.path import basename
 from os.path import dirname
 from os.path import join
 from os.path import splitext
-
 from setuptools import find_packages
 from setuptools import setup
 
@@ -98,7 +98,9 @@ setup(
         "Topic :: Text Processing :: Linguistic",
     ],
     keywords=["nlp", "tokenizer", "icelandic"],
-    install_requires=[],
+    # Install the typing module if it isn't already in the
+    # Python standard library (i.e. in versions prior to 3.5)
+    install_requires=["typing"] if sys.version_info < (3, 5) else [],
     # Set up a tokenize command (tokenize.exe on Windows),
     # which calls main() in src/tokenizer/main.py
     entry_points={

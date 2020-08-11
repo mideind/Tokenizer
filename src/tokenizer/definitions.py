@@ -32,6 +32,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
+from typing import Dict, Tuple, Union, Callable
+
 import sys
 import re
 
@@ -474,7 +476,7 @@ SI_UNITS = {
     # Percentage and promille
     "%": ("%", 1.0),
     "‰": ("‰", 0.1),
-}
+}  # type: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]]
 
 DIRECTIONS = {
     "N": "Norður",
