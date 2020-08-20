@@ -1011,6 +1011,14 @@ def test_correction():
 
 
 def test_correct_spaces():
+    s = t.correct_spaces("Bensínstöðvar, -dælur og -brúsar eru bannaðir.")
+    assert s == "Bensínstöðvar, -dælur og -brúsar eru bannaðir."
+    s = t.correct_spaces("Fjármála- og efnahagsráðuneytið")
+    assert s == "Fjármála- og efnahagsráðuneytið"
+    s = t.correct_spaces("Iðnaðar-, ferðamála- og nýsköpunarráðuneytið")
+    assert s == "Iðnaðar-, ferðamála- og nýsköpunarráðuneytið"
+    s = t.correct_spaces("Ég hef aldrei verslað í húsgagna-, byggingavöru- eða timburverslun.")
+    assert s == "Ég hef aldrei verslað í húsgagna-, byggingavöru- eða timburverslun."
     s = t.correct_spaces(
         "Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100,8  /  2  =   50.4"
     )

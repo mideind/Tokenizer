@@ -745,6 +745,9 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.2.0: Fixed ``correct_spaces()`` to handle compounds such as
+  *Atvinnu-, nýsköpunar- og ferðamálaráðuneytið* and
+  *bensínstöðvar, -dælur og -tankar*.
 * Version 2.1.0: Changed handling of periods at end of sentences if they are
   a part of an abbreviation. Now, the period is kept attached to the abbreviation,
   not split off into a separate period token, as before.

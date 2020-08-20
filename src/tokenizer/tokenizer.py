@@ -2216,7 +2216,9 @@ RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 def correct_spaces(s):
     """ Utility function to split and re-compose a string
-        with correct spacing between tokens """
+        with correct spacing between tokens.
+        NOTE that this function uses a quick-and-dirty approach
+        which may not handle all edge cases! """
     r = []
     last = TP_NONE
     double_quote_count = 0
@@ -2243,7 +2245,25 @@ def correct_spaces(s):
             this = TP_CENTER
         else:
             this = TP_WORD
-        if TP_SPACE[last - 1][this - 1] and r:
+        if (
+            (w == "og" or w == "eða") and
+            len(r) >= 2 and r[-1] == "-" and
+            r[-2].lstrip().isalpha()
+        ):
+            # Special case for compounds such as "fjármála- og efnahagsráðuneytið"
+            # and "Iðnaðar-, ferðamála- og atvinnuráðuneytið":
+            # detach the hyphen from "og"/"eða"
+            r.append(" " + w)
+        elif (
+            this == TP_WORD and len(r) >= 2 and
+            r[-1] == "-" and w.isalpha() and
+            (r[-2] == "," or r[-2].lstrip() in ("og", "eða"))
+        ):
+            # Special case for compounds such as
+            # "bensínstöðvar, -dælur og -tankar"
+            r[-1] = " -"
+            r.append(w)
+        elif TP_SPACE[last - 1][this - 1] and r:
             r.append(" " + w)
         else:
             r.append(w)
