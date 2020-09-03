@@ -825,8 +825,10 @@ def parse_tokens(txt, **options):
                 i = 2
                 while i < len(w) and w[i].isalpha():
                     i += 1
-                yield TOK.Word(w[:i])
-                w = w[i:]
+                # We allow -menn and -MENN, but not -Menn or -mEnn
+                if w[:i].islower() or w[:i].isupper():
+                    yield TOK.Word(w[:i])
+                    w = w[i:]
 
         # Shortcut for quotes around a single word
         if len(w) >= 3:
