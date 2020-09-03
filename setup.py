@@ -38,7 +38,7 @@ import io
 import re
 from glob import glob
 from os.path import basename, dirname, join, splitext
-from setuptools import find_packages, setup
+from setuptools import find_packages, setup  # type: ignore
 
 
 def read(*names, **kwargs):
@@ -53,7 +53,7 @@ def read(*names, **kwargs):
 
 setup(
     name="tokenizer",
-    version="2.2.0",  # Also update src/tokenizer/__init__.py
+    version="2.3.0",  # Also update src/tokenizer/__init__.py
     license="MIT",
     description="A tokenizer for Icelandic text",
     long_description=u"{0}\n{1}".format(

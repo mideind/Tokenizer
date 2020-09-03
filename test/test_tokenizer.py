@@ -1290,6 +1290,48 @@ def test_normalization():
     )
 
 
+def test_html_escapes():
+    toklist = list(
+        t.tokenize(
+            "Ég&nbsp;fór &aacute; &lt;bömmer&gt; og bor&shy;ðaði köku.",
+            replace_html_escapes=True
+        )
+    )
+    correct = [
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='Ég', val=None),
+        Tok(kind=6, txt='fór', val=None),
+        Tok(kind=6, txt='á', val=None),
+        Tok(kind=1, txt='<', val=(1, '<')),
+        Tok(kind=6, txt='bömmer', val=None),
+        Tok(kind=1, txt='>', val=(3, '>')),
+        Tok(kind=6, txt='og', val=None),
+        Tok(kind=6, txt='borðaði', val=None),
+        Tok(kind=6, txt='köku', val=None),
+        Tok(kind=1, txt='.', val=(3, '.')),
+        Tok(kind=11002, txt=None, val=None),
+    ]
+    assert toklist == correct
+
+    toklist = list(
+        t.tokenize(
+            "Ég fór &uacute;t og &#97;fs&#x61;kaði mig",
+            replace_html_escapes=True
+        )
+    )
+    correct = [
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='Ég', val=None),
+        Tok(kind=6, txt='fór', val=None),
+        Tok(kind=6, txt='út', val=None),
+        Tok(kind=6, txt='og', val=None),
+        Tok(kind=6, txt='afsakaði', val=None),
+        Tok(kind=6, txt='mig', val=None),
+        Tok(kind=11002, txt=None, val=None)
+    ]
+    assert toklist == correct
+
+
 if __name__ == "__main__":
 
     test_single_tokens()

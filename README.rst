@@ -422,6 +422,29 @@ functions:
   The default value for the ``convert_measurements`` option is ``False``.
 
 
+* ``replace_composite_glyphs=[bool]``
+
+  Setting this option to ``False`` disables the automatic replacement
+  of composite Unicode glyphs with their corresponding Icelandic characters.
+  By default, the tokenizer combines vowels with the Unicode
+  COMBINING ACUTE ACCENT and COMBINING DIAERESIS glyphs to form single
+  character code points, such as 'á' and 'ö'.
+
+  The default value for the ``replace_composite_glyphs`` option is ``True``.
+
+
+* ``replace_html_escapes=[bool]``
+
+  Setting this option to ``True`` causes the tokenizer to replace common
+  HTML escaped character codes, such as ``&aacute;`` with the character being
+  escaped, such as ``á``. Note that ``&shy;`` (soft hyphen) is replaced by
+  an empty string, and ``&nbsp;`` is replaced by a normal space.
+  The ligatures ``&filig;`` and ``&fllig;`` are replaced by ``fi`` and ``fl``,
+  respectively.
+
+  The default value for the ``replace_html_escapes`` option is ``False``.
+
+
 * ``handle_kludgy_ordinals=[value]``
 
   This options controls the way Tokenizer handles 'kludgy' ordinals, such as
@@ -588,12 +611,18 @@ with the following exceptions:
 * Tokenizer automatically merges Unicode ``COMBINING ACUTE ACCENT``
   (code point 769) and ``COMBINING DIAERESIS`` (code point 776)
   with vowels to form single code points for the Icelandic letters
-  á, é, í, ó, ú, ý and ö, in both lower and upper case.
+  á, é, í, ó, ú, ý and ö, in both lower and upper case. (This behavior
+  can be disabled; see the ``replace_composite_glyphs`` option described
+  above.)
 
 * If the appropriate options are specified (see above), it converts
   kludgy ordinals (*3ja*) to proper ones (*þriðja*), and English-style
   thousand and decimal separators to Icelandic ones
   (*10,345.67* becomes *10.345,67*).
+
+* If the ``replace_html_escapes`` option is set, Tokenizer replaces
+  HTML-style escapes (``&aacute;``) with the characters
+  being escaped (``á``).
 
 
 The ``val`` field
@@ -745,6 +774,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.3.0: Added the ``replace_html_escapes`` option to
+  the ``tokenize()`` function.
 * Version 2.2.0: Fixed ``correct_spaces()`` to handle compounds such as
   *Atvinnu-, nýsköpunar- og ferðamálaráðuneytið* and
   *bensínstöðvar, -dælur og -tankar*.
@@ -753,57 +784,57 @@ Changelog
   not split off into a separate period token, as before.
 * Version 2.0.7: Added ``TOK.COMPANY`` token type; fixed a few abbreviations;
   renamed parameter ``text`` to ``text_or_gen`` in functions that accept a string
-  or a string iterator
+  or a string iterator.
 * Version 2.0.6: Fixed handling of abbreviations such as *m.v.* (*miðað við*)
-  that should not start a new sentence even if the following word is capitalized
+  that should not start a new sentence even if the following word is capitalized.
 * Version 2.0.5: Fixed bug where single uppercase letters were erroneously
   being recognized as abbreviations, causing prepositions such as 'Í' and 'Á'
-  at the beginning of sentences to be misunderstood in ReynirPackage
+  at the beginning of sentences to be misunderstood in ReynirPackage.
 * Version 2.0.4: Added imperfect abbreviations (*amk.*, *osfrv.*); recognized
-  *klukkan hálf tvö* as a ``TOK.TIME``
+  *klukkan hálf tvö* as a ``TOK.TIME``.
 * Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains
-  and e-mails containing periods were wrongly split
+  and e-mails containing periods were wrongly split.
 * Version 2.0.2: Spelled-out day ordinals are no longer included as a part of
   ``TOK.DATEREL`` tokens. Thus, *þriðji júní* is now a ``TOK.WORD``
   followed by a ``TOK.DATEREL``. *3. júní* continues to be parsed as
-  a single ``TOK.DATEREL``
+  a single ``TOK.DATEREL``.
 * Version 2.0.1: Order of abbreviation meanings within the ``token.val`` field
-  made deterministic; fixed bug in measurement unit handling
+  made deterministic; fixed bug in measurement unit handling.
 * Version 2.0.0: Added command line tool; added ``split_into_sentences()``
   and ``detokenize()`` functions; removed ``convert_telno`` option;
   splitting of coalesced tokens made more robust;
   added ``TOK.SSN``, ``TOK.MOLECULE``, ``TOK.USERNAME`` and
   ``TOK.SERIALNUMBER`` token kinds; abbreviations can now have multiple
-  meanings
+  meanings.
 * Version 1.4.0: Added the ``**options`` parameter to the
   ``tokenize()`` function, giving control over the handling of numbers,
-  telephone numbers, and 'kludgy' ordinals
+  telephone numbers, and 'kludgy' ordinals.
 * Version 1.3.0: Added ``TOK.DOMAIN`` and ``TOK.HASHTAG`` token types;
   improved handling of capitalized month name *Ágúst*, which is
   now recognized when following an ordinal number; improved recognition
-  of telephone numbers; added abbreviations
-* Version 1.2.3: Added abbreviations; updated GitHub URLs
+  of telephone numbers; added abbreviations.
+* Version 1.2.3: Added abbreviations; updated GitHub URLs.
 * Version 1.2.2: Added support for composites with more than two parts, i.e.
   *„dómsmála-, ferðamála-, iðnaðar- og nýsköpunarráðherra“*; added support for
-  ``±`` sign; added several abbreviations
+  ``±`` sign; added several abbreviations.
 * Version 1.2.1: Fixed bug where the name *Ágúst* was recognized
   as a month name; Unicode nonbreaking and invisible space characters
-  are now removed before tokenization
+  are now removed before tokenization.
 * Version 1.2.0: Added support for Unicode fraction characters;
   enhanced handing of degrees (°, °C, °F); fixed bug in cubic meter
-  measurement unit; more abbreviations
-* Version 1.1.2: Fixed bug in liter (``l`` and ``ltr``) measurement units
-* Version 1.1.1: Added ``mark_paragraphs()`` function
+  measurement unit; more abbreviations.
+* Version 1.1.2: Fixed bug in liter (``l`` and ``ltr``) measurement units.
+* Version 1.1.1: Added ``mark_paragraphs()`` function.
 * Version 1.1.0: All abbreviations in ``Abbrev.conf`` are now
   returned with their meaning in a tuple in ``token.val``;
-  handling of 'mbl.is' fixed
-* Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers
+  handling of 'mbl.is' fixed.
+* Version 1.0.9: Added abbreviation 'MAST'; harmonized copyright headers.
 * Version 1.0.8: Bug fixes in ``DATEREL``, ``MEASUREMENT`` and ``NUMWLETTER``
-  token handling; added 'kWst' and 'MWst' measurement units; blackened
-* Version 1.0.7: Added ``TOK.NUMWLETTER`` token type
+  token handling; added 'kWst' and 'MWst' measurement units; blackened.
+* Version 1.0.7: Added ``TOK.NUMWLETTER`` token type.
 * Version 1.0.6: Automatic merging of Unicode ``COMBINING ACUTE ACCENT`` and
-  ``COMBINING DIAERESIS`` code points with vowels
-* Version 1.0.5: Date/time and amount tokens coalesced to a further extent
+  ``COMBINING DIAERESIS`` code points with vowels.
+* Version 1.0.5: Date/time and amount tokens coalesced to a further extent.
 * Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``,
-  ``TOK.MEASUREMENT``
+  ``TOK.MEASUREMENT``.
 
