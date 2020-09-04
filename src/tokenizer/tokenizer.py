@@ -152,7 +152,7 @@ class TOK:
         DATEREL: "DATEREL",
         YEAR: "YEAR",
         NUMBER: "NUMBER",
-        NUMWLETTER: "NUMBER WITH LETTER",
+        NUMWLETTER: "NUMWLETTER",
         CURRENCY: "CURRENCY",
         AMOUNT: "AMOUNT",
         MEASUREMENT: "MEASUREMENT",
