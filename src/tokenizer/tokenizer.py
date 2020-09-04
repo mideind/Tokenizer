@@ -826,7 +826,8 @@ def parse_tokens(txt, **options):
                 while i < len(w) and w[i].isalpha():
                     i += 1
                 # We allow -menn and -MENN, but not -Menn or -mEnn
-                if w[:i].islower() or w[:i].isupper():
+                # We don't allow -Á or -Í, i.e. single-letter uppercase combos
+                if w[:i].islower() or (i > 2 and w[:i].isupper()):
                     yield TOK.Word(w[:i])
                     w = w[i:]
 
