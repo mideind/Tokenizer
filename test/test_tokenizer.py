@@ -1290,6 +1290,19 @@ def test_normalization():
     )
 
 
+def test_time_token():
+    toklist = list(
+        t.tokenize(
+            "2.55pm - Síðasta tilraun setur Knights fram klukkan hálf"
+        )
+    )
+    assert len(toklist) == 12
+    assert toklist[-2].kind == TOK.WORD
+    assert toklist[-2].txt == "hálf"
+    assert toklist[-3].kind == TOK.WORD
+    assert toklist[-3].txt == "klukkan"
+
+
 def test_html_escapes():
     toklist = list(
         t.tokenize(

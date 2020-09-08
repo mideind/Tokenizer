@@ -1334,7 +1334,7 @@ def parse_particles(token_stream, **options):
             elif next_token.kind == TOK.WORD and next_token.txt.lower() == "hálf":
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     time_token = next(token_stream)
-                    time_txt = time_token.txt.lower()
+                    time_txt = time_token.txt.lower() if time_token.txt else ""
                     if time_txt in CLOCK_NUMBERS and not time_txt.startswith("hálf"):
                         # Match
                         token = TOK.Time(

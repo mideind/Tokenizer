@@ -13,12 +13,12 @@ Tokenization is a necessary first step in many natural language processing
 tasks, such as word counting, parsing, spell checking, corpus generation, and
 statistical analysis of text.
 
-**Tokenizer** is a compact pure-Python (2 and 3) executable program and module
-for tokenizing Icelandic text. It converts input text to streams of *tokens*,
-where each token is a separate word, punctuation sign, number/amount, date,
-e-mail, URL/URI, etc. It also segments the token stream into sentences,
-considering corner cases such as abbreviations and dates in the middle
-of sentences.
+**Tokenizer** is a compact pure-Python (2 and 3) executable
+program and module for tokenizing Icelandic text. It converts input text to
+streams of *tokens*, where each token is a separate word, punctuation sign,
+number/amount, date, e-mail, URL/URI, etc. It also segments the token stream
+into sentences, considering corner cases such as abbreviations and dates in
+the middle of sentences.
 
 The package contains a dictionary of common Icelandic abbreviations,
 in the file ``src/tokenizer/Abbrev.conf``.
