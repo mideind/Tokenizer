@@ -153,7 +153,7 @@ class TOK:
         DATEREL: "DATEREL",
         YEAR: "YEAR",
         NUMBER: "NUMBER",
-        NUMWLETTER: "NUMBER WITH LETTER",
+        NUMWLETTER: "NUMWLETTER",
         CURRENCY: "CURRENCY",
         AMOUNT: "AMOUNT",
         MEASUREMENT: "MEASUREMENT",
@@ -682,13 +682,32 @@ def parse_digits(w, convert_numbers):
     return TOK.Unknown(w), len(w)
 
 
-def gen_from_string(txt, replace_composite_glyphs=True):
+def html_escape(match):
+    """ Regex substitution function for HTML escape codes """
+    g = match.group(4)
+    if g is not None:
+        # HTML escape string: 'acute'
+        return HTML_ESCAPES[g]
+    g = match.group(2)
+    if g is not None:
+        # Hex code: '#xABCD'
+        return unicode_chr(int(g[2:], base=16))
+    g = match.group(3)
+    assert g is not None
+    # Decimal code: '#8930'
+    return unicode_chr(int(g[1:]))
+
+
+def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False):
     """ Generate rough tokens from a string """
     if replace_composite_glyphs:
         # Replace composite glyphs with single code points
         txt = UNICODE_REGEX.sub(
             lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
         )
+    if replace_html_escapes:
+        # Replace HTML escapes: '&aacute;' -> 'á'
+        txt = HTML_ESCAPE_REGEX.sub(html_escape, txt)
     # If there are consecutive newlines in the string (i.e. two
     # newlines separated only by whitespace), we interpret
     # them as hard sentence boundaries
@@ -704,7 +723,7 @@ def gen_from_string(txt, replace_composite_glyphs=True):
             yield w
 
 
-def gen(text_or_gen, replace_composite_glyphs=True):
+def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
     """ Generate rough tokens from a string or a generator """
     if text_or_gen is None:
         return
@@ -721,7 +740,9 @@ def gen(text_or_gen, replace_composite_glyphs=True):
             # Convert to a Unicode string (if Python 2.7)
             txt = make_str(txt)
             # Yield the contained rough tokens
-            for w in gen_from_string(txt, replace_composite_glyphs):
+            for w in gen_from_string(
+                txt, replace_composite_glyphs, replace_html_escapes
+            ):
                 yield w
 
 
@@ -747,6 +768,7 @@ def parse_tokens(txt, **options):
     # Obtain individual flags from the options dict
     convert_numbers = options.get("convert_numbers", False)
     replace_composite_glyphs = options.get("replace_composite_glyphs", True)
+    replace_html_escapes = options.get("replace_html_escapes", False)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
@@ -773,7 +795,7 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for w in gen(txt, replace_composite_glyphs):
+    for w in gen(txt, replace_composite_glyphs, replace_html_escapes):
 
         # Handle each sequence w of non-whitespace characters
 
@@ -803,8 +825,11 @@ def parse_tokens(txt, **options):
                 i = 2
                 while i < len(w) and w[i].isalpha():
                     i += 1
-                yield TOK.Word(w[:i])
-                w = w[i:]
+                # We allow -menn and -MENN, but not -Menn or -mEnn
+                # We don't allow -Á or -Í, i.e. single-letter uppercase combos
+                if w[:i].islower() or (i > 2 and w[:i].isupper()):
+                    yield TOK.Word(w[:i])
+                    w = w[i:]
 
         # Shortcut for quotes around a single word
         if len(w) >= 3:
@@ -1304,7 +1329,7 @@ def parse_particles(token_stream, **options):
             elif next_token.kind == TOK.WORD and next_token.txt.lower() == "hálf":
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     time_token = next(token_stream)
-                    time_txt = time_token.txt.lower()
+                    time_txt = time_token.txt.lower() if time_token.txt else ""
                     if time_txt in CLOCK_NUMBERS and not time_txt.startswith("hálf"):
                         # Match
                         token = TOK.Time(
@@ -1415,7 +1440,7 @@ def parse_particles(token_stream, **options):
                 unit, factor = SI_UNITS[orig_unit]
                 if callable(factor):
                     # We have a lambda conversion function
-                    value = factor(value)
+                    value = factor(value)  # pylint: disable=not-callable
                 else:
                     # Simple scaling factor
                     value *= factor
@@ -2202,7 +2227,9 @@ RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 def correct_spaces(s):
     """ Utility function to split and re-compose a string
-        with correct spacing between tokens """
+        with correct spacing between tokens.
+        NOTE that this function uses a quick-and-dirty approach
+        which may not handle all edge cases! """
     r = []
     last = TP_NONE
     double_quote_count = 0
@@ -2229,7 +2256,28 @@ def correct_spaces(s):
             this = TP_CENTER
         else:
             this = TP_WORD
-        if TP_SPACE[last - 1][this - 1] and r:
+        if (
+            (w == "og" or w == "eða")
+            and len(r) >= 2
+            and r[-1] == "-"
+            and r[-2].lstrip().isalpha()
+        ):
+            # Special case for compounds such as "fjármála- og efnahagsráðuneytið"
+            # and "Iðnaðar-, ferðamála- og atvinnuráðuneytið":
+            # detach the hyphen from "og"/"eða"
+            r.append(" " + w)
+        elif (
+            this == TP_WORD
+            and len(r) >= 2
+            and r[-1] == "-"
+            and w.isalpha()
+            and (r[-2] == "," or r[-2].lstrip() in ("og", "eða"))
+        ):
+            # Special case for compounds such as
+            # "bensínstöðvar, -dælur og -tankar"
+            r[-1] = " -"
+            r.append(w)
+        elif TP_SPACE[last - 1][this - 1] and r:
             r.append(" " + w)
         else:
             r.append(w)

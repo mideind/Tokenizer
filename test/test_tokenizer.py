@@ -1011,6 +1011,14 @@ def test_correction():
 
 
 def test_correct_spaces():
+    s = t.correct_spaces("Bensínstöðvar, -dælur og -brúsar eru bannaðir.")
+    assert s == "Bensínstöðvar, -dælur og -brúsar eru bannaðir."
+    s = t.correct_spaces("Fjármála- og efnahagsráðuneytið")
+    assert s == "Fjármála- og efnahagsráðuneytið"
+    s = t.correct_spaces("Iðnaðar-, ferðamála- og nýsköpunarráðuneytið")
+    assert s == "Iðnaðar-, ferðamála- og nýsköpunarráðuneytið"
+    s = t.correct_spaces("Ég hef aldrei verslað í húsgagna-, byggingavöru- eða timburverslun.")
+    assert s == "Ég hef aldrei verslað í húsgagna-, byggingavöru- eða timburverslun."
     s = t.correct_spaces(
         "Frétt \n  dagsins:Jón\t ,Friðgeir og Páll ! 100,8  /  2  =   50.4"
     )
@@ -1280,6 +1288,61 @@ def test_normalization():
         t.normalized_text_from_tokens(toklist) ==
         "Hann sagði : „ Þú ert ágæt ! “ ."
     )
+
+
+def test_time_token():
+    toklist = list(
+        t.tokenize(
+            "2.55pm - Síðasta tilraun setur Knights fram klukkan hálf"
+        )
+    )
+    assert len(toklist) == 12
+    assert toklist[-2].kind == TOK.WORD
+    assert toklist[-2].txt == "hálf"
+    assert toklist[-3].kind == TOK.WORD
+    assert toklist[-3].txt == "klukkan"
+
+
+def test_html_escapes():
+    toklist = list(
+        t.tokenize(
+            "Ég&nbsp;fór &aacute; &lt;bömmer&gt; og bor&shy;ðaði köku.",
+            replace_html_escapes=True
+        )
+    )
+    correct = [
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='Ég', val=None),
+        Tok(kind=6, txt='fór', val=None),
+        Tok(kind=6, txt='á', val=None),
+        Tok(kind=1, txt='<', val=(1, '<')),
+        Tok(kind=6, txt='bömmer', val=None),
+        Tok(kind=1, txt='>', val=(3, '>')),
+        Tok(kind=6, txt='og', val=None),
+        Tok(kind=6, txt='borðaði', val=None),
+        Tok(kind=6, txt='köku', val=None),
+        Tok(kind=1, txt='.', val=(3, '.')),
+        Tok(kind=11002, txt=None, val=None),
+    ]
+    assert toklist == correct
+
+    toklist = list(
+        t.tokenize(
+            "Ég fór &uacute;t og &#97;fs&#x61;kaði mig",
+            replace_html_escapes=True
+        )
+    )
+    correct = [
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='Ég', val=None),
+        Tok(kind=6, txt='fór', val=None),
+        Tok(kind=6, txt='út', val=None),
+        Tok(kind=6, txt='og', val=None),
+        Tok(kind=6, txt='afsakaði', val=None),
+        Tok(kind=6, txt='mig', val=None),
+        Tok(kind=11002, txt=None, val=None)
+    ]
+    assert toklist == correct
 
 
 if __name__ == "__main__":

@@ -1143,3 +1143,84 @@ def valid_ssn(kt):
     m = 11 - sum((ord(kt[i]) - 48) * KT_MAGIC[i] for i in range(9)) % 11
     c = ord(kt[9]) - 48
     return m == 11 if c == 0 else m == c
+
+
+# HTML escaped characters/ligatures, e.g. '&aacute;' meaning 'á'.
+# The following is a subset of HTML escape codes, roughly selected
+# by analyzing the content of the Icelandic Gigaword Corpus (Risamálheild).
+HTML_ESCAPES = {
+    # Icelandic letters
+    "aacute": "á",
+    "eth": "ð",
+    "eacute": "é",
+    "iacute": "í",
+    "oacute": "ó",
+    "uacute": "ú",
+    "yacute": "ý",
+    "thorn": "þ",
+    "aelig": "æ",
+    "ouml": "ö",
+    "Aacute": "Á",
+    "ETH": "Ð",
+    "Eacute": "É",
+    "Iacute": "Í",
+    "Oacute": "Ó",
+    "Uacute": "Ú",
+    "Yacute": "Ý",
+    "THORN": "Þ",
+    "AElig": "Æ",
+    "Ouml": "Ö",
+    # Punctuation
+    "amp": "&",
+    "lt": "<",
+    "gt": ">",
+    "quot": '"',
+    "apos": "'",
+    "bdquo": "„",
+    "ldquo": "“",
+    "rdquo": "”",
+    "lsquo": "‘",
+    "acute": "´",
+    "lcub": "{",
+    "rcub": "}",
+    "darr": "↓",
+    "uarr": "↑",
+    "ring": "˚",
+    "deg": "°",
+    "diam": "⋄",
+    "ordm": "º",
+    "ogon": "˛",
+    "hellip": "…",
+    "copy": "©",
+    "reg": "®",
+    "trade": "™",
+    # Spaces - all spaces are mapped to \x20
+    "nbsp": " ",
+    "ensp": " ",
+    "emsp": " ",
+    "thinsp": " ",
+    # Dashes and hyphens
+    "ndash": "–",
+    "mdash": "—",
+    # The soft hyphen &shy; is mapped to an empty string
+    "shy": "",
+    # Other non-ASCII letters
+    "uuml": "ü",
+    "Uuml": "Ü",
+    "zcaron": "ž",
+    "Zcaron": "Ž",
+    "lstrok": "ł",
+    "Lstrok": "Ł",
+    "ntilde": "ñ",
+    "inodot": "ı",
+    # Ligatures
+    "filig": "fi",
+    "fllig": "fl",
+}
+
+ESCAPES_REGEX = r"|".join(HTML_ESCAPES.keys())
+HTML_ESCAPE_REGEX = re.compile(
+    r"&((#x[0-9a-fA-F]{r1})|(#\d{r2})|({ex}))\;".format(
+        r1="{1,8}", r2="{1,10}", ex=ESCAPES_REGEX
+    )
+)
