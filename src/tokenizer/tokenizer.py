@@ -1735,6 +1735,14 @@ def parse_phrases_1(token_stream):
                 token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER
             ) and next_token.kind == TOK.WORD:
 
+                if next_token.txt == "gr.":
+                    # Corner case: If we have an ordinal followed by
+                    # the abbreviation "gr.", we assume that the only
+                    # interpretation of the abbreviation is "grein".
+                    next_token = TOK.Word("gr.",
+                        [("grein", 0, "kvk", "skst", "gr.", "-")]
+                    )
+
                 month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
