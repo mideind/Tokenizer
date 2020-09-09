@@ -172,9 +172,7 @@ CLOCK_ABBREVS = frozenset(("kl", "kl.", "klukkan"))
 TELNO_PREFIXES = "45678"
 
 # Known telephone country codes
-COUNTRY_CODES = frozenset((
-    "354", "+354", "00354",
-))
+COUNTRY_CODES = frozenset(("354", "+354", "00354",))
 
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
@@ -490,7 +488,7 @@ SI_UNITS_REGEX_STRING = r"|".join(
         lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit,
         # Sort in descending order by length, so that longer strings
         # are matched before shorter ones
-        sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True)
+        sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True),
     )
 )
 SI_UNITS_REGEX = re.compile(r"({0})".format(SI_UNITS_REGEX_STRING), re.UNICODE)
@@ -500,7 +498,7 @@ CURRENCY_REGEX_STRING = r"|".join(
         # Sort in descending order by length, so that longer strings
         # are matched before shorter ones
         re.escape,
-        sorted(keys(CURRENCY_SYMBOLS), key=lambda s: len(s), reverse=True)
+        sorted(keys(CURRENCY_SYMBOLS), key=lambda s: len(s), reverse=True),
     )
 )
 
@@ -509,21 +507,18 @@ UNIT_REGEX_STRING = SI_UNITS_REGEX_STRING + r"|" + CURRENCY_REGEX_STRING
 
 # Icelandic-style number, followed by a unit
 NUM_WITH_UNIT_REGEX1 = re.compile(
-    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(UNIT_REGEX_STRING),
-    re.UNICODE
+    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(UNIT_REGEX_STRING), re.UNICODE
 )
 
 # English-style number, followed by a unit
 NUM_WITH_UNIT_REGEX2 = re.compile(
-    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(UNIT_REGEX_STRING),
-    re.UNICODE
+    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(UNIT_REGEX_STRING), re.UNICODE
 )
 
 # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
 # and a unit (SI, percent or currency symbol)
 NUM_WITH_UNIT_REGEX3 = re.compile(
-    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(UNIT_REGEX_STRING),
-    re.UNICODE
+    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(UNIT_REGEX_STRING), re.UNICODE
 )
 
 
@@ -574,7 +569,7 @@ ORDINAL_NUMBERS = {
     "4ðu": 4,
     "5ti": 5,
     "5ta": 5,
-    "5tu": 5
+    "5tu": 5,
 }
 
 # Handling of Roman numerals
@@ -862,7 +857,7 @@ TOP_LEVEL_DOMAINS = frozenset(
         "km",
         "kn",
         "kp",
-        # "kr", # Gives us trouble with "kr" abbreviation (e.g. "þús.kr" is a legitimate domain name)
+        # "kr", # Clashes with "kr" abbreviation (e.g. "þús.kr" is a legitimate domain name)
         "kw",
         "ky",
         "kz",

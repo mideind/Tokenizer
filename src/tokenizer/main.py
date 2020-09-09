@@ -52,45 +52,40 @@ from .definitions import make_str
 
 if sys.version_info >= (3, 0):
     # Python 3: read and write strings from and to UTF-8 encoded files
-    ReadFile = argparse.FileType('r', encoding="utf-8")
-    WriteFile = argparse.FileType('w', encoding="utf-8")
+    ReadFile = argparse.FileType("r", encoding="utf-8")
+    WriteFile = argparse.FileType("w", encoding="utf-8")
 else:
     # Python 2: read and write bytes, which are decoded from UTF-8 in the gen() function
-    ReadFile = argparse.FileType('r')
-    WriteFile = argparse.FileType('w')
+    ReadFile = argparse.FileType("r")
+    WriteFile = argparse.FileType("w")
 
 # Define the command line arguments
 
 parser = argparse.ArgumentParser(description="Tokenizes Icelandic text")
 
 parser.add_argument(
-    'infile',
-    nargs='?',
+    "infile",
+    nargs="?",
     type=ReadFile,
     default=sys.stdin,
     help="UTF-8 text file to tokenize",
 )
 parser.add_argument(
-    'outfile',
-    nargs='?',
+    "outfile",
+    nargs="?",
     type=WriteFile,
     default=sys.stdout,
-    help="UTF-8 output text file"
+    help="UTF-8 output text file",
 )
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument(
-    "--csv",
-    help="Output one token per line in CSV format", action="store_true"
+    "--csv", help="Output one token per line in CSV format", action="store_true"
 )
 group.add_argument(
-    "--json",
-    help="Output one token per line in JSON format", action="store_true"
+    "--json", help="Output one token per line in JSON format", action="store_true"
 )
-group.add_argument(
-    "--normalize",
-    help="Normalize punctuation", action="store_true"
-)
+group.add_argument("--normalize", help="Normalize punctuation", action="store_true")
 
 
 def main():
@@ -102,7 +97,7 @@ def main():
     def quote(s):
         """ Return the string s within double quotes, and with any contained
             backslashes and double quotes escaped with a backslash """
-        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+        return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
     def gen(f):
         """ Generate the lines of text in the input file """
@@ -126,16 +121,23 @@ def main():
         if t.kind == TOK.AMOUNT:
             if quote_word:
                 # Format as "1234.56|USD"
-                return "\"{0}|{1}\"".format(t.val[0], t.val[1])
+                return '"{0}|{1}"'.format(t.val[0], t.val[1])
             return t.val[0], t.val[1]
         if t.kind == TOK.S_BEGIN:
             return None
         if t.kind == TOK.PUNCTUATION:
             return quote(t.val[1]) if quote_word else t.val[1]
         if quote_word and t.kind in {
-            TOK.DATE, TOK.TIME, TOK.DATEABS, TOK.DATEREL, TOK.TIMESTAMP,
-            TOK.TIMESTAMPABS, TOK.TIMESTAMPREL, TOK.TELNO, TOK.NUMWLETTER,
-            TOK.MEASUREMENT
+            TOK.DATE,
+            TOK.TIME,
+            TOK.DATEABS,
+            TOK.DATEREL,
+            TOK.TIMESTAMP,
+            TOK.TIMESTAMPABS,
+            TOK.TIMESTAMPREL,
+            TOK.TELNO,
+            TOK.NUMWLETTER,
+            TOK.MEASUREMENT,
         }:
             # Return a |-delimited list of numbers
             return quote("|".join(str(v) for v in t.val))
@@ -149,7 +151,7 @@ def main():
         to_text = lambda t: t.txt
 
     # Configure our JSON dump function
-    json_dumps = partial(json.dumps, ensure_ascii=False, separators=(',', ':'))
+    json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
     curr_sent = []
 
     for t in tokenize(gen(args.infile), **options):
@@ -157,13 +159,14 @@ def main():
             # Output the tokens in CSV format, one line per token
             if t.txt:
                 print(
-                    "{0},{1},{2}"
-                    .format(t.kind, quote(t.txt), val(t, quote_word=True) or "\"\""),
-                    file=args.outfile
+                    "{0},{1},{2}".format(
+                        t.kind, quote(t.txt), val(t, quote_word=True) or '""'
+                    ),
+                    file=args.outfile,
                 )
             elif t.kind == TOK.S_END:
                 # Indicate end of sentence
-                print("0,\"\",\"\"", file=args.outfile)
+                print('0,"",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
             d = dict(k=TOK.descr[t.kind])

@@ -27,7 +27,7 @@
         TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
         SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-    
+
     This module reads the definition of abbreviations from the file
     Abbrev.conf, assumed to be located in the same directory (or installation
     resource library) as this Python source file.
@@ -38,8 +38,9 @@ from __future__ import absolute_import
 from __future__ import unicode_literals
 
 import sys
+
 if sys.version_info >= (3, 5):
-    from typing import Set, List, Tuple, Dict, Any
+    from typing import Set, List, Dict, Any
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
@@ -147,14 +148,7 @@ class Abbreviations:
         # Append the abbreviation and its meaning in tuple form
         # Multiple meanings are supported for each abbreviation
         Abbreviations.DICT[abbrev].add(
-            (
-                meaning,
-                0,
-                gender,
-                "skst" if fl is None else fl,
-                abbrev,
-                "-",
-            )
+            (meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
         )
         Abbreviations.MEANINGS.add(meaning)
         # Adding wrong versions of abbreviations
@@ -171,14 +165,7 @@ class Abbreviations:
                 # as abbreviations, even though they are listed as such
                 # in the form 'Í.' and 'Á.' for use within person names
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    (
-                        meaning,
-                        0,
-                        gender,
-                        "skst" if fl is None else fl,
-                        wabbrev,
-                        "-",
-                    )
+                    (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
 
         elif "." in abbrev:
@@ -188,19 +175,12 @@ class Abbreviations:
             indices = [pos for pos, char in enumerate(abbrev) if char == "."]
             for i in indices:
                 # Removing one dot at a time
-                wabbrev = abbrev[:i] + abbrev[i+1:]
-                #if finisher:
+                wabbrev = abbrev[:i] + abbrev[i + 1 :]
+                # if finisher:
                 #    Abbreviations.FINISHERS.add(wabbrev)
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    (
-                        meaning,
-                        0,
-                        gender,
-                        "skst" if fl is None else fl,
-                        wabbrev,
-                        "-",
-                    )
+                    (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
             if len(indices) > 2:
                 # 3 or 4 dots currently in vocabulary
@@ -210,13 +190,13 @@ class Abbreviations:
                 i3 = indices[2]
                 wabbrevs = []
                 # 1 and 2 removed
-                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i2]+abbrev[i2+1:])
+                wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i2] + abbrev[i2 + 1 :])
                 # 1 and 3 removed
-                wabbrevs.append(abbrev[:i1]+abbrev[i1+1:i3]+abbrev[i3+1:])
+                wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i3] + abbrev[i3 + 1 :])
                 # 2 and 3 removed
-                wabbrevs.append(abbrev[:i2]+abbrev[i2+1:i3]+abbrev[i3+1:])
+                wabbrevs.append(abbrev[:i2] + abbrev[i2 + 1 : i3] + abbrev[i3 + 1 :])
                 for wabbrev in wabbrevs:
-                    #if finisher:
+                    # if finisher:
                     #    Abbreviations.FINISHERS.add(wabbrev)
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                     Abbreviations.WRONGDICT[wabbrev].add(
@@ -232,18 +212,11 @@ class Abbreviations:
             # Removing all dots
             wabbrev = abbrev.replace(".", "")
             Abbreviations.WRONGSINGLES.add(wabbrev)
-            #if finisher:
+            # if finisher:
             #    Abbreviations.FINISHERS.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
-                (
-                    meaning,
-                    0,
-                    gender,
-                    "skst" if fl is None else fl,
-                    wabbrev,
-                    "-",
-                )
+                (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
@@ -308,6 +281,7 @@ class Abbreviations:
                 # Already initialized
                 return
             from pkg_resources import resource_stream
+
             with resource_stream(__name__, "Abbrev.conf") as config:
                 for b in config:
                     # We get lines as binary strings
