@@ -33,7 +33,6 @@
 
 from __future__ import absolute_import
 
-import sys
 import io
 import re
 from glob import glob
@@ -96,7 +95,9 @@ setup(
     keywords=["nlp", "tokenizer", "icelandic"],
     # Install the typing module if it isn't already in the
     # Python standard library (i.e. in versions prior to 3.5)
-    install_requires=["typing"] if sys.version_info < (3, 5) else [],
+    install_requires=[
+        "typing;python_version<'3.5'"
+    ],
     # Set up a tokenize command (tokenize.exe on Windows),
     # which calls main() in src/tokenizer/main.py
     entry_points={
