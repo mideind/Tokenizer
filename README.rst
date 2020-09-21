@@ -774,6 +774,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.3.1: Various bug fixes; fixed type annotations for Python 2.7;
+  the token kind ``NUMBER WITH LETTER`` is now ``NUMWLETTER``.
 * Version 2.3.0: Added the ``replace_html_escapes`` option to
   the ``tokenize()`` function.
 * Version 2.2.0: Fixed ``correct_spaces()`` to handle compounds such as

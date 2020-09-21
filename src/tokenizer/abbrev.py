@@ -130,9 +130,12 @@ class Abbreviations:
                     "can be marked as not-finishers"
                 )
         elif abbrev.endswith("^"):
-            # This abbreviation can be followed by a name;
-            # in other aspects it is like a not-finisher
-            # (Example: 'próf.')
+            # This abbreviation is only to be interpreted as an abbreviation
+            # if it is followed by a name (example: 'próf.' for 'prófessor').
+            # This logic is not fully present in Tokenizer as information
+            # about person names is needed to make it work. The full implementation,
+            # using the NAME_FINISHERS set, is found in bintokenizer.py in
+            # ReynirPackage.
             name_finisher = True
             abbrev = abbrev[0:-1]
             if not abbrev.endswith("."):
@@ -175,8 +178,6 @@ class Abbreviations:
             for i in indices:
                 # Removing one dot at a time
                 wabbrev = abbrev[:i] + abbrev[i + 1 :]
-                # if finisher:
-                #    Abbreviations.FINISHERS.add(wabbrev)
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
                     (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
@@ -195,8 +196,6 @@ class Abbreviations:
                 # 2 and 3 removed
                 wabbrevs.append(abbrev[:i2] + abbrev[i2 + 1 : i3] + abbrev[i3 + 1 :])
                 for wabbrev in wabbrevs:
-                    # if finisher:
-                    #    Abbreviations.FINISHERS.add(wabbrev)
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                     Abbreviations.WRONGDICT[wabbrev].add(
                         (
@@ -211,16 +210,13 @@ class Abbreviations:
             # Removing all dots
             wabbrev = abbrev.replace(".", "")
             Abbreviations.WRONGSINGLES.add(wabbrev)
-            # if finisher:
-            #    Abbreviations.FINISHERS.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
                 (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
-        if not_finisher or name_finisher:
-            # Both name finishers and not-finishers are added to the NOT_FINISHERS set
+        if not_finisher:
             Abbreviations.NOT_FINISHERS.add(abbrev)
         if name_finisher:
             Abbreviations.NAME_FINISHERS.add(abbrev)

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # -*- encoding: utf-8 -*-
-
 """
 
     Tokenizer for Icelandic text
@@ -52,7 +51,7 @@ def read(*names, **kwargs):
 
 setup(
     name="tokenizer",
-    version="2.3.0",  # Also update src/tokenizer/__init__.py
+    version="2.3.1",  # Also update src/tokenizer/__init__.py
     license="MIT",
     description="A tokenizer for Icelandic text",
     long_description=u"{0}\n{1}".format(

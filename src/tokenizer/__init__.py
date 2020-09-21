@@ -42,4 +42,4 @@ from .tokenizer import (
 from .abbrev import Abbreviations, ConfigError
 
 __author__ = u"Miðeind ehf"
-__version__ = u"2.3.0"  # Also update setup.py
+__version__ = u"2.3.1"  # Also update setup.py
