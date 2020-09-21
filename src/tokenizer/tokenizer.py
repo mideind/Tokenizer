@@ -29,12 +29,12 @@
 
 
     The function tokenize() consumes a text string and
-    returns a generator of tokens. Each token is a tuple,
-    typically having the form (type, word, meaning),
-    where type is one of the constants specified in the
-    TOK class, word is the original word found in the
-    source text, and meaning contains auxiliary information
-    depending on the token type (such as the definition of
+    returns a generator of tokens. Each token is a
+    named tuple, having the form (kind, txt, val),
+    where kind is one of the constants specified in the
+    TOK class, txt is the original source text,
+    and val contains auxiliary information
+    depending on the token type (such as the meaning of
     an abbreviation, or the day, month and year for dates).
 
 """

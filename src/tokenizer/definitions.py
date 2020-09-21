@@ -44,6 +44,7 @@ if sys.version_info >= (3, 0):
     keys = lambda d: d.keys()
     make_str = lambda s: s
     unicode_chr = lambda c: chr(c)
+    unicode = str
     is_str = lambda s: isinstance(s, str)
     if sys.version_info >= (3, 5):
         # On Python >= 3.5, the typing module is available
@@ -474,7 +475,7 @@ SI_UNITS = {
     # Percentage and promille
     "%": ("%", 1.0),
     "‰": ("‰", 0.1),
-}  # type: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]]
+}  # type: Dict[unicode, Tuple[unicode, Union[float, Callable[[float], float]]]]
 
 DIRECTIONS = {
     "N": "Norður",
@@ -987,7 +988,7 @@ TOP_LEVEL_DOMAINS = frozenset(
 )
 
 # This is a small hack to satisfy the Mypy type checker
-_escape = lambda s: re.escape(s)  # type: Callable[[str], str]
+_escape = lambda s: re.escape(s)  # type: Callable[[unicode], unicode]
 
 # Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"

@@ -39,8 +39,7 @@ from __future__ import unicode_literals
 
 import sys
 
-if sys.version_info >= (3, 5):
-    from typing import Set, List, Dict, Any
+from typing import Set, List, Dict, Any
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
@@ -280,7 +279,7 @@ class Abbreviations:
             if len(Abbreviations.DICT):
                 # Already initialized
                 return
-            from pkg_resources import resource_stream
+            from pkg_resources import resource_stream  # type: ignore
 
             with resource_stream(__name__, "Abbrev.conf") as config:
                 for b in config:

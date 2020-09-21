@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 """
 
     Type annotation stubs for Tokenizer
