@@ -25,7 +25,7 @@ in the file ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/mideind/Greynir>`_), by the same authors.
-The `Greynir natural language parser for Icelandic <https://github.com/mideind/ReynirPackage>`_
+The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirPackage>`_
 uses Tokenizer on its input.
 
 Note that Tokenizer is licensed under the *MIT* license
@@ -791,7 +791,7 @@ Changelog
   that should not start a new sentence even if the following word is capitalized.
 * Version 2.0.5: Fixed bug where single uppercase letters were erroneously
   being recognized as abbreviations, causing prepositions such as 'Í' and 'Á'
-  at the beginning of sentences to be misunderstood in ReynirPackage.
+  at the beginning of sentences to be misunderstood in GreynirPackage.
 * Version 2.0.4: Added imperfect abbreviations (*amk.*, *osfrv.*); recognized
   *klukkan hálf tvö* as a ``TOK.TIME``.
 * Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains
