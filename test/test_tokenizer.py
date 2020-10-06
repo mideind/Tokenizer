@@ -1290,6 +1290,17 @@ def test_normalization():
     )
 
 
+def test_abbr_at_eos():
+    """ Test that 'Örn.' is not treated as an abbreviation here """
+    toklist = list(t.tokenize(
+        "„Mér leiddist ekki,“ segir Einar Örn. Hann telur þó að "
+        "sýningin líði fyrir það ástand sem hefur skapast "
+        "vegna heimsfaraldursins."
+    ))
+    assert len([tok for tok in toklist if tok.kind == TOK.S_BEGIN]) == 2
+    assert len([tok for tok in toklist if tok.kind == TOK.S_END]) == 2
+
+
 def test_time_token():
     toklist = list(
         t.tokenize(
