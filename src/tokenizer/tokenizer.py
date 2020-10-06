@@ -894,7 +894,7 @@ def parse_tokens(txt, **options):
                     yield TOK.Punctuation(dots, normalized="…")
                     # TODO LAGA Hér ætti að safna áfram.
                     w = wdots
-                # TODO STILLING Was at the end of a word or by itself, should be ",".
+                # TODO Was at the end of a word or by itself, should be ",".
                 # Won't correct automatically, check for M6
                 elif w == ",,":
                     yield TOK.Punctuation(",,", normalized=",")
@@ -1251,7 +1251,6 @@ def parse_particles(token_stream, **options):
                         # following person name as an indicator of an end-of-sentence
                         # !!! TODO: This does not work as intended because person names
                         # !!! have not been recognized at this phase in the token pipeline.
-                        # TODO JAÐAR Skoða þetta betur í jaðartilvikum.
                         test_set = TOK.TEXT_EXCL_PERSON
                     else:
                         test_set = TOK.TEXT
@@ -1274,10 +1273,14 @@ def parse_particles(token_stream, **options):
                             yield token
                             # Set token to the period
                             token = next_token
-                        elif abbrev in Abbreviations.NOT_FINISHERS:
+                        elif (
+                            abbrev in Abbreviations.NOT_FINISHERS
+                            or abbrev.lower() in Abbreviations.NOT_FINISHERS
+                        ):
                             # This is a potential abbreviation that we don't interpret
                             # as such if it's at the end of a sentence
-                            # ('dags.', 'próf.', 'mín.')
+                            # ('dags.', 'próf.', 'mín.'). Note that this also
+                            # applies for uppercase versions: 'Örn.', 'Próf.'
                             yield token
                             token = next_token
                         else:
@@ -1731,8 +1734,8 @@ def parse_phrases_1(token_stream):
                     # Corner case: If we have an ordinal followed by
                     # the abbreviation "gr.", we assume that the only
                     # interpretation of the abbreviation is "grein".
-                    next_token = TOK.Word("gr.",
-                        [("grein", 0, "kvk", "skst", "gr.", "-")]
+                    next_token = TOK.Word(
+                        "gr.", [("grein", 0, "kvk", "skst", "gr.", "-")]
                     )
 
                 month = month_for_token(next_token, True)
