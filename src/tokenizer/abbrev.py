@@ -99,6 +99,8 @@ class Abbreviations:
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
     WRONGDOTS = defaultdict(list)  # type: Dict[str, List[str]]
+    # Word forms that should never be interpreted as abbreviations
+    NOT_ABBREVIATIONS = set()  # type: Set[str]
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
@@ -269,6 +271,13 @@ class Abbreviations:
         Abbreviations.add(abbrev, m[1], gender, fl)
 
     @staticmethod
+    def _handle_not_abbreviations(s):
+        """ Handle not_abbreviations in the settings section """
+        if len(s) < 3 or s[0] != '"' or s[-1] != '"':
+            raise ConfigError("not_abbreviations should be enclosed in double quotes")
+        Abbreviations.NOT_ABBREVIATIONS.add(s[1:-1])
+
+    @staticmethod
     def initialize():
         """ Read the abbreviations config file """
         with Abbreviations._lock:
@@ -277,6 +286,7 @@ class Abbreviations:
                 return
             from pkg_resources import resource_stream  # type: ignore
 
+            section = None
             with resource_stream(__name__, "Abbrev.conf") as config:
                 for b in config:
                     # We get lines as binary strings
@@ -290,8 +300,20 @@ class Abbreviations:
                         # Blank line: ignore
                         continue
                     if s[0] == "[":
-                        # Section header (we are expecting [abbreviations])
-                        if s != "[abbreviations]":
+                        # Section header (we are expecting [abbreviations]/[not_abbreviations])
+                        if s not in {"[abbreviations]", "[not_abbreviations]"}:
                             raise ConfigError("Wrong section header")
+                        section = s
                         continue
-                    Abbreviations._handle_abbreviations(s)
+                    if section == "[abbreviations]":
+                        Abbreviations._handle_abbreviations(s)
+                    elif section == "[not_abbreviations]":
+                        Abbreviations._handle_not_abbreviations(s)
+                    else:
+                        raise ConfigError("Content outside section")
+
+            # Remove not_abbreviations from WRONGDICT
+            for abbr in Abbreviations.NOT_ABBREVIATIONS:
+                if abbr in Abbreviations.WRONGDICT:
+                    del Abbreviations.WRONGDICT[abbr]
+            Abbreviations.NOT_ABBREVIATIONS = set()

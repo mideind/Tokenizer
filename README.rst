@@ -774,6 +774,10 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.4.0: Fixed bug where certain well-known word forms (*fá*, *fær*, *mín*, *sá*...)
+  were being interpreted as (wrong) abbreviations. Also fixed bug where certain
+  abbreviations were being recognized even in uppercase and at the end
+  of a sentence, for instance *Örn.*
 * Version 2.3.1: Various bug fixes; fixed type annotations for Python 2.7;
   the token kind ``NUMBER WITH LETTER`` is now ``NUMWLETTER``.
 * Version 2.3.0: Added the ``replace_html_escapes`` option to
