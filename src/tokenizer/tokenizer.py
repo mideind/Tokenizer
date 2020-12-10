@@ -42,7 +42,8 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from collections import namedtuple
+from dataclasses import dataclass
+from typing import Any, List, Optional
 
 import re
 import datetime
@@ -54,13 +55,63 @@ from .abbrev import Abbreviations
 from .definitions import *
 
 
-# Named tuple for tokens
-Tok = namedtuple("Tok", ["kind", "txt", "val"])
+@dataclass() # TODO: Does this still make sense?
+class Tok:
+    # Type of token
+    kind: int
+    # Text of the token
+    txt: str
+    # Value of the token (e.g. if it is a date or currency)
+    val: Any
+
+    # The full original string of this token
+    _original: Optional[str] = None # If this is none then we're not tracking origins
+    # Each index in _origin_spans maps from 'txt' (which may have substitutions) to 'original'
+    # This is required to preserve 'original' correctly when splitting
+    _origin_spans: Optional[List[int]] = None
+
+
+    def split(self, pos: int):
+        """
+        Split this token into two at 'pos'.
+
+        The first token returned will have 'pos' characters and the second one will have the rest.
+        """
+        # TODO: What should we do with val?
+
+        if self._is_tracking_original():
+            l = Tok(self.kind, self.txt[:pos], self.val,
+                    self._original[:self._origin_spans[pos]], self._origin_spans[:pos])
+            r = Tok(self.kind, self.txt[pos:], self.val,
+                    self._original[self._origin_spans[pos]:],
+                    [x-self._origin_spans[pos] for x in self._origin_spans[pos:]])
+        else:
+            l = Tok(self.kind, self.txt[:pos], self.val)
+            r = Tok(self.kind, self.txt[pos:], self.val)
+
+        return l, r
+
+
+    def substitute(self, span, new):
+        """ Substitute a span with a single character 'new'. """
+        substitute_length = span[1]-span[0]
+
+        self.txt = self.txt[:span[0]] + new + self.txt[span[1]:]
+
+        if self._is_tracking_original():
+            # Remove origin entries that correspond to characters that are gone.
+            self._origin_spans = self._origin_spans[:span[0]+1] + self._origin_spans[span[1]:]
+
+
+    def _is_tracking_original(self):
+        return self._original is not None and self._origin_spans is not None
 
 
 class TOK:
 
     """ Token types """
+    # Raw minimally processed token
+    RAW = -1
 
     # Punctuation
     PUNCTUATION = 1
@@ -687,27 +738,40 @@ def html_escape(match):
     g = match.group(4)
     if g is not None:
         # HTML escape string: 'acute'
-        return HTML_ESCAPES[g]
+        return match.span(), HTML_ESCAPES[g]
     g = match.group(2)
     if g is not None:
         # Hex code: '#xABCD'
-        return unicode_chr(int(g[2:], base=16))
+        return match.span(), unicode_chr(int(g[2:], base=16))
     g = match.group(3)
     assert g is not None
     # Decimal code: '#8930'
-    return unicode_chr(int(g[1:]))
+    return match.span(), unicode_chr(int(g[1:]))
+
+
+def unicode_replacement(token):
+    """ Replace some composite glyphs with single code points """
+    total_reduction = 0
+    for m in UNICODE_REGEX.finditer(token.txt):
+        # TODO: what happens when new_letter is an empty string? (which _does_ happen with some nonprinting chars)
+        span, new_letter = m.span(), UNICODE_REPLACEMENTS[m.group(0)]
+        token.substitute((span[0]-total_reduction, span[1]-total_reduction), new_letter)
+        total_reduction += (span[1] - span[0] - 1)
+    return token
+
+
+def html_replacement(token):
+    """ Replace html escape sequences with their proper characters """
+    total_reduction = 0
+    for m in HTML_ESCAPE_REGEX.finditer(token.txt):
+        span, new_letter = html_escape(m)
+        token.substitute((span[0]-total_reduction, span[1]-total_reduction), new_letter)
+        total_reduction += (span[1] - span[0] - 1)
+    return token
 
 
 def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False):
     """ Generate rough tokens from a string """
-    if replace_composite_glyphs:
-        # Replace composite glyphs with single code points
-        txt = UNICODE_REGEX.sub(
-            lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
-        )
-    if replace_html_escapes:
-        # Replace HTML escapes: '&aacute;' -> 'á'
-        txt = HTML_ESCAPE_REGEX.sub(html_escape, txt)
     # If there are consecutive newlines in the string (i.e. two
     # newlines separated only by whitespace), we interpret
     # them as hard sentence boundaries
@@ -718,9 +782,24 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
         else:
             # Return a sentence splitting token in lieu of the
             # newline pair that separates the spans
-            yield ""
-        for w in span.split():
-            yield w
+            yield "", ""
+
+        while span != "":
+            res = ROUGH_TOKEN_REGEX.match(span)
+            token_original = res.groups()[0]
+            token_text = res.groups()[1]
+            starting_whitespace_length = len(token_text) - len(token_original)
+            tok = Tok(TOK.RAW, token_text, None, token_original, [n+starting_whitespace_length for n in range(len(token_text))])
+            if replace_composite_glyphs:
+                # Replace composite glyphs with single code points
+                tok = unicode_replacement(tok)
+
+            if replace_html_escapes:
+                # Replace HTML escapes: '&aacute;' -> 'á'
+                tok = html_replacement(tok)
+
+            yield tok
+            span = span[len(token_original):]
 
 
 def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
@@ -732,18 +811,18 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
         text_or_gen = [text_or_gen]
     # Iterate through text_or_gen, which is assumed to yield strings
     for txt in text_or_gen:
-        txt = txt.strip()
+        #txt = txt.strip()
         if not txt:
             # Empty line: signal this to the consumer of the generator
-            yield ""
+            yield "", ""
         else:
             # Convert to a Unicode string (if Python 2.7)
             txt = make_str(txt)
             # Yield the contained rough tokens
-            for w in gen_from_string(
+            for t in gen_from_string(
                 txt, replace_composite_glyphs, replace_html_escapes
             ):
-                yield w
+                yield t
 
 
 def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
@@ -795,7 +874,9 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for w in gen(txt, replace_composite_glyphs, replace_html_escapes):
+    for raw_tok in gen(txt, replace_composite_glyphs, replace_html_escapes):
+
+        w = raw_tok.txt
 
         # Handle each sequence w of non-whitespace characters
 

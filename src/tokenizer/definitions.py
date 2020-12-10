@@ -105,6 +105,9 @@ UNICODE_REGEX = re.compile(
     r"|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))), re.UNICODE
 )
 
+# Used for the first step of token splitting
+ROUGH_TOKEN_REGEX = re.compile(r"(\s*([^\s]*))", re.UNICODE)
+
 # Hyphens are normalized to '-'
 HYPHEN = "-"  # Normal hyphen
 EN_DASH = "\u2013"  # "–"

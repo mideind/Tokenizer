@@ -1355,6 +1355,7 @@ def test_html_escapes():
     ]
     assert toklist == correct
 
+# TODO: Add tests for html and unicode replacements that also test for correct origin tracking
 
 if __name__ == "__main__":
 
@@ -1366,3 +1367,4 @@ if __name__ == "__main__":
     test_overlap()
     test_split_sentences()
     test_normalization()
+    test_html_escapes()
