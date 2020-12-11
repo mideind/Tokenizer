@@ -80,11 +80,15 @@ class Tok:
         # TODO: What should we do with val?
 
         if self._is_tracking_original():
-            l = Tok(self.kind, self.txt[:pos], self.val,
-                    self._original[:self._origin_spans[pos]], self._origin_spans[:pos])
-            r = Tok(self.kind, self.txt[pos:], self.val,
-                    self._original[self._origin_spans[pos]:],
-                    [x-self._origin_spans[pos] for x in self._origin_spans[pos:]])
+            if pos >= len(self._origin_spans):
+                l = Tok(self.kind, self.txt, self.val, self._original, self._origin_spans)
+                r = Tok(self.kind, "", None, "", [])
+            else:
+                l = Tok(self.kind, self.txt[:pos], self.val,
+                        self._original[:self._origin_spans[pos]], self._origin_spans[:pos])
+                r = Tok(self.kind, self.txt[pos:], self.val,
+                        self._original[self._origin_spans[pos]:],
+                        [x-self._origin_spans[pos] for x in self._origin_spans[pos:]])
         else:
             l = Tok(self.kind, self.txt[:pos], self.val)
             r = Tok(self.kind, self.txt[pos:], self.val)
@@ -783,22 +787,20 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
             # newline pair that separates the spans
             yield TOK.Split_Sentence()
 
-        while span != "":
-            res = ROUGH_TOKEN_REGEX.match(span)
-            token_original = res.groups()[0]
-            token_text = res.groups()[1]
-            starting_whitespace_length = len(token_text) - len(token_original)
-            tok = Tok(TOK.RAW, token_text, None, token_original, [n+starting_whitespace_length for n in range(len(token_text))])
-            if replace_composite_glyphs:
-                # Replace composite glyphs with single code points
-                tok = unicode_replacement(tok)
+        tok_big = Tok(TOK.RAW, span, None, span, list(range(len(span))))
+        if replace_composite_glyphs:
+            # Replace composite glyphs with single code points
+            tok_big = unicode_replacement(tok_big)
+        if replace_html_escapes:
+            # Replace HTML escapes: '&aacute;' -> 'á'
+            tok_big = html_replacement(tok_big)
 
-            if replace_html_escapes:
-                # Replace HTML escapes: '&aacute;' -> 'á'
-                tok = html_replacement(tok)
+        while tok_big.txt != "":
+            res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
+            tok, tok_big = tok_big.split(res.span(0)[1])
 
+            tok.substitute(res.span(1), "")
             yield tok
-            span = span[len(token_original):]
 
 
 def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):

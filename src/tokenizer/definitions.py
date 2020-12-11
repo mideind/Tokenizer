@@ -106,7 +106,7 @@ UNICODE_REGEX = re.compile(
 )
 
 # Used for the first step of token splitting
-ROUGH_TOKEN_REGEX = re.compile(r"(\s*([^\s]*))", re.UNICODE)
+ROUGH_TOKEN_REGEX = re.compile(r"(\s*)([^\s]*)", re.UNICODE)
 
 # Hyphens are normalized to '-'
 HYPHEN = "-"  # Normal hyphen

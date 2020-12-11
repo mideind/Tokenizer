@@ -71,6 +71,29 @@ def test_split_with_whitespace_prefix():
     assert r == Tok(TOK.RAW, "at", None, "at", [0, 1])
 
 
+def test_split_at_ends():
+    t = Tok(TOK.RAW, "ab", None, "ab", [0, 1])
+    l, r = t.split(0)
+    assert l == Tok(TOK.RAW, "", None, "", [])
+    assert r == Tok(TOK.RAW, "ab", None, "ab", [0, 1])
+
+    t = Tok(TOK.RAW, "ab", None, "ab", [0, 1])
+    l, r = t.split(2)
+    assert l == Tok(TOK.RAW, "ab", None, "ab", [0, 1])
+    assert r == Tok(TOK.RAW, "", None, "", [])
+
+
+    t = Tok(TOK.RAW, "ab", None)
+    l, r = t.split(0)
+    assert l == Tok(TOK.RAW, "", None)
+    assert r == Tok(TOK.RAW, "ab", None)
+
+    t = Tok(TOK.RAW, "ab", None)
+    l, r = t.split(2)
+    assert l == Tok(TOK.RAW, "ab", None)
+    assert r == Tok(TOK.RAW, "", None)
+
+
 def test_substitute():
     t = Tok(TOK.RAW, "a&123b", None, "a&123b", [0, 1, 2, 3, 4, 5])
     t.substitute((1, 5), "x")
@@ -102,7 +125,6 @@ def test_substitute_bugfix_1():
     # bug was here
     t.substitute((6, 14), "á")
     assert t == Tok(kind=-1, txt='xyázúwáöb', val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
-
 
 
 def test_multiple_substitutions():
