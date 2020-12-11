@@ -93,14 +93,14 @@ class Tok:
 
 
     def substitute(self, span, new):
-        """ Substitute a span with a single character 'new'. """
+        """ Substitute a span with a single or empty character 'new'. """
         substitute_length = span[1]-span[0]
 
         self.txt = self.txt[:span[0]] + new + self.txt[span[1]:]
 
         if self._is_tracking_original():
             # Remove origin entries that correspond to characters that are gone.
-            self._origin_spans = self._origin_spans[:span[0]+1] + self._origin_spans[span[1]:]
+            self._origin_spans = self._origin_spans[:span[0]+len(new)] + self._origin_spans[span[1]:]
 
 
     def _is_tracking_original(self):
@@ -753,10 +753,9 @@ def unicode_replacement(token):
     """ Replace some composite glyphs with single code points """
     total_reduction = 0
     for m in UNICODE_REGEX.finditer(token.txt):
-        # TODO: what happens when new_letter is an empty string? (which _does_ happen with some nonprinting chars)
         span, new_letter = m.span(), UNICODE_REPLACEMENTS[m.group(0)]
         token.substitute((span[0]-total_reduction, span[1]-total_reduction), new_letter)
-        total_reduction += (span[1] - span[0] - 1)
+        total_reduction += (span[1] - span[0] - len(new_letter))
     return token
 
 
@@ -766,7 +765,7 @@ def html_replacement(token):
     for m in HTML_ESCAPE_REGEX.finditer(token.txt):
         span, new_letter = html_escape(m)
         token.substitute((span[0]-total_reduction, span[1]-total_reduction), new_letter)
-        total_reduction += (span[1] - span[0] - 1)
+        total_reduction += (span[1] - span[0] - len(new_letter))
     return token
 
 
@@ -782,7 +781,7 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
         else:
             # Return a sentence splitting token in lieu of the
             # newline pair that separates the spans
-            yield "", ""
+            yield TOK.Split_Sentence()
 
         while span != "":
             res = ROUGH_TOKEN_REGEX.match(span)
@@ -814,7 +813,7 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
         #txt = txt.strip()
         if not txt:
             # Empty line: signal this to the consumer of the generator
-            yield "", ""
+            yield TOK.Split_Sentence()
         else:
             # Convert to a Unicode string (if Python 2.7)
             txt = make_str(txt)
@@ -875,6 +874,9 @@ def parse_tokens(txt, **options):
     #    exhausted. At that point, we obtain the next token and start from 2).
 
     for raw_tok in gen(txt, replace_composite_glyphs, replace_html_escapes):
+
+        if raw_tok.kind == TOK.S_SPLIT:
+            yield raw_tok
 
         w = raw_tok.txt
 

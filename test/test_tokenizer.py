@@ -629,7 +629,8 @@ def test_sentences():
     def test_sentence(text, expected, **options):
 
         exp = expected.split()
-        s = t.tokenize(text, **options)
+        s = list(t.tokenize(text, **options))
+        assert len(s) == len(exp)
 
         for token, e in zip(s, exp):
             assert e in KIND
@@ -701,7 +702,7 @@ def test_sentences():
         "Þetta voru 300 1000 kílóa pokar, og 4000 500 kílóa pokar. "
         "Einnig 932 800 kílóa pokar, svo og 177 4455 millilítra skammtar.",
         "B W   W    N   N    W     W    P W  N    N   W     W    P E "
-        "B W    N   N   W     W    P W   W  N   N    W          W       P"
+        "B W    N   N   W     W    P W   W  N   N    W          W       P E"
     )
 
     test_sentence(

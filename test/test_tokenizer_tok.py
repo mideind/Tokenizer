@@ -133,6 +133,20 @@ def test_substitute_without_origin_tracking():
     assert t == Tok(TOK.RAW, "axb&456c", None)
     t.substitute((3, 7), "y")
     assert t == Tok(TOK.RAW, "axbyc", None)
+
+
+def test_substitute_that_removes():
+    t = Tok(TOK.RAW, "a&123b", None, "a&123b", [0, 1, 2, 3, 4, 5])
+    t.substitute((1, 5), "")
+    assert t == Tok(TOK.RAW, "ab", None, "a&123b", [0, 5])
+
+    t = Tok(TOK.RAW, "&123ab", None, "&123ab", [0, 1, 2, 3, 4, 5])
+    t.substitute((0, 4), "")
+    assert t == Tok(TOK.RAW, "ab", None, "&123ab", [4, 5])
+
+    t = Tok(TOK.RAW, "ab&123", None, "ab&123", [0, 1, 2, 3, 4, 5])
+    t.substitute((2, 6), "")
+    assert t == Tok(TOK.RAW, "ab", None, "ab&123", [0, 1])
     
 
 def test_split_without_origin_tracking():
@@ -189,6 +203,13 @@ def test_unicode_escapes_with_origin_tracking():
     tokens = list(tokenizer.gen_from_string(test_string, replace_composite_glyphs=True))
     assert len(tokens) == 1
     assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwöb", val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 10])
+
+
+def test_unicode_escapes_that_are_removed():
+    test_string = "a\xadb\xadc"
+    tokens = list(tokenizer.gen_from_string(test_string, replace_composite_glyphs=True))
+    assert len(tokens) == 1
+    assert tokens[0] == Tok(kind=TOK.RAW, txt="abc", val=None, _original=test_string, _origin_spans=[0, 2, 4])
 
 
 def test_html_unicode_mix():
