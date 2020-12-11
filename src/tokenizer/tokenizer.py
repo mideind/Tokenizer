@@ -799,6 +799,7 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
             res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
             tok, tok_big = tok_big.split(res.span(0)[1])
 
+            # Remove whitespace from the start of the token
             tok.substitute(res.span(1), "")
             yield tok
 
@@ -811,19 +812,30 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
         # The parameter is a single string: wrap it in an iterable
         text_or_gen = [text_or_gen]
     # Iterate through text_or_gen, which is assumed to yield strings
+    saved = None
     for txt in text_or_gen:
         #txt = txt.strip()
         if not txt:
             # Empty line: signal this to the consumer of the generator
             yield TOK.Split_Sentence()
         else:
+            if saved:
+                # There is a remainder from the last token.
+                txt = saved + txt
+                saved = None
             # Convert to a Unicode string (if Python 2.7)
             txt = make_str(txt)
             # Yield the contained rough tokens
             for t in gen_from_string(
                 txt, replace_composite_glyphs, replace_html_escapes
             ):
-                yield t
+                if t.txt == "" and t._original != "":
+                    # Prevent emitting an empty line signal when there's extra
+                    # whitespace at the end of a text segment. Splice it onto
+                    # the front of the next one.
+                    saved = t._original
+                else:
+                    yield t
 
 
 def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
@@ -876,9 +888,6 @@ def parse_tokens(txt, **options):
     #    exhausted. At that point, we obtain the next token and start from 2).
 
     for raw_tok in gen(txt, replace_composite_glyphs, replace_html_escapes):
-
-        if raw_tok.kind == TOK.S_SPLIT:
-            yield raw_tok
 
         w = raw_tok.txt
 
