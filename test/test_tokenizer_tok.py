@@ -94,6 +94,14 @@ def test_split_at_ends():
     assert r == Tok(TOK.RAW, "", None)
 
 
+def test_split_with_negative_index():
+    test_string = "abcde"
+    t = Tok(TOK.RAW, test_string, None, test_string, list(range(len(test_string))))
+    l, r = t.split(-2)
+    assert l == Tok(TOK.RAW, "abc", None, "abc", [0, 1, 2])
+    assert r == Tok(TOK.RAW, "de", None, "de", [0, 1])
+
+
 def test_substitute():
     t = Tok(TOK.RAW, "a&123b", None, "a&123b", [0, 1, 2, 3, 4, 5])
     t.substitute((1, 5), "x")
