@@ -107,6 +107,16 @@ class Tok:
             self._origin_spans = self._origin_spans[:span[0]+len(new)] + self._origin_spans[span[1]:]
 
 
+    def concatenate(self, other):
+        """ Return a new token that consists of self with other concatenated to the end. """
+        new_kind = self.kind # XXX: This is a guess. We'll probably change this just after?
+        new_txt = self.txt + other.txt
+        new_val = self.val # XXX: Probably wrong?
+        new_original = self._original + other._original
+        new_origin_spans = self._origin_spans + [i + len(self._original) for i in other._origin_spans]
+        return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
+
+
     def _is_tracking_original(self):
         return self._original is not None and self._origin_spans is not None
 
@@ -289,8 +299,8 @@ class TOK:
 
     @staticmethod
     def Year(t, n):
-        tok.kind = TOK.YEAR
-        tok.val = n
+        t.kind = TOK.YEAR
+        t.val = n
         return t
 
     @staticmethod
@@ -1400,12 +1410,12 @@ def parse_particles(token_stream, **options):
             if token.txt in CURRENCY_SYMBOLS:
                 for symbol, currabbr in items(CURRENCY_SYMBOLS):
                     if (
-                        token.kind == TOK.PUNCTUATION
+                        token.kind == TOK.PUNCTUATION # XXX: this should probably be outside the loop
                         and token.txt == symbol
-                        and next_token.kind == TOK.NUMBER
+                        and next_token.kind == TOK.NUMBER # XXX: this also
                     ):
                         token = TOK.Amount(
-                            token.txt + next_token.txt, currabbr, next_token.val[0]
+                            token.concatenate(next_token), currabbr, next_token.val[0]
                         )
                         next_token = next(token_stream)
                         break
@@ -1422,7 +1432,7 @@ def parse_particles(token_stream, **options):
                     else:
                         # This is something like 'Ég fæddist 25.9. í Svarfaðardal.'
                         y, m, d = token.val
-                        token = TOK.Daterel(token.txt + ".", y, m, d)
+                        token = TOK.Daterel(token.concatenate(next_token), y, m, d)
                     next_token = next_next_token
 
             # Coalesce abbreviations ending with a period into a single
@@ -1465,7 +1475,7 @@ def parse_particles(token_stream, **options):
                             # seems to be starting just after it.
                             # Yield the abbreviation without a trailing dot,
                             # and then an 'extra' period token to end the current sentence.
-                            token = TOK.Word(token.txt, lookup(abbrev))
+                            token = TOK.Word(token, lookup(abbrev))
                             yield token
                             # Set token to the period
                             token = next_token
@@ -1481,11 +1491,11 @@ def parse_particles(token_stream, **options):
                             token = next_token
                         else:
                             # Substitute the abbreviation and eat the period
-                            token = TOK.Word(abbrev, lookup(abbrev))
+                            token = TOK.Word(token.concatenate(next_token), lookup(abbrev))
                     else:
                         # 'Regular' abbreviation in the middle of a sentence:
                         # Eat the period and yield the abbreviation as a single token
-                        token = TOK.Word(abbrev, lookup(abbrev))
+                        token = TOK.Word(token.concatenate(next_token), lookup(abbrev))
 
                     next_token = follow_token
 
@@ -1493,18 +1503,17 @@ def parse_particles(token_stream, **options):
             if next_token.kind == TOK.TIME or next_token.kind == TOK.NUMBER:
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     # Match: coalesce and step to next token
-                    txt = token.txt
                     if next_token.kind == TOK.NUMBER:
                         # next_token.txt may be a real number, i.e. 13,40,
                         # which may have been converted from 13.40
                         # If we now have hh.mm, parse it as such
                         a = "{0:.2f}".format(next_token.val[0]).split(".")
                         h, m = int(a[0]), int(a[1])
-                        token = TOK.Time(txt + " " + next_token.txt, h, m, 0)
+                        token = TOK.Time(token.concatenate(next_token), h, m, 0) # XXX: Insert artificial space?
                     else:
                         # next_token.kind is TOK.TIME
                         token = TOK.Time(
-                            txt + " " + next_token.txt,
+                            token.concatenate(next_token), # XXX: Insert artifical space?
                             next_token.val[0],
                             next_token.val[1],
                             next_token.val[2],
@@ -1516,10 +1525,9 @@ def parse_particles(token_stream, **options):
                 next_token.kind == TOK.WORD and next_token.txt.lower() in CLOCK_NUMBERS
             ):
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
-                    txt = token.txt
                     # Match: coalesce and step to next token
                     token = TOK.Time(
-                        txt + " " + next_token.txt,
+                        token.concatenate(next_token), # XXX: Insert artifical space?
                         *CLOCK_NUMBERS[next_token.txt.lower()]
                     )
                     next_token = next(token_stream)
@@ -1531,8 +1539,10 @@ def parse_particles(token_stream, **options):
                     time_txt = time_token.txt.lower() if time_token.txt else ""
                     if time_txt in CLOCK_NUMBERS and not time_txt.startswith("hálf"):
                         # Match
+                        temp_tok = token.concatenate(next_token) # XXX: Insert artifical space?
+                        temp_tok = temp_tok.concatenate(time_token)
                         token = TOK.Time(
-                            token.txt + " " + next_token.txt + " " + time_token.txt,
+                            temp_tok,
                             *CLOCK_NUMBERS["hálf" + time_txt]
                         )
                         next_token = next(token_stream)
@@ -1545,14 +1555,14 @@ def parse_particles(token_stream, **options):
             # Words like 'hálftólf' are only used in temporal expressions
             # so can stand alone
             if token.txt in CLOCK_HALF:
-                token = TOK.Time(token.txt, *CLOCK_NUMBERS[token.txt])
+                token = TOK.Time(token, *CLOCK_NUMBERS[token.txt])
 
             # Coalesce 'árið' + [year|number] into year
             if (token.kind == TOK.WORD and token.txt.lower() in YEAR_WORD) and (
                 next_token.kind == TOK.YEAR or next_token.kind == TOK.NUMBER
             ):
                 token = TOK.Year(
-                    token.txt + " " + next_token.txt,
+                    token.concatenate(next_token), # XXX: Insert artifical space?
                     next_token.val
                     if next_token.kind == TOK.YEAR
                     else next_token.val[0],
@@ -1567,9 +1577,8 @@ def parse_particles(token_stream, **options):
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                w = token.txt + " " + next_token.txt
                 telno = token.txt + "-" + next_token.txt
-                token = TOK.Telno(w, telno)
+                token = TOK.Telno(token.concatenate(next_token), telno) # XXX: Insert artifical space?
                 next_token = next(token_stream)
 
             # Coalesce percentages or promilles into a single token
@@ -1580,7 +1589,7 @@ def parse_particles(token_stream, **options):
                     sign = next_token.txt
                     # Store promille as one-tenth of a percentage
                     factor = 1.0 if sign == "%" else 0.1
-                    token = TOK.Percent(token.txt + " " + sign, token.val[0] * factor)
+                    token = TOK.Percent(token.concatenate(next_token), token.val[0] * factor)
                     next_token = next(token_stream)
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
@@ -1625,7 +1634,7 @@ def parse_particles(token_stream, **options):
                             if token.kind == TOK.NUMBER
                             else roman_to_int(token.txt)
                         )
-                        token = TOK.Ordinal(token.txt + ".", num)
+                        token = TOK.Ordinal(token.concatenate(next_token), num)
                         # Continue with the following word
                         next_token = follow_token
 
@@ -1644,10 +1653,10 @@ def parse_particles(token_stream, **options):
                     # Simple scaling factor
                     value *= factor
                 if unit in ("%", "‰"):
-                    token = TOK.Percent(token.txt + " " + next_token.txt, value)
+                    token = TOK.Percent(token.concatenate(next_token), value) # XXX: Insert artifical space?
                 else:
                     token = TOK.Measurement(
-                        token.txt + " " + next_token.txt, unit, value
+                        token.concatenate(next_token), unit, value # XXX: Insert artifical space?
                     )
                 next_token = next(token_stream)
 
@@ -1661,7 +1670,9 @@ def parse_particles(token_stream, **options):
                     next_token = next(token_stream)
                     if next_token.txt == "klst":
                         unit = token.txt + "/" + next_token.txt
-                        token = TOK.Measurement(unit, unit, value)
+                        temp_tok = token.concatenate(slashtok)
+                        temp_tok = temp_tok.concatenate(next_token)
+                        token = TOK.Measurement(temp_tok, unit, value)
                         # Eat extra unit
                         next_token = next(token_stream)
                     else:
@@ -1684,13 +1695,14 @@ def parse_particles(token_stream, **options):
 
                 if convert_measurements:
                     token = TOK.Measurement(
-                        token.txt[:-1] + " " + new_unit,  # 200 °C
+                        # XXX: This is not currently well supported for origin tracking.
+                        Tok(TOK.RAW, token.txt[:-1] + " " + new_unit, None),  # 200 °C
                         unit,  # K
                         val,  # 200 converted to Kelvin
                     )
                 else:
                     token = TOK.Measurement(
-                        token.txt + " " + next_token.txt,  # 200° C
+                        token.concatenate(next_token),  # 200° C # XXX: Insert artifical space?
                         unit,  # K
                         val,  # 200 converted to Kelvin
                     )
@@ -1721,7 +1733,7 @@ def parse_particles(token_stream, **options):
                 else:
                     unit, value = token.val
                     # Add the period to the token text
-                    token = TOK.Measurement(token.txt + ".", unit, value)
+                    token = TOK.Measurement(token.concatenate(next_token), unit, value)
 
             # Cases such as USD. 44
             if (
@@ -1736,7 +1748,7 @@ def parse_particles(token_stream, **options):
                     yield token
                     token = puncttoken
                 else:
-                    token = TOK.Currency(token.txt + ".", token.txt)
+                    token = TOK.Currency(token.concatenate(next_token), token.txt)
 
             # Cases such as 19 $, 199.99 $
             if (
@@ -1745,7 +1757,7 @@ def parse_particles(token_stream, **options):
                 and next_token.txt in CURRENCY_SYMBOLS
             ):
                 token = TOK.Amount(
-                    token.txt + " " + next_token.txt,
+                    token.concatenate(next_token), # XXX: Insert artifical space?
                     CURRENCY_SYMBOLS[next_token.txt],
                     token.val[0],
                 )
@@ -1756,7 +1768,7 @@ def parse_particles(token_stream, **options):
             if token.kind == TOK.WORD and token.val is None:
                 if Abbreviations.has_meaning(token.txt):
                     # Add a meaning to the token
-                    token = TOK.Word(token.txt, Abbreviations.get_meaning(token.txt))
+                    token = TOK.Word(token, Abbreviations.get_meaning(token.txt))
 
             # Yield the current token and advance to the lookahead
             yield token

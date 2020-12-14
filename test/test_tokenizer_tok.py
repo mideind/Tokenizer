@@ -248,3 +248,21 @@ def test_html_unicode_mix():
     tokens = list(tokenizer.gen_from_string(test_string, replace_composite_glyphs=True, replace_html_escapes=True))
     assert len(tokens) == 1
     assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwáöb", val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
+
+
+def test_tok_concatenation():
+    str1 = "asdf"
+    tok1 = Tok(TOK.RAW, str1, None, str1, list(range(len(str1))))
+    str2 = "jklæ"
+    tok2 = Tok(TOK.RAW, str2, None, str2, list(range(len(str1))))
+    assert tok1.concatenate(tok2) == Tok(TOK.RAW, str1+str2, None, str1+str2, list(range(len(str1+str2))))
+
+    str1 = "abc"
+    or1 = "&123&456&789"
+    str2 = "xyz"
+    or2 = "&xx&yy&zz"
+    tok1 = Tok(TOK.RAW, str1, None, or1, [0, 4, 8])
+    tok2 = Tok(TOK.RAW, str2, None, or2, [0, 2, 4])
+    assert tok1.concatenate(tok2) == Tok(TOK.RAW, str1+str2, None, or1+or2, [0, 4, 8, 12, 14, 16])
+
+
