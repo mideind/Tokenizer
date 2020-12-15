@@ -102,6 +102,21 @@ def test_split_with_negative_index():
     assert r == Tok(TOK.RAW, "de", None, "de", [0, 1])
 
 
+"""
+TODO: Haven't decided what's the correct behavior.
+def test_split_on_empty_txt():
+    t = Tok(TOK.RAW, "", None, "this got removed", [])
+
+    l, r = t.split(0)
+    assert l == Tok(TOK.RAW, "", None, "", [])
+    assert r == Tok(TOK.RAW, "", None, "this got removed", [])
+
+    l, r = t.split(1)
+    assert l == Tok(TOK.RAW, "", None, "this got removed", [])
+    assert r == Tok(TOK.RAW, "", None, "", [])
+"""
+
+
 def test_substitute():
     t = Tok(TOK.RAW, "a&123b", None, "a&123b", [0, 1, 2, 3, 4, 5])
     t.substitute((1, 5), "x")
