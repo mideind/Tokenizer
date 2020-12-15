@@ -290,8 +290,10 @@ class TOK:
         return t
 
     @staticmethod
-    def Timestamp(w, y, mo, d, h, m, s):
-        return Tok(TOK.TIMESTAMP, w, (y, mo, d, h, m, s))
+    def Timestamp(t, y, mo, d, h, m, s):
+        t.kind = TOK.TIMESTAMP
+        t.val = (y, mo, d, h, m, s)
+        return t
 
     @staticmethod
     def Timestampabs(t, y, mo, d, h, m, s):
@@ -340,10 +342,12 @@ class TOK:
         return t
 
     @staticmethod
-    def Currency(w, iso, cases=None, genders=None):
+    def Currency(t, iso, cases=None, genders=None):
         # The cases parameter is a list of possible cases for this currency name
         # (if it was originally stated in words, i.e. not abbreviated)
-        return Tok(TOK.CURRENCY, w, (iso, cases, genders))
+        t.kind = TOK.CURRENCY
+        t.val = (iso, cases, genders)
+        return t
 
     @staticmethod
     def Amount(t, iso, n, cases=None, genders=None):
@@ -998,7 +1002,7 @@ def parse_tokens(txt, **options):
                 # Note that we can't immediately parse a non-signed number
                 # here since kludges such as '3ja' and domain names such as '4chan.com'
                 # need to be handled separately below
-                t, rt = parse_digits(rt.txt, convert_numbers)
+                t, rt = parse_digits(rt, convert_numbers)
                 yield t
                 if not rt.txt:
                     continue
@@ -1081,7 +1085,7 @@ def parse_tokens(txt, **options):
                     # Treat ellipsis as one piece of punctuation
                     numdots = 0
                     for c in rt.txt:
-                        if c == '.':
+                        if c == '…':
                             numdots += 1
                         else:
                             break
