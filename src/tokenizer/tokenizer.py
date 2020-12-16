@@ -1747,7 +1747,7 @@ def parse_particles(token_stream, **options):
                 else:
                     unit, value = token.val
                     # Add the period to the token text
-                    token = TOK.Measurement(token.concatenate(next_token), unit, value)
+                    token = TOK.Measurement(token.concatenate(puncttoken), unit, value)
 
             # Cases such as USD. 44
             if (
@@ -1762,7 +1762,7 @@ def parse_particles(token_stream, **options):
                     yield token
                     token = puncttoken
                 else:
-                    token = TOK.Currency(token.concatenate(next_token), token.txt)
+                    token = TOK.Currency(token.concatenate(puncttoken), token.txt)
 
             # Cases such as 19 $, 199.99 $
             if (
