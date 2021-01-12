@@ -30,19 +30,30 @@
 """
 
 from typing import (
-    Any, Optional, Union, Set, List, Dict, Tuple, Iterable, Iterator
+    Any, Optional, Union, Set, List, Dict, Tuple, Iterable, Iterator, NamedTuple
 )
 
-from collections import namedtuple
-
-Tok = namedtuple('Tok', ['kind', 'txt', 'val'])
+class Tok(NamedTuple):
+    kind: int
+    txt: str
+    val: Any
 
 Meaning = Tuple[str, int, str, str, str, str]
 MeaningList = List[Meaning]
-PersonNameList = List[Tuple[str, str, str]]
+PersonNameList = Sequence[Tuple[str, Optional[str], Optional[str]]]
 Options = Union[bool, int, str]
 SentenceTuple = Tuple[int, List[Tok]]
 StringIterable = Union[str, Iterable[str]]
+
+TP_LEFT: int = ...
+TP_CENTER: int = ...
+TP_RIGHT: int = ...
+TP_NONE: int = ...
+TP_WORD: int = ...
+
+KLUDGY_ORDINALS_PASS_THROUGH: int = ...
+KLUDGY_ORDINALS_MODIFY: int = ...
+KLUDGY_ORDINALS_TRANSLATE: int = ...
 
 class TOK:
 
@@ -186,3 +197,14 @@ RE_SPLIT: str
 
 def correct_spaces(s: str) -> str: ...
 def detokenize(tokens: Iterable[Tok], normalize: bool = ...) -> str: ...
+
+class Abbreviations:
+
+    DICT: Dict[str, Any] = ...
+    NAME_FINISHERS: Set[str] = ...
+
+    @staticmethod
+    def initialize() -> None: ...
+
+    @staticmethod
+    def has_abbreviation(meaning: str) -> bool: ...
