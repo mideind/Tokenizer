@@ -2,9 +2,8 @@
 Tokenizer: A tokenizer for Icelandic text
 -----------------------------------------
 
-.. image:: https://travis-ci.com/mideind/Tokenizer.svg?branch=master
-   :target: https://travis-ci.com/mideind/Tokenizer
-
+.. image:: https://github.com/mideind/Tokenizer/workflows/Python%20package/badge.svg
+   :target: https://github.com/mideind/Tokenizer
 
 Overview
 --------
