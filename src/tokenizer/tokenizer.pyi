@@ -49,7 +49,7 @@ class Tok(NamedTuple):
     val: Any
 
 Meaning = Tuple[str, int, str, str, str, str]
-MeaningList = List[Meaning]
+MeaningList = Sequence[Meaning]
 PersonNameList = Sequence[Tuple[str, Optional[str], Optional[str]]]
 Options = Union[bool, int, str]
 SentenceTuple = Tuple[int, List[Tok]]
