@@ -712,7 +712,7 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
     # newlines separated only by whitespace), we interpret
     # them as hard sentence boundaries
     first = True
-    for span in re.split(r"\n\s*\n", txt):
+    for span in re.split(r"\n", txt):
         if first:
             first = False
         else:
