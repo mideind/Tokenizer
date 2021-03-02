@@ -87,6 +87,13 @@ group.add_argument(
 )
 group.add_argument("--normalize", help="Normalize punctuation", action="store_true")
 
+parser.add_argument(
+    "--ospl",
+    "--onesentperline",
+    action="store_true",
+    help="Input only contains one sentence per line",
+)
+
 
 def main():
     """ Main function, called when the tokenize command is invoked """
@@ -149,6 +156,9 @@ def main():
         to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
     else:
         to_text = lambda t: t.txt
+
+    if args.ospl:
+        options["onesentperline"] = True
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))

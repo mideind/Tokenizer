@@ -748,7 +748,7 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, 
             txt = make_str(txt)
             # Yield the contained rough tokens
             for w in gen_from_string(
-                txt, replace_composite_glyphs, replace_html_escapes
+                txt, replace_composite_glyphs, replace_html_escapes, onesentperline
             ):
                 yield w
 
@@ -2131,7 +2131,6 @@ def tokenize(text_or_gen, **options):
     Abbreviations.initialize()
     with_annotation = options.pop("with_annotation", True)
     coalesce_percent = options.pop("coalesce_percent", False)
-    #onesentperline = options.pop("onesentperline", True)
 
     token_stream = parse_tokens(text_or_gen, **options)
     token_stream = parse_particles(token_stream, **options)
