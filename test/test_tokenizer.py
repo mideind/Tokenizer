@@ -540,6 +540,11 @@ def test_single_tokens():
         ("12,3 prósentustig", TOK.PERCENT),
     ]
 
+    TEST_CASES_CONVERT_MEASUREMENTS = [
+        ("200° C", [Tok(TOK.MEASUREMENT, "200 °C", ('K', 473.15))]),
+        ("80° F", [Tok(TOK.MEASUREMENT, "80 °F", ('K', 299.8166666666667))]),
+    ]
+
     def run_test(test_cases, **options):
         for test_case in test_cases:
             if len(test_case) == 3:
@@ -594,7 +599,10 @@ def test_single_tokens():
         TEST_CASES_COALESCE_PERCENT,
         coalesce_percent=True
     )
-
+    run_test(
+        TEST_CASES_CONVERT_MEASUREMENTS,
+        convert_measurements=True
+    )
 
 def test_sentences():
 
@@ -1280,6 +1288,8 @@ def test_split_sentences():
         "Vigur kom með fullfermi að landi",
     ]
 
+    # Test onesentperline
+
 
 def test_normalization():
     toklist = list(t.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
@@ -1352,6 +1362,51 @@ def test_html_escapes():
         Tok(kind=6, txt='afsakaði', val=None),
         Tok(kind=6, txt='mig', val=None),
         Tok(kind=11002, txt=None, val=None)
+    ]
+    assert toklist == correct
+
+
+def test_onesentperline():
+    toklist = list(
+        t.tokenize(
+            "Hér er hestur\nmaður beit hund",
+            onesentperline=True
+        )
+
+    )
+
+    correct = [
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='Hér', val=None),
+        Tok(kind=6, txt='er', val=None),
+        Tok(kind=6, txt='hestur', val=None),
+        Tok(kind=11002, txt=None, val=None),
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='maður', val=None),
+        Tok(kind=6, txt='beit', val=None),
+        Tok(kind=6, txt='hund', val=None),
+        Tok(kind=11002, txt=None, val=None),
+    ]
+    assert toklist == correct
+
+    # Test without option
+    toklist = list(
+        t.tokenize(
+            "Hér er hestur\nmaður beit hund",
+            onesentperline=False
+        )
+
+    )
+
+    correct = [
+        Tok(kind=11001, txt=None, val=(0, None)),
+        Tok(kind=6, txt='Hér', val=None),
+        Tok(kind=6, txt='er', val=None),
+        Tok(kind=6, txt='hestur', val=None),
+        Tok(kind=6, txt='maður', val=None),
+        Tok(kind=6, txt='beit', val=None),
+        Tok(kind=6, txt='hund', val=None),
+        Tok(kind=11002, txt=None, val=None),
     ]
     assert toklist == correct
 

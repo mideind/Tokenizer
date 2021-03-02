@@ -712,11 +712,12 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
     # newlines separated only by whitespace), we interpret
     # them as hard sentence boundaries
     first = True
-    splitter = re.split(r"\n\s*\n", txt)
     if onesentperline:
         # We know there's a single sentence per line
         # Only split on newline
         splitter = re.split(r"\n", txt)
+    else:
+        splitter = re.split(r"\n\s*\n", txt)
 
     for span in splitter:
         if first:
@@ -726,9 +727,8 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
             # newline pair that separates the spans
             yield ""
         for w in span.split():
-            yield w
-        if onesentperline:
-            yield " "
+            if w:
+                yield w
 
 def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=False):
     """ Generate rough tokens from a string or a generator """
@@ -809,10 +809,6 @@ def parse_tokens(txt, **options):
 
         if not w:
             # An empty string signals an empty line, which splits sentences
-            yield TOK.Split_Sentence()
-            continue
-        if w == " ":
-            # Sentence split information from option onesentperline
             yield TOK.Split_Sentence()
             continue
 
@@ -2035,7 +2031,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     )
                     next_token = next(token_stream)
                 else:
-                    # Check for [number] 'prósent/prósentustig/hundraðshluta'
+                    # Check for [number] 'prósent/prósentustig/hundraðshlutar'
                     if coalesce_percent:
                         percentage = match_stem_list(next_token, PERCENTAGES)
                     else:
