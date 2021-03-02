@@ -698,7 +698,7 @@ def html_escape(match):
     return unicode_chr(int(g[1:]))
 
 
-def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=True):
+def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=False):
     """ Generate rough tokens from a string """
     if replace_composite_glyphs:
         # Replace composite glyphs with single code points
@@ -730,7 +730,7 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
         if onesentperline:
             yield " "
 
-def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=True):
+def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=False):
     """ Generate rough tokens from a string or a generator """
     if text_or_gen is None:
         return
@@ -776,7 +776,7 @@ def parse_tokens(txt, **options):
     convert_numbers = options.get("convert_numbers", False)
     replace_composite_glyphs = options.get("replace_composite_glyphs", True)
     replace_html_escapes = options.get("replace_html_escapes", False)
-    onesentperline = options.get("onesentperline", True)
+    onesentperline = options.get("onesentperline", False)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
@@ -2131,6 +2131,7 @@ def tokenize(text_or_gen, **options):
     Abbreviations.initialize()
     with_annotation = options.pop("with_annotation", True)
     coalesce_percent = options.pop("coalesce_percent", False)
+    #onesentperline = options.pop("onesentperline", True)
 
     token_stream = parse_tokens(text_or_gen, **options)
     token_stream = parse_particles(token_stream, **options)
