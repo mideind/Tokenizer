@@ -87,63 +87,63 @@ group.add_argument(
 )
 
 parser.add_argument(
-    "--s",
+    "-s",
     "--one_sent_per_line",
     action="store_true",
     help="Input contains one sentence per line",
 )
 
 parser.add_argument(
-    "--m",
+    "-m",
     "--convert_measurements",
     action="store_true",
     help="Degree signal in temperature tokens normalized (200° C -> 200 °C)",
 )
 
 parser.add_argument(
-    "--a",
+    "-a",
     "--with_annotation",
     action="store_true",
-    help="Add annotation to tokens",
+    help="Add extra annotation to tokens, such as more complex handling of numbers, amounts and composite words",
 )
 
 parser.add_argument(
-    "--p",
+    "-p",
     "--coalesce_percent",
     action="store_true",
     help="Numbers combined into one token with percentage word forms (prósent/prósentustig/hundraðshlutar)",
 )
 
 parser.add_argument(
-    "--n",
+    "-n",
     "--normalize",
     action="store_true",
     help="Outputs normalized value of punctuation tokens instead of original text",
 )
 
 parser.add_argument(
-    "--g",
+    "-g",
     "--replace_composite_glyphs",
     action="store_true",
     help="Composite glyphs replaced with a single code point",
 )
 
 parser.add_argument(
-    "--e",
+    "-e",
     "--replace_html_escapes",
     action="store_true",
     help="Escape codes from HTML replaced",
 )
 
 parser.add_argument(
-    "--c",
+    "-c",
     "--convert_numbers",
     action="store_true",
     help="English-style decimal points and thousands separators in numbers changed to Icelandic style",
 )
 
 parser.add_argument(
-    "--k",
+    "-k",
     "--handle_kludgy_ordinals",
     type=int,
     default=0,
@@ -231,8 +231,8 @@ def main():
     if args.convert_numbers:
         options["convert_numbers"] = True
 
-    if args.onesentperline:
-        options["onesentperline"] = True
+    if args.one_sent_per_line:
+        options["one_sent_per_line"] = True
 
     if args.handle_kludgy_ordinals:
         options["handle_kludgy_ordinals"] = args.handle_kludgy_ordinals

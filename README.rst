@@ -107,36 +107,39 @@ on the command line:
 
 Other options can be specified on the command line:
 
-+-------------------+---------------------------------------------------+
-| | ``--n``         | Normalize punctuation, causing e.g. quotes to be  |
-|                   | output in Icelandic form and hyphens to be        |
-|                   | regularized. This option is only applicable to    |
-|                   | shallow tokenization.                             |
-+-------------------+---------------------------------------------------+
-| | ``--s``         | Input contains one sentence per line.             |
-+-------------------+---------------------------------------------------+
-| | ``--m``         | Degree signal in tokens denoting temperature      |
-|                   | normalized (200° C -> 200 °C)                     |
-+-------------------+---------------------------------------------------+
-| | ``--a``         | Additional annotation, usually handled by         |
-|                   | GreynirPackage, added to tokens.                  |
-+-------------------+---------------------------------------------------+
-| | ``--p``         | Numbers combined into one token with following    |
-|                   | token denoting percentage word forms              |
-|                   | (prósent, prósentustig, hundraðshlutar)           |
-+-------------------+---------------------------------------------------+
-| | ``--g``         | Composite glyphs replaced with a single code point|
-+-------------------+---------------------------------------------------+
-| | ``--e``         | HTML escape codes replaced                        |
-+-------------------+---------------------------------------------------+
-| | ``--c``         | English-style decimal points and thousands        |
-|                   | separators in numbers changed to Icelandic style  |
-+-------------------+---------------------------------------------------+
-| | ``--k``         | Kludgy ordinal handling defined.                  |
-|                   | 0: Returns the original mixed word form           |
-|                   | 1. Kludgy ordinal returned as pure word forms     |
-|                   | 2: Kludgy ordinals returned as pure numbers       |
-+-------------------+---------------------------------------------------+
++-----------------------------------+---------------------------------------------------+
+| | ``-n``                          | Normalize punctuation, causing e.g. quotes to be  |
+| | ``--normalize``                 | output in Icelandic form and hyphens to be        |
+|                                   | regularized. This option is only applicable to    |
+|                                   | shallow tokenization.                             |
++-----------------------------------+---------------------------------------------------+
+| | ``-s``                          | Input contains strictly one sentence per line.    |
+| | ``--one_sent_per_line``         |                                                   |
++-----------------------------------+---------------------------------------------------+
+| | ``-m``                          | Degree signal in tokens denoting temperature      |
+| | ``--convert_measurements``      | normalized (200° C -> 200 °C)                     |
++-----------------------------------+---------------------------------------------------+
+| | ``-a``                          | Additional annotation, usually handled by         |
+| | ``--with_annotation``           | GreynirPackage, added to tokens.                  |
++-----------------------------------+---------------------------------------------------+
+| | ``-p``                          | Numbers combined into one token with the          |
+| | ``--coalesce_percent``          | following token denoting percentage word forms    |
+|                                   | (prósent, prósentustig, hundraðshlutar)           |
++-----------------------------------+---------------------------------------------------+
+| | ``-g``                          | Composite glyphs replaced with a single           |
+| | ``--replace_composite_glyphs``  | code point, such as a ́' -> á                     |
++-----------------------------------+---------------------------------------------------+
+| | ``-e``                          | HTML escape codes replaced,                       |
+| | ``--replace_html_escapes``      | such as '&aacute;' -> 'á'                         |
++-----------------------------------+---------------------------------------------------+
+| | ``-c``                          | English-style decimal points and thousands        |
+| | ``--convert_numbers``           | separators in numbers changed to Icelandic style  |
++-----------------------------------+---------------------------------------------------+
+| | ``-k N``                        | Kludgy ordinal handling defined.                  |
+| | ``--handle_kludgy_ordinals N``  | 0: Returns the original mixed word form           |
+|                                   | 1. Kludgy ordinal returned as pure word forms     |
+|                                   | 2: Kludgy ordinals returned as pure numbers       |
++-----------------------------------+---------------------------------------------------+
 
 
 

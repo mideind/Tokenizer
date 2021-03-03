@@ -698,7 +698,7 @@ def html_escape(match):
     return unicode_chr(int(g[1:]))
 
 
-def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=False):
+def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False, one_sent_per_line=False):
     """ Generate rough tokens from a string """
     if replace_composite_glyphs:
         # Replace composite glyphs with single code points
@@ -712,7 +712,7 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
     # newlines separated only by whitespace), we interpret
     # them as hard sentence boundaries
     first = True
-    if onesentperline:
+    if one_sent_per_line:
         # We know there's a single sentence per line
         # Only split on newline
         splitter = re.split(r"\n", txt)
@@ -730,7 +730,7 @@ def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=Fal
             if w:
                 yield w
 
-def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, onesentperline=False):
+def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, one_sent_per_line=False):
     """ Generate rough tokens from a string or a generator """
     if text_or_gen is None:
         return
@@ -748,7 +748,7 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, 
             txt = make_str(txt)
             # Yield the contained rough tokens
             for w in gen_from_string(
-                txt, replace_composite_glyphs, replace_html_escapes, onesentperline
+                txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
             ):
                 yield w
 
@@ -776,7 +776,7 @@ def parse_tokens(txt, **options):
     convert_numbers = options.get("convert_numbers", False)
     replace_composite_glyphs = options.get("replace_composite_glyphs", True)
     replace_html_escapes = options.get("replace_html_escapes", False)
-    onesentperline = options.get("onesentperline", False)
+    one_sent_per_line = options.get("one_sent_per_line", False)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
@@ -803,7 +803,7 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for w in gen(txt, replace_composite_glyphs, replace_html_escapes, onesentperline):
+    for w in gen(txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line):
 
         # Handle each sequence w of non-whitespace characters
 
