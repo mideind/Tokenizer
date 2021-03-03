@@ -1366,11 +1366,11 @@ def test_html_escapes():
     assert toklist == correct
 
 
-def test_onesentperline():
+def test_one_sent_per_line():
     toklist = list(
         t.tokenize(
             "Hér er hestur\nmaður beit hund",
-            onesentperline=True
+            one_sent_per_line=True
         )
 
     )
@@ -1393,7 +1393,7 @@ def test_onesentperline():
     toklist = list(
         t.tokenize(
             "Hér er hestur\nmaður beit hund",
-            onesentperline=False
+            one_sent_per_line=False
         )
 
     )
