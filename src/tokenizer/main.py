@@ -101,13 +101,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-a",
-    "--with_annotation",
-    action="store_true",
-    help="Add extra annotation to tokens, such as more complex handling of numbers, amounts and composite words",
-)
-
-parser.add_argument(
     "-p",
     "--coalesce_percent",
     action="store_true",
@@ -123,9 +116,9 @@ parser.add_argument(
 
 parser.add_argument(
     "-g",
-    "--replace_composite_glyphs",
+    "--keep_composite_glyphs",
     action="store_true",
-    help="Composite glyphs replaced with a single code point",
+    help="Composite glyphs not replaced with a single code point",
 )
 
 parser.add_argument(
@@ -216,14 +209,11 @@ def main():
     if args.convert_measurements:
         options["convert_measurements"] = True
 
-    if args.with_annotation:
-        options["with_annotation"] = True
-
     if args.coalesce_percent:
         options["coalesce_percent"] = True
 
-    if args.replace_composite_glyphs:
-        options["replace_composite_glyphs"] = True
+    if args.keep_composite_glyphs:
+        options["replace_composite_glyphs"] = False  # True is the default ok tokenizer.py
 
     if args.replace_html_escapes:
         options["replace_html_escapes"] = True
