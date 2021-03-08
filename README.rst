@@ -104,11 +104,44 @@ on the command line:
 | | ``--json``      | Deep tokenization. Output token objects in JSON   |
 |                   | format, one per line.                             |
 +-------------------+---------------------------------------------------+
-| | ``--normalize`` | Normalize punctuation, causing e.g. quotes to be  |
-|                   | output in Icelandic form and hyphens to be        |
-|                   | regularized. This option is only applicable to    |
-|                   | shallow tokenization.                             |
-+-------------------+---------------------------------------------------+
+
+Other options can be specified on the command line:
+
++-----------------------------------+---------------------------------------------------+
+| | ``-n``                          | Normalize punctuation, causing e.g. quotes to be  |
+| | ``--normalize``                 | output in Icelandic form and hyphens to be        |
+|                                   | regularized. This option is only applicable to    |
+|                                   | shallow tokenization.                             |
++-----------------------------------+---------------------------------------------------+
+| | ``-s``                          | Input contains strictly one sentence per line.    |
+| | ``--one_sent_per_line``         |                                                   |
++-----------------------------------+---------------------------------------------------+
+| | ``-m``                          | Degree signal in tokens denoting temperature      |
+| | ``--convert_measurements``      | normalized (200° C -> 200 °C)                     |
++-----------------------------------+---------------------------------------------------+
+| | ``-a``                          | Additional annotation, usually handled by         |
+| | ``--with_annotation``           | GreynirPackage, added to tokens.                  |
++-----------------------------------+---------------------------------------------------+
+| | ``-p``                          | Numbers combined into one token with the          |
+| | ``--coalesce_percent``          | following token denoting percentage word forms    |
+|                                   | (prósent, prósentustig, hundraðshlutar)           |
++-----------------------------------+---------------------------------------------------+
+| | ``-g``                          | Composite glyphs not replaced with a single       |
+| | ``--keep_composite_glyphs``     | code point, so a ́' is not replaced with á        |
++-----------------------------------+---------------------------------------------------+
+| | ``-e``                          | HTML escape codes replaced,                       |
+| | ``--replace_html_escapes``      | such as '&aacute;' -> 'á'                         |
++-----------------------------------+---------------------------------------------------+
+| | ``-c``                          | English-style decimal points and thousands        |
+| | ``--convert_numbers``           | separators in numbers changed to Icelandic style  |
++-----------------------------------+---------------------------------------------------+
+| | ``-k N``                        | Kludgy ordinal handling defined.                  |
+| | ``--handle_kludgy_ordinals N``  | 0: Returns the original mixed word form           |
+|                                   | 1. Kludgy ordinal returned as pure word forms     |
+|                                   | 2: Kludgy ordinals returned as pure numbers       |
++-----------------------------------+---------------------------------------------------+
+
+
 
 Type ``tokenize -h`` or ``tokenize --help`` to get a short help message.
 
