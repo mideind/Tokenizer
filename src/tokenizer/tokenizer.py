@@ -42,7 +42,6 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
 
-from dataclasses import dataclass
 from typing import Any, List, Optional
 
 import re
@@ -55,20 +54,32 @@ from .abbrev import Abbreviations
 from .definitions import *
 
 
-@dataclass() # TODO: Does this still make sense?
 class Tok:
-    # Type of token
-    kind: int
-    # Text of the token
-    txt: str
-    # Value of the token (e.g. if it is a date or currency)
-    val: Any
 
-    # The full original string of this token
-    _original: Optional[str] = None # If this is none then we're not tracking origins
-    # Each index in _origin_spans maps from 'txt' (which may have substitutions) to 'original'
-    # This is required to preserve 'original' correctly when splitting
-    _origin_spans: Optional[List[int]] = None
+    def __init__(self, kind: int, txt: str, val: Any, original: Optional[str] = None, origin_spans: Optional[List[int]] = None):
+        # Type of token
+        self.kind = kind
+        # Text of the token
+        self.txt = txt
+        # Value of the token (e.g. if it is a date or currency)
+        self.val = val
+        # The full original string of this token
+        # If this is none then we're not tracking origins
+        self.original = original
+        # Each index in origin_spans maps from 'txt' (which may have substitutions) to 'original'
+        # This is required to preserve 'original' correctly when splitting
+        self.origin_spans = origin_spans
+
+
+    def __eq__(self, other: Any):
+        if not isinstance(other, Tok):
+            return False
+
+        return self.kind == other.kind \
+            and self.txt == other.txt \
+            and self.val == other.val \
+            and self.original == other.original \
+            and self.origin_spans == other.origin_spans
 
 
     def split(self, pos: int):
@@ -78,19 +89,19 @@ class Tok:
         The first token returned will have 'pos' characters and the second one will have the rest.
 
         """
-        # TODO: What happens if you split a token that has txt=="" and _original!=""?
+        # TODO: What happens if you split a token that has txt=="" and original!=""?
         # TODO: What should we do with val?
 
         if self._is_tracking_original():
-            if pos >= len(self._origin_spans):
-                l = Tok(self.kind, self.txt, self.val, self._original, self._origin_spans)
+            if pos >= len(self.origin_spans):
+                l = Tok(self.kind, self.txt, self.val, self.original, self.origin_spans)
                 r = Tok(self.kind, "", None, "", [])
             else:
                 l = Tok(self.kind, self.txt[:pos], self.val,
-                        self._original[:self._origin_spans[pos]], self._origin_spans[:pos])
+                        self.original[:self.origin_spans[pos]], self.origin_spans[:pos])
                 r = Tok(self.kind, self.txt[pos:], self.val,
-                        self._original[self._origin_spans[pos]:],
-                        [x-self._origin_spans[pos] for x in self._origin_spans[pos:]])
+                        self.original[self.origin_spans[pos]:],
+                        [x-self.origin_spans[pos] for x in self.origin_spans[pos:]])
         else:
             l = Tok(self.kind, self.txt[:pos], self.val)
             r = Tok(self.kind, self.txt[pos:], self.val)
@@ -106,7 +117,7 @@ class Tok:
 
         if self._is_tracking_original():
             # Remove origin entries that correspond to characters that are gone.
-            self._origin_spans = self._origin_spans[:span[0]+len(new)] + self._origin_spans[span[1]:]
+            self.origin_spans = self.origin_spans[:span[0]+len(new)] + self.origin_spans[span[1]:]
 
 
     def substitute_all(self, old_char, new_char):
@@ -134,17 +145,17 @@ class Tok:
         new_kind = self.kind # XXX: This is a guess. We'll probably change this just after?
         new_txt = self.txt + separator + other.txt
         new_val = self.val # XXX: Probably wrong?
-        new_original = self._original + other._original
-        separator_origin_spans = [len(self._original)]*len(separator) if len(other._origin_spans) > 0 else []
-        new_origin_spans = self._origin_spans \
+        new_original = self.original + other.original
+        separator_origin_spans = [len(self.original)]*len(separator) if len(other.origin_spans) > 0 else []
+        new_origin_spans = self.origin_spans \
                 + separator_origin_spans \
-                + [i + len(self._original) for i in other._origin_spans]
+                + [i + len(self.original) for i in other.origin_spans]
 
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
 
 
     def _is_tracking_original(self):
-        return self._original is not None and self._origin_spans is not None
+        return self.original is not None and self.origin_spans is not None
 
 
 class TOK:
@@ -945,11 +956,11 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
             for t in gen_from_string(
                 txt, replace_composite_glyphs, replace_html_escapes
             ):
-                if t.txt == "" and t._original != "":
+                if t.txt == "" and t.original != "":
                     # Prevent emitting an empty line signal when there's extra
                     # whitespace at the end of a text segment. Splice it onto
                     # the front of the next one.
-                    saved = t._original
+                    saved = t.original
                 else:
                     yield t
 

@@ -51,8 +51,8 @@ def strip_originals(tokens):
     """
 
     for t in tokens:
-        t._original = None
-        t._origin_spans = None
+        t.original = None
+        t.origin_spans = None
 
     return tokens
 

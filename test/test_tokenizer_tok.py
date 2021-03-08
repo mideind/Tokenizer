@@ -135,19 +135,19 @@ def test_substitute_bugfix_1():
     test_string = "xya" + ACCENT + "zu" + ACCENT + "w&aacute;o" + UMLAUT + "b"
     #              012    3         45    6         7890123456    7         8
     #              0123456789012345
-    t = Tok(kind=-1, txt=test_string, val=None, _original=test_string, _origin_spans=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    t = Tok(kind=-1, txt=test_string, val=None, original=test_string, origin_spans=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
     t.substitute((2, 4), "á")
-    assert t == Tok(kind=-1, txt='xyázu' + ACCENT + 'w&aacute;o' + UMLAUT + 'b', val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    assert t == Tok(kind=-1, txt='xyázu' + ACCENT + 'w&aacute;o' + UMLAUT + 'b', val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
 
     t.substitute((4, 6), "ú")
-    assert t == Tok(kind=-1, txt='xyázúw&aacute;o' + UMLAUT + 'b', val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    assert t == Tok(kind=-1, txt='xyázúw&aacute;o' + UMLAUT + 'b', val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
 
     t.substitute((14, 16), "ö")
-    assert t == Tok(kind=-1, txt='xyázúw&aacute;öb', val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18])
+    assert t == Tok(kind=-1, txt='xyázúw&aacute;öb', val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18])
     
     # bug was here
     t.substitute((6, 14), "á")
-    assert t == Tok(kind=-1, txt='xyázúwáöb', val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
+    assert t == Tok(kind=-1, txt='xyázúwáöb', val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
 
 
 def test_multiple_substitutions():
@@ -240,21 +240,21 @@ def test_html_escapes_with_origin_tracking():
     test_string = "xy&#x61;z&aacute;w&#97;b"
     tokens = list(tokenizer.gen_from_string(test_string, replace_html_escapes=True))
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyazáwab", val=None, _original=test_string, _origin_spans=[0, 1, 2, 8, 9, 17, 18, 23])
+    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyazáwab", val=None, original=test_string, origin_spans=[0, 1, 2, 8, 9, 17, 18, 23])
 
 
 def test_unicode_escapes_with_origin_tracking():
     test_string = "xya" + ACCENT + "zu" + ACCENT + "wo" + UMLAUT + "b"
     tokens = list(tokenizer.gen_from_string(test_string, replace_composite_glyphs=True))
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwöb", val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 10])
+    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 10])
 
 
 def test_unicode_escapes_that_are_removed():
     test_string = "a\xadb\xadc"
     tokens = list(tokenizer.gen_from_string(test_string, replace_composite_glyphs=True))
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="abc", val=None, _original=test_string, _origin_spans=[0, 2, 4])
+    assert tokens[0] == Tok(kind=TOK.RAW, txt="abc", val=None, original=test_string, origin_spans=[0, 2, 4])
 
 
 def test_html_unicode_mix():
@@ -262,7 +262,7 @@ def test_html_unicode_mix():
     #              012    3         45    6         7890123456    7         8
     tokens = list(tokenizer.gen_from_string(test_string, replace_composite_glyphs=True, replace_html_escapes=True))
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwáöb", val=None, _original=test_string, _origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
+    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwáöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
 
 
 def test_tok_concatenation():
