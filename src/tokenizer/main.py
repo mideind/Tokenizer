@@ -213,7 +213,7 @@ def main():
         options["coalesce_percent"] = True
 
     if args.keep_composite_glyphs:
-        options["replace_composite_glyphs"] = False  # True is the default ok tokenizer.py
+        options["replace_composite_glyphs"] = False  # True is the default in tokenizer.py
 
     if args.replace_html_escapes:
         options["replace_html_escapes"] = True

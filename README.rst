@@ -126,8 +126,8 @@ Other options can be specified on the command line:
 | | ``--coalesce_percent``          | following token denoting percentage word forms    |
 |                                   | (prósent, prósentustig, hundraðshlutar)           |
 +-----------------------------------+---------------------------------------------------+
-| | ``-g``                          | Composite glyphs replaced with a single           |
-| | ``--replace_composite_glyphs``  | code point, such as a ́' -> á                     |
+| | ``-g``                          | Composite glyphs not replaced with a single       |
+| | ``--keep_composite_glyphs``     | code point, so a ́' is not replaced with á        |
 +-----------------------------------+---------------------------------------------------+
 | | ``-e``                          | HTML escape codes replaced,                       |
 | | ``--replace_html_escapes``      | such as '&aacute;' -> 'á'                         |
