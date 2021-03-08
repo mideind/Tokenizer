@@ -51,8 +51,8 @@ two tokens each, output with a single space between them.
 
 In deep tokenization, the same strings are represented by single token objects,
 of type ``TOK.MEASUREMENT``, ``TOK.DATEREL`` and ``TOK.TELNO``, respectively.
-The text associated with a single token object may contain one or more spaces,
-although consecutive space is always coalesced.
+The text associated with a single token object may contain spaces,
+although consecutive whitespace is always coalesced into a single space ``" "``.
 
 By default, the command line tool performs shallow tokenization. If you
 want deep tokenization with the command line tool, use the ``--json`` or
@@ -83,11 +83,11 @@ the command line:
 
     $ tokenize input.txt output.txt
 
-Input and output files are encoded in UTF-8. If the files are not
+Input and output files are in UTF-8 encoding. If the files are not
 given explicitly, ``stdin`` and ``stdout`` are used for input and output,
 respectively.
 
-Empty lines in the input are treated as sentence boundaries.
+Empty lines in the input are treated as hard sentence boundaries.
 
 By default, the output consists of one sentence per line, where each
 line ends with a single newline character (ASCII LF, ``chr(10)``, ``"\n"``).
@@ -104,11 +104,42 @@ on the command line:
 | | ``--json``      | Deep tokenization. Output token objects in JSON   |
 |                   | format, one per line.                             |
 +-------------------+---------------------------------------------------+
-| | ``--normalize`` | Normalize punctuation, causing e.g. quotes to be  |
-|                   | output in Icelandic form and hyphens to be        |
-|                   | regularized. This option is only applicable to    |
-|                   | shallow tokenization.                             |
-+-------------------+---------------------------------------------------+
+
+Other options can be specified on the command line:
+
++-----------------------------------+---------------------------------------------------+
+| | ``-n``                          | Normalize punctuation, causing e.g. quotes to be  |
+| |                                 | output in Icelandic form and hyphens to be        |
+| | ``--normalize``                 | regularized. This option is only applicable to    |
+|                                   | shallow tokenization.                             |
++-----------------------------------+---------------------------------------------------+
+| | ``-s``                          | Input contains strictly one sentence per line,    |
+| |                                 | i.e. every newline is a sentence boundary.        |
+| | ``--one_sent_per_line``         |                                                   |
++-----------------------------------+---------------------------------------------------+
+| | ``-m``                          | Degree signal in tokens denoting temperature      |
+| | ``--convert_measurements``      | normalized (200° C -> 200 °C)                     |
++-----------------------------------+---------------------------------------------------+
+| | ``-p``                          | Numbers combined into one token with the          |
+| | ``--coalesce_percent``          | following token denoting percentage word forms    |
+|                                   | (*prósent*, *prósentustig*, *hundraðshlutar*)     |
++-----------------------------------+---------------------------------------------------+
+| | ``-g``                          | Do not replace composite glyphs using Unicode     |
+| | ``--keep_composite_glyphs``     | COMBINING codes with their accented/umlaut        |
+|                                   | counterparts                                      |
++-----------------------------------+---------------------------------------------------+
+| | ``-e``                          | HTML escape codes replaced by their meaning,      |
+| | ``--replace_html_escapes``      | such as ``&aacute;`` -> ``á``                     |
++-----------------------------------+---------------------------------------------------+
+| | ``-c``                          | English-style decimal points and thousands        |
+| | ``--convert_numbers``           | separators in numbers changed to Icelandic style  |
++-----------------------------------+---------------------------------------------------+
+| | ``-k N``                        | Kludgy ordinal handling defined.                  |
+| | ``--handle_kludgy_ordinals N``  | 0: Returns the original mixed word form           |
+|                                   | 1. Kludgy ordinal returned as pure word forms     |
+|                                   | 2: Kludgy ordinals returned as pure numbers       |
++-----------------------------------+---------------------------------------------------+
+
 
 Type ``tokenize -h`` or ``tokenize --help`` to get a short help message.
 
@@ -773,6 +804,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 2.5.0: Added arguments for all tokenizer options to the
+  command-line tool. Type annotations enhanced.
 * Version 2.4.0: Fixed bug where certain well-known word forms (*fá*, *fær*, *mín*, *sá*...)
   were being interpreted as (wrong) abbreviations. Also fixed bug where certain
   abbreviations were being recognized even in uppercase and at the end
