@@ -109,13 +109,37 @@ class Tok:
             self._origin_spans = self._origin_spans[:span[0]+len(new)] + self._origin_spans[span[1]:]
 
 
-    def concatenate(self, other):
-        """ Return a new token that consists of self with other concatenated to the end. """
+    def substitute_all(self, old_char, new_char):
+        """ Substitute all occurrences of 'old_char' with 'new_char'.
+            The new character may be empty.
+        """
+        # TODO: Support arbitrary length substitutions? What does that do to origin tracking?
+
+        assert len(old_char) == 1, f"'old_char' ({old_char}) was not of length 1"
+        assert len(new_char) == 0 or len(new_char) == 1, f"'new_char' ({new_char}) was too long."
+
+        i = 0
+        for c in self.txt:
+            if c == old_char:
+                self.substitute((i, i+1), new_char)
+                i += len(new_char)
+            else:
+                i += 1
+
+
+    def concatenate(self, other, *, separator=""):
+        """ Return a new token that consists of self with other concatenated to the end.
+            A separator can optionally be supplied.
+        """
         new_kind = self.kind # XXX: This is a guess. We'll probably change this just after?
-        new_txt = self.txt + other.txt
+        new_txt = self.txt + separator + other.txt
         new_val = self.val # XXX: Probably wrong?
         new_original = self._original + other._original
-        new_origin_spans = self._origin_spans + [i + len(self._original) for i in other._origin_spans]
+        separator_origin_spans = [len(self._original)]*len(separator) if len(other._origin_spans) > 0 else []
+        new_origin_spans = self._origin_spans \
+                + separator_origin_spans \
+                + [i + len(self._original) for i in other._origin_spans]
+
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
 
 
@@ -651,14 +675,13 @@ def parse_digits(tok, convert_numbers):
         else:
             # Simple scaling factor
             val *= factor
-        if convert_numbers:
-            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
-            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
-            g = re.sub("x", ".", g)  # Change 'x' to '.'
-        if unit in ("%", "‰"):
-            t, rest = tok.split(s.end())
-            return TOK.Percent(t, val), rest
         t, rest = tok.split(s.end())
+        if convert_numbers:
+            t.substitute_all(",", "x")  # Change thousands separator to 'x'
+            t.substitute_all(".", ",")  # Change decimal separator to ','
+            t.substitute_all("x", ".")  # Change 'x' to '.'
+        if unit in ("%", "‰"):
+            return TOK.Percent(t, val), rest
         return TOK.Measurement(t, unit, val), rest
 
     s = NUM_WITH_UNIT_REGEX3.match(w)
@@ -807,12 +830,11 @@ def parse_digits(tok, convert_numbers):
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
-        if convert_numbers:
-            # TODO ZZZ: Propagate this properly for origin tracking. look at all instances where convert_numbers occurs
-            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
-            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
-            g = re.sub("x", ".", g)  # Change 'x' to '.'
         t, rest = tok.split(s.end())
+        if convert_numbers:
+            t.substitute_all(",", "x")  # Change thousands separator to 'x'
+            t.substitute_all(".", ",")  # Change decimal separator to ','
+            t.substitute_all("x", ".")  # Change 'x' to '.'
         return TOK.Number(t, float(n)), rest
 
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
@@ -822,7 +844,7 @@ def parse_digits(tok, convert_numbers):
         n = re.sub(",", "", g)  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
         if convert_numbers:
-            g = re.sub(",", ".", g)  # Change thousands separator to a dot
+            t.substitute_all(",", ".")  # Change thousands separator to a dot
         t, rest = tok.split(s.end())
         return TOK.Number(t, int(n)), rest
 
@@ -1523,11 +1545,11 @@ def parse_particles(token_stream, **options):
                         # If we now have hh.mm, parse it as such
                         a = "{0:.2f}".format(next_token.val[0]).split(".")
                         h, m = int(a[0]), int(a[1])
-                        token = TOK.Time(token.concatenate(next_token), h, m, 0) # XXX: Insert artificial space?
+                        token = TOK.Time(token.concatenate(next_token, separator=" "), h, m, 0)
                     else:
                         # next_token.kind is TOK.TIME
                         token = TOK.Time(
-                            token.concatenate(next_token), # XXX: Insert artifical space?
+                            token.concatenate(next_token, separator=" "),
                             next_token.val[0],
                             next_token.val[1],
                             next_token.val[2],
@@ -1541,7 +1563,7 @@ def parse_particles(token_stream, **options):
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     # Match: coalesce and step to next token
                     token = TOK.Time(
-                        token.concatenate(next_token), # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),
                         *CLOCK_NUMBERS[next_token.txt.lower()]
                     )
                     next_token = next(token_stream)
@@ -1553,8 +1575,8 @@ def parse_particles(token_stream, **options):
                     time_txt = time_token.txt.lower() if time_token.txt else ""
                     if time_txt in CLOCK_NUMBERS and not time_txt.startswith("hálf"):
                         # Match
-                        temp_tok = token.concatenate(next_token) # XXX: Insert artifical space?
-                        temp_tok = temp_tok.concatenate(time_token)
+                        temp_tok = token.concatenate(next_token, separator=" ")
+                        temp_tok = temp_tok.concatenate(time_token, separator=" ")
                         token = TOK.Time(
                             temp_tok,
                             *CLOCK_NUMBERS["hálf" + time_txt]
@@ -1576,7 +1598,7 @@ def parse_particles(token_stream, **options):
                 next_token.kind == TOK.YEAR or next_token.kind == TOK.NUMBER
             ):
                 token = TOK.Year(
-                    token.concatenate(next_token), # XXX: Insert artifical space?
+                    token.concatenate(next_token, separator=" "),
                     next_token.val
                     if next_token.kind == TOK.YEAR
                     else next_token.val[0],
@@ -1592,7 +1614,7 @@ def parse_particles(token_stream, **options):
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
                 telno = token.txt + "-" + next_token.txt
-                token = TOK.Telno(token.concatenate(next_token), telno) # XXX: Insert artifical space?
+                token = TOK.Telno(token.concatenate(next_token, separator=" "), telno)
                 next_token = next(token_stream)
 
             # Coalesce percentages or promilles into a single token
@@ -1667,10 +1689,10 @@ def parse_particles(token_stream, **options):
                     # Simple scaling factor
                     value *= factor
                 if unit in ("%", "‰"):
-                    token = TOK.Percent(token.concatenate(next_token), value) # XXX: Insert artifical space?
+                    token = TOK.Percent(token.concatenate(next_token, separator=" "), value)
                 else:
                     token = TOK.Measurement(
-                        token.concatenate(next_token), unit, value # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "), unit, value
                     )
                 next_token = next(token_stream)
 
@@ -1716,7 +1738,7 @@ def parse_particles(token_stream, **options):
                     )
                 else:
                     token = TOK.Measurement(
-                        token.concatenate(next_token),  # 200° C # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),  # 200° C
                         unit,  # K
                         val,  # 200 converted to Kelvin
                     )
@@ -1771,7 +1793,7 @@ def parse_particles(token_stream, **options):
                 and next_token.txt in CURRENCY_SYMBOLS
             ):
                 token = TOK.Amount(
-                    token.concatenate(next_token), # XXX: Insert artifical space?
+                    token.concatenate(next_token, separator=" "),
                     CURRENCY_SYMBOLS[next_token.txt],
                     token.val[0],
                 )
@@ -1944,7 +1966,7 @@ def parse_phrases_1(token_stream):
                 elif next_token.txt in CE:  # e.Kr.
                     nval = val
                 if nval is not None:
-                    token = TOK.Year(token.concatenate(next_token), nval) # XXX: Insert artifical space?
+                    token = TOK.Year(token.concatenate(next_token, separator=" "), nval)
                     next_token = next(token_stream)
                     if next_token.txt == ".":
                         token = TOK.Year(token.concatenate(next_token), nval)
@@ -1966,7 +1988,7 @@ def parse_phrases_1(token_stream):
                 month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
-                        token.concatenate(next_token), # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),
                         y=0,
                         m=month,
                         d=token.val if token.kind == TOK.ORDINAL else token.val[0],
@@ -1980,7 +2002,7 @@ def parse_phrases_1(token_stream):
                 if not token.val[0]:
                     # No year yet: add it
                     token = TOK.Date(
-                        token.concatenate(next_token), # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),
                         y=next_token.val,
                         m=token.val[1],
                         d=token.val[2],
@@ -1994,7 +2016,7 @@ def parse_phrases_1(token_stream):
                 y, mo, d = token.val
                 h, m, s = next_token.val
                 token = TOK.Timestamp(
-                    token.concatenate(next_token), y=y, mo=mo, d=d, h=h, m=m, s=s # XXX: Insert artifical space?
+                    token.concatenate(next_token, separator=" "), y=y, mo=mo, d=d, h=h, m=m, s=s
                 )
                 # Eat the time token
                 next_token = next(token_stream)
@@ -2006,7 +2028,7 @@ def parse_phrases_1(token_stream):
             ):
                 # Check for country code in front of telephone number
                 token = TOK.Telno(
-                    token.concatenate(next_token), next_token.val[0], cc=token.txt # XXX: Insert artifical space?
+                    token.concatenate(next_token, separator=" "), next_token.val[0], cc=token.txt
                 )
                 next_token = next(token_stream)
 
@@ -2046,7 +2068,7 @@ def parse_date_and_time(token_stream):
                 month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
-                        token.concatenate(next_token), # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),
                         y=0,
                         m=month,
                         d=(
@@ -2075,7 +2097,7 @@ def parse_date_and_time(token_stream):
                     )
                     if year != 0:
                         token = TOK.Date(
-                            token.concatenate(next_token), # XXX: Insert artifical space?
+                            token.concatenate(next_token, separator=" "),
                             y=year,
                             m=token.val[1],
                             d=token.val[2],
@@ -2098,7 +2120,7 @@ def parse_date_and_time(token_stream):
                     )
                     if year != 0:
                         token = TOK.Date(
-                            token.concatenate(next_token), y=year, m=month, d=0 # XXX: Insert artifical space?
+                            token.concatenate(next_token, separator=" "), y=year, m=month, d=0
                         )
                         # Eat the year token
                         next_token = next(token_stream)
@@ -2138,7 +2160,7 @@ def parse_date_and_time(token_stream):
                         # Change year to negative number
                         y = -y
                     token = TOK.Dateabs(
-                        token.concatenate(next_token), # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),
                         y=y,
                         m=token.val[1],
                         d=token.val[2],
@@ -2153,7 +2175,7 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestampabs(
-                        token.concatenate(next_token), y=y, mo=mo, d=d, h=h, m=m, s=s # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "), y=y, mo=mo, d=d, h=h, m=m, s=s
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -2165,7 +2187,7 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestamprel(
-                        token.concatenate(next_token), y=y, mo=mo, d=d, h=h, m=m, s=s # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "), y=y, mo=mo, d=d, h=h, m=m, s=s
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -2224,7 +2246,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     # Retain the case of the last multiplier
                     token = convert_to_num(token)
                     token = TOK.Number(
-                        token.concatenate(next_token), token.val[0] * multiplier_next # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "), token.val[0] * multiplier_next
                     )
                     # Eat the multiplier token
                     next_token = next(token_stream)
@@ -2234,7 +2256,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     # but we try to retain the previous case information if any
                     token = convert_to_num(token)
                     token = TOK.Amount(
-                        token.concatenate(next_token), # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "),
                         "ISK",
                         token.val[0] * AMOUNT_ABBREV[next_token.txt],
                     )
@@ -2243,7 +2265,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     # A number followed by an ISO currency abbreviation
                     token = convert_to_num(token)
                     token = TOK.Amount(
-                        token.concatenate(next_token), next_token.txt, token.val[0] # XXX: Insert artifical space?
+                        token.concatenate(next_token, separator=" "), next_token.txt, token.val[0]
                     )
                     next_token = next(token_stream)
                 else:
@@ -2256,7 +2278,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                         break
                     # We have '17 prósent': coalesce into a single token
                     token = convert_to_num(token)
-                    token = TOK.Percent(token.concatenate(next_token), token.val[0]) # XXX: Insert artifical space?
+                    token = TOK.Percent(token.concatenate(next_token, separator=" "), token.val[0])
                     # Eat the percent word token
                     next_token = next(token_stream)
 
@@ -2268,7 +2290,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
             ):
                 curr = "ISK" if token.txt in ISK_AMOUNT_PRECEDING else token.txt
                 token = TOK.Amount(
-                    token.concatenate(next_token), curr, next_token.val[0] # XXX: Insert artifical space?
+                    token.concatenate(next_token, separator=" "), curr, next_token.val[0]
                 )
                 next_token = next(token_stream)
 

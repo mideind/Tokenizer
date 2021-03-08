@@ -281,3 +281,43 @@ def test_tok_concatenation():
     assert tok1.concatenate(tok2) == Tok(TOK.RAW, str1+str2, None, or1+or2, [0, 4, 8, 12, 14, 16])
 
 
+def test_tok_concatenation_with_separator():
+    str1 = "asdf"
+    tok1 = Tok(TOK.RAW, str1, None, str1, list(range(len(str1))))
+    str2 = "jklæ"
+    tok2 = Tok(TOK.RAW, str2, None, str2, list(range(len(str1))))
+    sep = "WOLOLO"
+    assert tok1.concatenate(tok2, separator=sep) == Tok(TOK.RAW, str1+sep+str2, None, str1+str2, [0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 5, 6, 7])
+
+    str1 = "abc"
+    or1 = "&123&456&789"
+    str2 = "xyz"
+    or2 = "&xx&yy&zz"
+    tok1 = Tok(TOK.RAW, str1, None, or1, [0, 4, 8])
+    tok2 = Tok(TOK.RAW, str2, None, or2, [0, 2, 4])
+    sep = "WOLOLO"
+    assert tok1.concatenate(tok2, separator=sep) == Tok(TOK.RAW, str1+sep+str2, None, or1+or2, [0, 4, 8, 12, 12, 12, 12, 12, 12, 12, 14, 16])
+
+
+def test_tok_substitute_all():
+    s = "asdf"
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_all("d", "x")
+    assert t == Tok(TOK.RAW, "asxf", None, s, [0, 1, 2, 3])
+
+    s = "Þetta er lengri strengur."
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_all("e", "x")
+    assert t == Tok(TOK.RAW, "Þxtta xr lxngri strxngur.", None, s, list(range(len(s))))
+
+    s = "asdf"
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_all("d", "")
+    assert t == Tok(TOK.RAW, "asf", None, s, [0, 1, 3])
+
+    s = "Þessi verður lengri."
+    #    01234567890123456789
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_all("r", "")
+    assert t == Tok(TOK.RAW, "Þessi veðu lengi.", None, s, [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 18, 19])
+

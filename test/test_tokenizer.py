@@ -42,6 +42,21 @@ TOK = t.TOK
 Tok = t.Tok
 
 
+def strip_originals(tokens):
+    """ Remove origin tracking info from a list of tokens.
+        This is useful for simplifying tests where we don't care about tracking
+        origins.
+        XXX: This could be removed if we get a feature to disable origin
+        tracking during tokenization.
+    """
+
+    for t in tokens:
+        t._original = None
+        t._origin_spans = None
+
+    return tokens
+
+
 def test_single_tokens():
 
     TEST_CASES = [
@@ -1040,6 +1055,7 @@ def test_correct_spaces():
 
 def test_abbrev():
     tokens = list(t.tokenize("Í dag las ég fréttina um IBM t.d. á Mbl."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         # We are testing that 'Í' is not an abbreviation
@@ -1069,6 +1085,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Reykjavík er stór m.v. Akureyri."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Reykjavík", val=None),
@@ -1080,6 +1097,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Ég nefndi t.d. Guðmund."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -1090,6 +1108,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Jón var sérfr. Guðmundur var læknir."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Jón", val=None),
@@ -1104,6 +1123,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Jón var t.h. Guðmundur var t.v. á myndinni."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Jón", val=None),
@@ -1120,6 +1140,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Bréfið var dags. 20. maí."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Bréfið", val=None),
@@ -1130,6 +1151,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Ég ræddi við hv. þm. Halldóru Mogensen."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -1143,6 +1165,7 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
     tokens = list(t.tokenize("Það var snemma dags. Fuglarnir sungu."))
+    tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Það", val=None),
@@ -1322,6 +1345,7 @@ def test_html_escapes():
             replace_html_escapes=True
         )
     )
+    toklist = strip_originals(toklist)
     correct = [
         Tok(kind=11001, txt=None, val=(0, None)),
         Tok(kind=6, txt='Ég', val=None),
@@ -1344,6 +1368,7 @@ def test_html_escapes():
             replace_html_escapes=True
         )
     )
+    toklist = strip_originals(toklist)
     correct = [
         Tok(kind=11001, txt=None, val=(0, None)),
         Tok(kind=6, txt='Ég', val=None),
