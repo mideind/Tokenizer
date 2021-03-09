@@ -64,7 +64,7 @@ class Tok:
         # Value of the token (e.g. if it is a date or currency)
         self.val = val
         # The full original string of this token
-        # If this is none then we're not tracking origins
+        # If this is None then we're not tracking origins
         self.original = original
         # Each index in origin_spans maps from 'txt' (which may have substitutions) to 'original'
         # This is required to preserve 'original' correctly when splitting
@@ -83,11 +83,8 @@ class Tok:
 
 
     def split(self, pos: int):
-        """
-        Split this token into two at 'pos'.
-
-        The first token returned will have 'pos' characters and the second one will have the rest.
-
+        """ Split this token into two at 'pos'.
+            The first token returned will have 'pos' characters and the second one will have the rest.
         """
         # TODO: What happens if you split a token that has txt=="" and original!=""?
         # TODO: What should we do with val?
@@ -155,12 +152,51 @@ class Tok:
 
 
     def _is_tracking_original(self):
+        """ Return true iff this instance is tracking origin spans. """
         return self.original is not None and self.origin_spans is not None
 
 
-class TOK:
+    def __getitem__(self, i):
+        """ Backwards compatibility for when Tok was a namedtuple. """
+        if not isinstance(i, int):
+            raise NotImplementedError("Tok can only be indexed by int")
+        if i == 0:
+            return self.kind
+        elif i == 1:
+            return self.txt
+        elif i == 2:
+            return self.val
+        else:
+            raise IndexError("Tok can only be indexed by 0, 1 or 2")
 
-    """ Token types """
+
+class TOK:
+    """
+    The TOK class contains constants that define token types and
+    constructors for creating token instances.
+
+    Each of the various constructors can accept as first parameter either
+    a string or a Tok object.
+    
+    The string version is the old one (from versions 2 and earlier).
+    These take in a string and sometimes value and return a token with
+    that string and value.
+    This should be preserved while there are downstream users that depend on
+    this behavior. The tokenizer does not use this internally.
+    
+    The Tok version of the constructors isn't really a constructor but rather
+    a converter. It takes in a token and returns a token with the given type 
+    and value but preserves other attributes, in particular origin tracking.
+    Note that the current version modifies the input and returns it again.
+    This particular detail should not be depended on (assume the input is eaten
+    and something new is returned).
+    
+    If, at some point, we can be reasonably certain that downstream users are
+    not using the string version any more we should consider removing it.
+    """
+
+    # Token types
+
     # Raw minimally processed token
     RAW = -1
 
@@ -296,209 +332,399 @@ class TOK:
                 tp = TP_RIGHT
             elif normalized in NONE_PUNCTUATION:
                 tp = TP_NONE
-        t.kind = TOK.PUNCTUATION
-        t.val = (tp, normalized)
-        return t
+
+        if isinstance(t, str):
+            return Tok(TOK.PUNCTUATION, t, (tp, normalized))
+        elif isinstance(t, Tok):
+            t.kind = TOK.PUNCTUATION
+            t.val = (tp, normalized)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Time(t, h, m, s):
-        t.kind = TOK.TIME
-        t.val = (h, m, s)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.TIME, t, (h, m, s))
+        elif isinstance(t, Tok):
+            t.kind = TOK.TIME
+            t.val = (h, m, s)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Date(t, y, m, d):
-        t.kind = TOK.DATE
-        t.val = (y, m, d)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.DATE, t, (y, m, d))
+        elif isinstance(t, Tok):
+            t.kind = TOK.DATE
+            t.val = (y, m, d)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Dateabs(t, y, m, d):
-        t.kind = TOK.DATEABS
-        t.val = (y, m, d)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.DATEABS, t, (y, m, d))
+        elif isinstance(t, Tok):
+            t.kind = TOK.DATEABS
+            t.val = (y, m, d)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Daterel(t, y, m, d):
-        t.kind = TOK.DATEREL
-        t.val = (y, m, d)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.DATEREL, t, (y, m, d))
+        elif isinstance(t, Tok):
+            t.kind = TOK.DATEREL
+            t.val = (y, m, d)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Timestamp(t, y, mo, d, h, m, s):
-        t.kind = TOK.TIMESTAMP
-        t.val = (y, mo, d, h, m, s)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.TIMESTAMP, t, (y, mo, d, h, m, s))
+        elif isinstance(t, Tok):
+            t.kind = TOK.TIMESTAMP
+            t.val = (y, mo, d, h, m, s)
+            return t
+        else:
+            raise TypeError
+        
 
     @staticmethod
     def Timestampabs(t, y, mo, d, h, m, s):
-        t.kind = TOK.TIMESTAMPABS
-        t.val = (y, mo, d, h, m, s)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.TIMESTAMPABS, t, (y, mo, d, h, m, s))
+        elif isinstance(t, Tok):
+            t.kind = TOK.TIMESTAMPABS
+            t.val = (y, mo, d, h, m, s)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Timestamprel(t, y, mo, d, h, m, s):
-        t.kind = TOK.TIMESTAMPREL
-        t.val = (y, mo, d, h, m, s)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.TIMESTAMPREL, t, (y, mo, d, h, m, s))
+        elif isinstance(t, Tok):
+            t.kind = TOK.TIMESTAMPREL
+            t.val = (y, mo, d, h, m, s)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Year(t, n):
-        t.kind = TOK.YEAR
-        t.val = n
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.YEAR, t, n)
+        elif isinstance(t, Tok):
+            t.kind = TOK.YEAR
+            t.val = n
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Telno(t, telno, cc="354"):
-        # The w parameter is the original token text,
+        # The t parameter is the original token text,
         # while telno has the standard form 'DDD-DDDD' (with hyphen)
         # cc is the country code
-        t.kind = TOK.TELNO
-        t.val = (telno, cc)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.TELNO, t, (telno, cc))
+        elif isinstance(t, Tok):
+            t.kind = TOK.TELNO
+            t.val = (telno, cc)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Email(t):
-        t.kind = TOK.EMAIL
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.EMAIL, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.EMAIL
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Number(t, n, cases=None, genders=None):
         # The cases parameter is a list of possible cases for this number
         # (if it was originally stated in words)
-        t.kind = TOK.NUMBER
-        t.val = (n, cases, genders)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.NUMBER, t, (n, cases, genders))
+        elif isinstance(t, Tok):
+            t.kind = TOK.NUMBER
+            t.val = (n, cases, genders)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def NumberWithLetter(t, n, c):
-        t.kind = TOK.NUMWLETTER
-        t.val = (n, c)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.NUMWLETTER, t, (n, c))
+        elif isinstance(t, Tok):
+            t.kind = TOK.NUMWLETTER
+            t.val = (n, c)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Currency(t, iso, cases=None, genders=None):
         # The cases parameter is a list of possible cases for this currency name
         # (if it was originally stated in words, i.e. not abbreviated)
-        t.kind = TOK.CURRENCY
-        t.val = (iso, cases, genders)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.CURRENCY, t, (iso, cases, genders))
+        elif isinstance(t, Tok):
+            t.kind = TOK.CURRENCY
+            t.val = (iso, cases, genders)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Amount(t, iso, n, cases=None, genders=None):
         # The cases parameter is a list of possible cases for this amount
         # (if it was originally stated in words)
-        t.kind = TOK.AMOUNT
-        t.val = (n, iso, cases, genders)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.AMOUNT, t, (n, iso, cases, genders))
+        elif isinstance(t, Tok):
+            t.kind = TOK.AMOUNT
+            t.val = (n, iso, cases, genders)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Percent(t, n, cases=None, genders=None):
-        t.kind = TOK.PERCENT
-        t.val = (n, cases, genders)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.PERCENT, t, (n, cases, genders))
+        elif isinstance(t, Tok):
+            t.kind = TOK.PERCENT
+            t.val = (n, cases, genders)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Ordinal(t, n):
-        t.kind = TOK.ORDINAL
-        t.val = n
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.ORDINAL, t, n)
+        elif isinstance(t, Tok):
+            t.kind = TOK.ORDINAL
+            t.val = n
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Url(t):
-        t.kind = TOK.URL
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.URL, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.URL
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Domain(t):
-        t.kind = TOK.DOMAIN
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.DOMAIN, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.DOMAIN
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Hashtag(t):
-        t.kind = TOK.HASHTAG
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.HASHTAG, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.HASHTAG
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Ssn(t):
-        t.kind = TOK.SSN
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.SSN, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.SSN
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Molecule(t):
-        t.kind = TOK.MOLECULE
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.MOLECULE, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.MOLECULE
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Username(t, username):
-        t.kind = TOK.USERNAME
-        t.val = username
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.USERNAME, t, username)
+        elif isinstance(t, Tok):
+            t.kind = TOK.USERNAME
+            t.val = username
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def SerialNumber(t):
-        t.kind = TOK.SERIALNUMBER
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.SERIALNUMBER, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.SERIALNUMBER
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Measurement(t, unit, val):
-        t.kind = TOK.MEASUREMENT
-        t.val = (unit, val)
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.MEASUREMENT, t, (unit, val))
+        elif isinstance(t, Tok):
+            t.kind = TOK.MEASUREMENT
+            t.val = (unit, val)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Word(t, m=None):
         # The m parameter is intended for a list of BIN_Meaning tuples
         # fetched from the BÍN database
-        t.kind = TOK.WORD
-        t.val = m
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.WORD, t, m)
+        elif isinstance(t, Tok):
+            t.kind = TOK.WORD
+            t.val = m
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
     def Unknown(t):
-        t.kind = TOK.UNKNOWN
-        return t
+        if isinstance(t, str):
+            return Tok(TOK.UNKNOWN, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.UNKNOWN
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def Person(w, m=None):
+    def Person(t, m=None):
         # The m parameter is intended for a list of PersonName tuples:
         # (name, gender, case)
-        return Tok(TOK.PERSON, w, m)
+        if isinstance(t, str):
+            return Tok(TOK.PERSON, t, m)
+        elif isinstance(t, Tok):
+            t.kind = TOK.PERSON
+            t.val = m
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def Entity(w):
-        return Tok(TOK.ENTITY, w, None)
+    def Entity(t):
+        if isinstance(t, str):
+            return Tok(TOK.ENTITY, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.ENTITY
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def Company(w):
-        return Tok(TOK.COMPANY, w, None)
+    def Company(t):
+        if isinstance(t, str):
+            return Tok(TOK.COMPANY, t, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.COMPANY
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def Begin_Paragraph(t):
-        t.kind = TOK.P_BEGIN
-        return
+    def Begin_Paragraph(t=None):
+        if t is None:
+            return Tok(TOK.P_BEGIN, None, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.P_BEGIN
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def End_Paragraph(t):
-        t.kind = TOK.P_END
-        return t
+    def End_Paragraph(t=None):
+        if t is None:
+            return Tok(TOK.P_END, None, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.P_END
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def Begin_Sentence(num_parses=0, err_index=None):
-        return Tok(TOK.S_BEGIN, None, (num_parses, err_index))
+    def Begin_Sentence(t=None, num_parses=0, err_index=None):
+        if t is None:
+            return Tok(TOK.S_BEGIN, None, (num_parses, err_index))
+        elif isinstance(t, Tok):
+            t.kind = TOK.S_BEGIN
+            t.val = (num_parses, err_index)
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def End_Sentence():
-        return Tok(TOK.S_END, None, None)
+    def End_Sentence(t=None):
+        if t is None:
+            return Tok(TOK.S_END, None, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.S_END
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def End_Sentinel():
-        return Tok(TOK.X_END, None, None)
+    def End_Sentinel(t=None):
+        if t is None:
+            return Tok(TOK.X_END, None, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.X_END
+            return t
+        else:
+            raise TypeError
 
     @staticmethod
-    def Split_Sentence(t):
-        t.kind = TOK.S_SPLIT
-        return t
+    def Split_Sentence(t=None):
+        if t is None:
+            return Tok(TOK.S_SPLIT, None, None)
+        elif isinstance(t, Tok):
+            t.kind = TOK.S_SPLIT
+            return t
+        else:
+            raise TypeError
 
 
 def normalized_text(token):
