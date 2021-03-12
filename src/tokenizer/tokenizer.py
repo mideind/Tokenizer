@@ -170,6 +170,11 @@ class Tok:
             raise IndexError("Tok can only be indexed by 0, 1 or 2")
 
 
+    def __repr__(self):
+        return f'Tok({self.kind}, "{self.txt}", {self.val}, "{self.original}", {self.origin_spans})'
+
+
+
 class TOK:
     """
     The TOK class contains constants that define token types and
@@ -1126,39 +1131,8 @@ def html_replacement(token):
     return token
 
 
-def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False):
-    """ Generate rough tokens from a string """
-    # If there are consecutive newlines in the string (i.e. two
-    # newlines separated only by whitespace), we interpret
-    # them as hard sentence boundaries
-    first = True
-    for span in re.split(r"\n\s*\n", txt):
-        if first:
-            first = False
-        else:
-            # Return a sentence splitting token in lieu of the
-            # newline pair that separates the spans
-            yield Tok(TOK.S_SPLIT, None, None)
-
-        tok_big = Tok(TOK.RAW, span, None, span, list(range(len(span))))
-        if replace_composite_glyphs:
-            # Replace composite glyphs with single code points
-            tok_big = unicode_replacement(tok_big)
-        if replace_html_escapes:
-            # Replace HTML escapes: '&aacute;' -> 'á'
-            tok_big = html_replacement(tok_big)
-
-        while tok_big.txt != "":
-            res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
-            tok, tok_big = tok_big.split(res.span(0)[1])
-
-            # Remove whitespace from the start of the token
-            tok.substitute(res.span(1), "")
-            yield tok
-
-
-def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
-    """ Generate rough tokens from a string or a generator """
+def generate_rough_tokens(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
+    """ Generate rough tokens from a string or an iterable that contains strings """
     if text_or_gen is None:
         return
     if is_str(text_or_gen):
@@ -1166,29 +1140,66 @@ def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
         text_or_gen = [text_or_gen]
     # Iterate through text_or_gen, which is assumed to yield strings
     saved = None
-    for txt in text_or_gen:
-        #txt = txt.strip()
-        if not txt:
-            # Empty line: signal this to the consumer of the generator
-            yield Tok(TOK.S_SPLIT, None, None)
-        else:
-            if saved:
-                # There is a remainder from the last token.
-                txt = saved + txt
-                saved = None
-            # Convert to a Unicode string (if Python 2.7)
-            txt = make_str(txt)
-            # Yield the contained rough tokens
-            for t in gen_from_string(
-                txt, replace_composite_glyphs, replace_html_escapes
-            ):
-                if t.txt == "" and t.original != "":
-                    # Prevent emitting an empty line signal when there's extra
-                    # whitespace at the end of a text segment. Splice it onto
-                    # the front of the next one.
-                    saved = t.original
-                else:
-                    yield t
+    for big_text in text_or_gen:
+        if saved:
+            big_text = saved.original + big_text
+            saved = None
+
+        # Force sentence splits
+        # Case 1: Two newlines with only whitespace between appear anywhere in 'big_text'.
+        #         I.e. force sentence split when we see an empty line.
+        # Case 2: 'big_txt' contains only whitespace.
+        #         This only means "empty line" if each element in text_or_gen is assumed to
+        #         be a line (even if they don't contain any newline characters).
+        #         That does not strictly have to be true and is not a declared assumption,
+        #         except in tests, but the tokenizer has had this behavior for a long time.
+        sentence_split_pattern = r"(\n\s*\n|^\s*$)"
+
+        splits = re.split(sentence_split_pattern, big_text)
+        is_text = True
+        # We know that splits will contain alternatively useful text and the splitting
+        # pattern, starting and ending with useful text. See the documentation on
+        # re.split.
+        for text in splits:
+            if is_text:
+                # 'text' is text to be tokenized
+                tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
+                if replace_composite_glyphs:
+                    # Replace composite glyphs with single code points
+                    tok_big = unicode_replacement(tok_big)
+                if replace_html_escapes:
+                    # Replace HTML escapes: '&aacute;' -> 'á'
+                    tok_big = html_replacement(tok_big)
+
+                while tok_big.txt != "":
+                    res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
+                    tok, tok_big = tok_big.split(res.span(0)[1])
+
+                    # Remove whitespace from the start of the token
+                    tok.substitute(res.span(1), "")
+                    if tok.txt == "":
+                        # We have some trailing whitespace at the end of a 'big_text'
+                        # This can only be the last item in 'splits'.
+                        # See ROUGH_TOKEN_REGEX to convince yourself this is true.
+                        # Save this bit and attach it to the front of the next 'big_text'
+                        # since we don't want to yield a word token with empty text.
+                        saved = tok
+                    else:
+                        yield tok
+            else:
+                # 'text' is the split pattern
+                tok_split = Tok(TOK.RAW, text, None, text, list(range(len(text))))
+                # This token should have no output text, but we still want to preserve its origin.
+                tok_split.substitute((0, len(text)), "")
+                tok_split = TOK.Split_Sentence(tok_split)
+                yield tok_split
+            is_text = not is_text
+
+    if saved:
+        # There is trailing whitespace at the end of everything.
+        # The only option to conserve this is to emit a token with empty text.
+        # Set the type to S_SPLIT to get proper sentence detection in later phases.
+        yield TOK.Split_Sentence(saved)
 
 
 def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
@@ -1240,14 +1251,14 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for rt in gen(txt, replace_composite_glyphs, replace_html_escapes):
+    for rt in generate_rough_tokens(txt, replace_composite_glyphs, replace_html_escapes):
         # rt: raw token
 
         # Handle each sequence w of non-whitespace characters
 
-        if not rt.txt:
-            # An empty string signals an empty line, which splits sentences
-            yield TOK.Split_Sentence(rt)
+        if rt.kind == TOK.S_SPLIT:
+            # Sentence split markers require no further processing. Yield them immediately.
+            yield rt
             continue
 
         if rt.txt.isalpha() or rt.txt in SI_UNITS:
@@ -2816,3 +2827,37 @@ def detokenize(tokens, normalize=False):
             r.append(w)
         last = this
     return "".join(r)
+
+
+def calculate_indexes(tokens: List[Tok], last_is_end: bool = False) -> (List[int], List[int]):
+    """ Calculate character and byte indexes for a token stream.
+        The indexes are the start positions of each token in the original
+        text that was tokenized.
+        'last_is_end' determines whether to include a "past-the-end" index
+        at the end. This index is also the total length of the sequence.
+    """
+
+    def byte_len(string):
+        return len(bytes(string, encoding="utf-8"))
+
+    char_indexes = [0]
+    byte_indexes = [0]
+
+    for t in tokens:
+        if t.original:
+            char_indexes.append(char_indexes[-1]+len(t.original))
+            byte_indexes.append(byte_indexes[-1]+byte_len(t.original))
+        else:
+            if t.txt:
+                # Origin tracking failed for this token.
+                # TODO: Can we do something better here? Or guarantee that it doesn't happen?
+                raise Exception(f"Origin tracking failed at {t.txt} near index {char_indexes[-1]}")
+            else:
+                # This is some marker token that has no text
+                pass
+
+    if not last_is_end:
+        char_indexes = char_indexes[:-1]
+        byte_indexes = byte_indexes[:-1]
+
+    return char_indexes, byte_indexes
