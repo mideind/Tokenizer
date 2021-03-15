@@ -135,18 +135,28 @@ class Tok:
                 i += 1
 
 
-    def concatenate(self, other, *, separator=""):
+    def concatenate(self, other, *, separator="", metadata_from_other=False):
         """ Return a new token that consists of self with other concatenated to the end.
             A separator can optionally be supplied.
+            The new token will have metadata (kind and val) from self unless 'metadata_from_other' is True.
         """
-        new_kind = self.kind # XXX: This is a guess. We'll probably change this just after?
-        new_txt = self.txt + separator + other.txt
-        new_val = self.val # XXX: Probably wrong?
-        new_original = self.original + other.original
-        separator_origin_spans = [len(self.original)]*len(separator) if len(other.origin_spans) > 0 else []
-        new_origin_spans = self.origin_spans \
+        new_kind = self.kind if not metadata_from_other else other.kind
+        new_val = self.val if not metadata_from_other else other.val
+
+        self_txt = self.txt if self.txt else ""
+        other_txt = other.txt if other.txt else ""
+        new_txt = self_txt + separator + other_txt
+
+        self_original = self.original if self.original else ""
+        other_original = other.original if other.original else ""
+        new_original = self_original + other_original
+
+        self_origin_spans = self.origin_spans if self.origin_spans else []
+        other_origin_spans = other.origin_spans if other.origin_spans else []
+        separator_origin_spans = [len(self_original)]*len(separator) if len(other_origin_spans) > 0 else []
+        new_origin_spans = self_origin_spans \
                 + separator_origin_spans \
-                + [i + len(self.original) for i in other.origin_spans]
+                + [i + len(self_original) for i in other_origin_spans]
 
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
 
@@ -2092,6 +2102,7 @@ def parse_sentences(token_stream):
                     # The double assignment to token is necessary to ensure that
                     # we are in a correct state if next() raises StopIteration
                     # XXX: We lose origin tracking here!
+                    print("YARR: DRAGONS")
                     token = None
                     token = next(token_stream)
                     continue
@@ -2102,11 +2113,12 @@ def parse_sentences(token_stream):
                 # sentence, if any, even if no ending punctuation has
                 # been encountered
                 if in_sentence:
-                    yield tok_end_sentence
-                in_sentence = False
-                # Swallow the S_SPLIT token
-                # XXX: We lose origin tracking here!
-                token = next_token
+                    yield TOK.End_Sentence(token)
+                    in_sentence = False
+                    token = next_token
+                else:
+                    # Swallow the S_SPLIT token but preserve any origin whitespace
+                    token = token.concatenate(next_token, metadata_from_other=True)
                 continue
             else:
                 if not in_sentence:

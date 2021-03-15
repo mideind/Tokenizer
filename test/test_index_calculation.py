@@ -382,8 +382,7 @@ def test_iterator_cases():
     assert char_indexes == [0, 5, 13, 14, 19, 27, 28]
     assert byte_indexes == [0, 5, 13, 14, 20, 28, 29]
 
-    # TODO: Fix this test.
-    # parse_tokens does some implentation-detail-stuff here. Testing that might get a bit fragile
+    # parse_tokens does some implentation-detail-stuff here. Use tokenize instead.
     s = [" Stutt setning. ", "\n \n", "Önnur setning."]
     #     0123456789012345    6 78     90123456789012
     #     ^     ^       ^^                  ^       ^
@@ -392,7 +391,7 @@ def test_iterator_cases():
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
     assert char_indexes == [0, 6, 14, 15, 24, 32]
     assert byte_indexes == [0, 6, 14, 15, 25, 33]
-    toks = tokenizer.parse_tokens(s)
+    toks = tokenizer.tokenize(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
     assert char_indexes == [0, 6, 14, 15, 24, 32, 33]
     assert byte_indexes == [0, 6, 14, 15, 25, 33, 34]
