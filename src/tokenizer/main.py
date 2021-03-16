@@ -5,7 +5,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2020 Miðeind ehf.
+    Copyright (C) 2021 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -85,7 +85,63 @@ group.add_argument(
 group.add_argument(
     "--json", help="Output one token per line in JSON format", action="store_true"
 )
-group.add_argument("--normalize", help="Normalize punctuation", action="store_true")
+
+parser.add_argument(
+    "-s",
+    "--one_sent_per_line",
+    action="store_true",
+    help="Input contains one sentence per line",
+)
+
+parser.add_argument(
+    "-m",
+    "--convert_measurements",
+    action="store_true",
+    help="Degree signal in temperature tokens normalized (200° C -> 200 °C)",
+)
+
+parser.add_argument(
+    "-p",
+    "--coalesce_percent",
+    action="store_true",
+    help="Numbers combined into one token with percentage word forms (prósent/prósentustig/hundraðshlutar)",
+)
+
+parser.add_argument(
+    "-n",
+    "--normalize",
+    action="store_true",
+    help="Outputs normalized value of punctuation tokens instead of original text",
+)
+
+parser.add_argument(
+    "-g",
+    "--keep_composite_glyphs",
+    action="store_true",
+    help="Composite glyphs not replaced with a single code point",
+)
+
+parser.add_argument(
+    "-e",
+    "--replace_html_escapes",
+    action="store_true",
+    help="Escape codes from HTML replaced",
+)
+
+parser.add_argument(
+    "-c",
+    "--convert_numbers",
+    action="store_true",
+    help="English-style decimal points and thousands separators in numbers changed to Icelandic style",
+)
+
+parser.add_argument(
+    "-k",
+    "--handle_kludgy_ordinals",
+    type=int,
+    default=0,
+    help="Kludgy ordinal handling defined. \n\t0: Returns the original word form. \n\t1: Ordinals returned as pure words. \n\t2: Ordinals returned as numbers.",
+)
 
 
 def main():
@@ -149,6 +205,27 @@ def main():
         to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
     else:
         to_text = lambda t: t.txt
+
+    if args.convert_measurements:
+        options["convert_measurements"] = True
+
+    if args.coalesce_percent:
+        options["coalesce_percent"] = True
+
+    if args.keep_composite_glyphs:
+        options["replace_composite_glyphs"] = False  # True is the default in tokenizer.py
+
+    if args.replace_html_escapes:
+        options["replace_html_escapes"] = True
+
+    if args.convert_numbers:
+        options["convert_numbers"] = True
+
+    if args.one_sent_per_line:
+        options["one_sent_per_line"] = True
+
+    if args.handle_kludgy_ordinals:
+        options["handle_kludgy_ordinals"] = args.handle_kludgy_ordinals
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))

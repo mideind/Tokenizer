@@ -3,7 +3,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2020 Miðeind ehf.
+    Copyright (C) 2021 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -1174,7 +1174,8 @@ def html_replacement(token):
     return token
 
 
-def generate_rough_tokens(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False):
+def generate_rough_tokens(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False,
+        one_sent_per_line=False):
     """ Generate rough tokens from a string or an iterable that contains strings """
     if text_or_gen is None:
         return
@@ -1196,7 +1197,13 @@ def generate_rough_tokens(text_or_gen, replace_composite_glyphs=True, replace_ht
         #         be a line (even if they don't contain any newline characters).
         #         That does not strictly have to be true and is not a declared assumption,
         #         except in tests, but the tokenizer has had this behavior for a long time.
-        sentence_split_pattern = r"(\n\s*\n|^\s*$)"
+
+        if one_sent_per_line:
+            # We know there's a single sentence per line
+            # Only split on newline
+            sentence_split_pattern = r"(\n)"
+        else:
+            sentence_split_pattern = r"(\n\s*\n|^\s*$)"
 
         splits = re.split(sentence_split_pattern, big_text)
         is_text = True
@@ -1268,6 +1275,7 @@ def parse_tokens(txt, **options):
     convert_numbers = options.get("convert_numbers", False)
     replace_composite_glyphs = options.get("replace_composite_glyphs", True)
     replace_html_escapes = options.get("replace_html_escapes", False)
+    one_sent_per_line = options.get("one_sent_per_line", False)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
@@ -1294,7 +1302,7 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for rt in generate_rough_tokens(txt, replace_composite_glyphs, replace_html_escapes):
+    for rt in generate_rough_tokens(txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line):
         # rt: raw token
 
         # Handle each sequence w of non-whitespace characters
@@ -2568,7 +2576,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     )
                     next_token = next(token_stream)
                 else:
-                    # Check for [number] 'prósent/prósentustig/hundraðshluta'
+                    # Check for [number] 'prósent/prósentustig/hundraðshlutar'
                     if coalesce_percent:
                         percentage = match_stem_list(next_token, PERCENTAGES)
                     else:

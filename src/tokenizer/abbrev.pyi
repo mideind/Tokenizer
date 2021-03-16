@@ -1,7 +1,9 @@
 # -*- encoding: utf-8 -*-
 """
 
-    Copyright(C) 2021 Miðeind ehf.
+    Type annotation stubs for Abbreviations
+
+    Copyright (C) 2021 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -27,20 +29,30 @@
 
 """
 
-from __future__ import absolute_import
-
-from .definitions import (
-    TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD,
-    EN_DASH, EM_DASH,
-    KLUDGY_ORDINALS_PASS_THROUGH, KLUDGY_ORDINALS_MODIFY, KLUDGY_ORDINALS_TRANSLATE
+from typing import (
+    Optional,
+    Set,
+    List,
+    Dict,
+    Tuple,
+    Sequence,
 )
-from .tokenizer import (
-    TOK, Tok, tokenize, tokenize_without_annotation, split_into_sentences,
-    parse_tokens, correct_spaces, detokenize, mark_paragraphs, paragraphs,
-    normalized_text, normalized_text_from_tokens, text_from_tokens,
-    calculate_indexes, generate_rough_tokens,
-)
-from .abbrev import Abbreviations, ConfigError
 
-__author__ = u"Miðeind ehf"
-__version__ = u"2.5.0"  # Also update setup.py
+Meaning = Tuple[str, int, str, str, str, str]
+MeaningList = Sequence[Meaning]
+
+class ConfigError(Exception):
+    ...
+
+class Abbreviations:
+
+    DICT: Dict[str, MeaningList] = ...
+    WRONGDICT: Dict[str, MeaningList] = ...
+    NAME_FINISHERS: Set[str] = ...
+    WRONGDOTS: Dict[str, List[str]] = ...
+    @staticmethod
+    def initialize() -> None: ...
+    @staticmethod
+    def has_abbreviation(meaning: str) -> bool: ...
+    @staticmethod
+    def get_meaning(abbrev: str) -> Optional[MeaningList]: ...

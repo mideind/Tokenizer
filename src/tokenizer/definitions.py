@@ -3,7 +3,7 @@
 
     Definitions used for tokenization of Icelandic text
 
-    Copyright (C) 2020 Miðeind ehf.
+    Copyright (C) 2021 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -478,6 +478,10 @@ SI_UNITS = {
     # Percentage and promille
     "%": ("%", 1.0),
     "‰": ("‰", 0.1),
+    # Velocity
+    "m/s": ("m/s", 1.0),
+    "km/klst": ("m/s", 1000.0/(60*60)),
+    #"km/klst.": ("m/s", 1000.0/(60*60)),
 }  # type: Dict[unicode, Tuple[unicode, Union[float, Callable[[float], float]]]]
 
 DIRECTIONS = {
@@ -704,7 +708,7 @@ ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
 # URL prefixes. Note that this list should not contain www since
 # www.something.com is a domain token, not a URL token.
-URL_PREFIXES = ("http://", "https://", "file://")
+URL_PREFIXES = ("http://", "https://", "file://", "ftp://", "ssh://", "sftp://", "smb://")
 
 TOP_LEVEL_DOMAINS = frozenset(
     (
@@ -742,6 +746,7 @@ TOP_LEVEL_DOMAINS = frozenset(
         "store",
         "gdn",
         "art",
+        "events",
         # ccTLDs
         "ac",
         "ad",

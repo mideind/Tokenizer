@@ -3,7 +3,7 @@
 
     Abbreviations module for tokenization of Icelandic text
 
-    Copyright (C) 2020 Miðeind ehf.
+    Copyright (C) 2021 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -36,8 +36,6 @@
 
 from __future__ import absolute_import
 from __future__ import unicode_literals
-
-import sys
 
 from typing import Set, List, Dict, Any
 
@@ -78,9 +76,9 @@ class Abbreviations:
         initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT = defaultdict(OrderedSet)  # type: Dict[str, Any]  # !!! TODO
+    DICT = defaultdict(OrderedSet)  # type: Dict[str, Any]
     # Wrong versions of abbreviations
-    WRONGDICT = defaultdict(OrderedSet)  # type: Dict[str, Any]  # !!! TODO
+    WRONGDICT = defaultdict(OrderedSet)  # type: Dict[str, Any]
     # All abbreviation meanings
     MEANINGS = set()  # type: Set[str]
     # Single-word abbreviations, i.e. those with only one dot at the end

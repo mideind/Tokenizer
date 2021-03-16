@@ -4,7 +4,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2020 Miðeind ehf.
+    Copyright (C) 2021 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -51,7 +51,7 @@ def read(*names, **kwargs):
 
 setup(
     name="tokenizer",
-    version="2.4.0",  # Also update src/tokenizer/__init__.py
+    version="2.5.0",  # Also update src/tokenizer/__init__.py
     license="MIT",
     description="A tokenizer for Icelandic text",
     long_description=u"{0}\n{1}".format(
