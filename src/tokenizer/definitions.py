@@ -475,6 +475,10 @@ SI_UNITS = {
     # Percentage and promille
     "%": ("%", 1.0),
     "‰": ("‰", 0.1),
+    # Velocity
+    "m/s": ("m/s", 1.0),
+    "km/klst": ("m/s", 1000.0/(60*60)),
+    #"km/klst.": ("m/s", 1000.0/(60*60)),
 }  # type: Dict[unicode, Tuple[unicode, Union[float, Callable[[float], float]]]]
 
 DIRECTIONS = {
