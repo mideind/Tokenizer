@@ -477,7 +477,8 @@ SI_UNITS = {
     "‰": ("‰", 0.1),
     # Velocity
     "m/s": ("m/s", 1.0),
-    "km/klst.": ("m/s", 0.278),
+    "km/klst": ("m/s", 1000.0/(60*60)),
+    #"km/klst.": ("m/s", 1000.0/(60*60)),
 }  # type: Dict[unicode, Tuple[unicode, Union[float, Callable[[float], float]]]]
 
 DIRECTIONS = {

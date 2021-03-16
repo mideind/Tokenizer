@@ -1495,7 +1495,7 @@ def test_abbrev():
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
-    tokens = list(t.tokenize("Ég jafnaði 3 km. Marteins."))
+    tokens = list(t.tokenize("Ég jafnaði 3 km. Marteins."))   # TODO can't handle cases before names in same sentenve
     #assert tokens == [
     #    Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
     #    Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -1532,7 +1532,7 @@ def test_abbrev():
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
-    tokens = list(t.tokenize("Ég jafnaði 3 kcal. Marteins."))
+    tokens = list(t.tokenize("Ég jafnaði 3 kcal. Marteins."))   # TODO can't handle cases before names in same sentenve
     #assert tokens == [
     #    Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
     #    Tok(kind=TOK.WORD, txt="Ég", val=None),
@@ -1558,8 +1558,6 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
-
-
     # m/s og km/klst.
     tokens = list(t.tokenize("Úti var 18 m/s og kuldi."))
     assert tokens == [
@@ -1573,14 +1571,31 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
+    tokens = list(t.tokenize("Bíllinn keyrði á 14 km/klst. Nonni keyrði á hámarkshraða."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Bíllinn", val=None),
+        Tok(kind=TOK.WORD, txt="keyrði", val=None),
+        Tok(kind=TOK.WORD, txt="á", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="14 km/klst", val=('14 km/klst', 14000.0)),  # TODO wrong val but correct tokenization
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Nonni", val=None),
+        Tok(kind=TOK.WORD, txt="keyrði", val=None),
+        Tok(kind=TOK.WORD, txt="á", val=None),
+        Tok(kind=TOK.WORD, txt="hámarkshraða", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
 
-    tokens = list(t.tokenize("Bílarnir keyrðu á 14 km/klst. hraða."))
+    tokens = list(t.tokenize("Bílarnir keyrðu á 14 km/klst hraða."))
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Bílarnir", val=None),
         Tok(kind=TOK.WORD, txt="keyrðu", val=None),
         Tok(kind=TOK.WORD, txt="á", val=None),
-        Tok(kind=TOK.MEASUREMENT, txt="14 km/klst.", val=('m/s', 3.8920000000000003)),
+        Tok(kind=TOK.MEASUREMENT, txt="14 km/klst", val=('m/s', 3.8888888888888893)),
         Tok(kind=TOK.WORD, txt="hraða", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
