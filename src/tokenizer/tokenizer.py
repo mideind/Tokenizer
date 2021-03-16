@@ -117,22 +117,23 @@ class Tok:
             self.origin_spans = self.origin_spans[:span[0]+len(new)] + self.origin_spans[span[1]:]
 
 
-    def substitute_all(self, old_char, new_char):
-        """ Substitute all occurrences of 'old_char' with 'new_char'.
+    def substitute_all(self, old_str, new_char):
+        """ Substitute all occurrences of 'old_str' with 'new_char'.
             The new character may be empty.
         """
+        # NOTE: This implementation is worst-case-quadratic in the length of the token text.
+        #       Fortunately tokens are almost always (?) short so this is an acceptable tradeoff
+        #       for a dead simple implementation.
         # TODO: Support arbitrary length substitutions? What does that do to origin tracking?
 
-        assert len(old_char) == 1, f"'old_char' ({old_char}) was not of length 1"
         assert len(new_char) == 0 or len(new_char) == 1, f"'new_char' ({new_char}) was too long."
 
-        i = 0
-        for c in self.txt:
-            if c == old_char:
-                self.substitute((i, i+1), new_char)
-                i += len(new_char)
-            else:
-                i += 1
+        while True:
+            i = self.txt.find(old_str)
+            if i == -1:
+                # No occurences of 'old_str' remain
+                break
+            self.substitute((i, i+len(old_str)), new_char)
 
 
     def concatenate(self, other, *, separator="", metadata_from_other=False):
@@ -1385,7 +1386,7 @@ def parse_tokens(txt, **options):
                 elif lw == 2 and (rt.txt == "[[" or rt.txt == "]]"):
                     # Begin or end paragraph marker
                     marker, rt = rt.split(2)
-                    if rt.txt == "[[":
+                    if marker.txt == "[[":
                         yield TOK.Begin_Paragraph(marker)
                     else:
                         yield TOK.End_Paragraph(marker)
@@ -2101,10 +2102,15 @@ def parse_sentences(token_stream):
                     # P_BEGIN immediately followed by P_END: skip both and continue
                     # The double assignment to token is necessary to ensure that
                     # we are in a correct state if next() raises StopIteration
-                    # XXX: We lose origin tracking here!
-                    print("YARR: DRAGONS")
+
+                    # To preserve origin tracking through this operation we must:
+                    # 1. squish the two tokens together
+                    _skip_me = token.concatenate(next_token, metadata_from_other=True)
+                    # 2. replace their text with nothing (while preserving the original text)
+                    _skip_me.substitute((0, len(_skip_me.txt)), "")
                     token = None
-                    token = next(token_stream)
+                    # 3. attach them to the front of the next token
+                    token = _skip_me.concatenate(next(token_stream), metadata_from_other=True)
                     continue
             elif token.kind == TOK.X_END:
                 assert not in_sentence
@@ -2594,10 +2600,12 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                         # the last word, but an amalgamated token text.
                         # Note: there is no meaning check for the first
                         # part of the composition, so it can be an unknown word.
-                        # XXX: We lose origin tracking here!
-                        txt = " ".join(t.txt for t in tq + [token, next_token])
-                        txt = txt.replace(" -", "-").replace(" ,", ",")
-                        token = Tok(TOK.WORD, txt, None)
+                        _acc = tq[0]
+                        for t in tq[1:] + [token, next_token]:
+                            _acc = _acc.concatenate(t, separator=" ", metadata_from_other=True)
+                        _acc.substitute_all(" -", "-")
+                        _acc.substitute_all(" ,", ",")
+                        token = _acc
                         next_token = next(token_stream)
                 else:
                     # Incorrect prediction: make amends and continue
