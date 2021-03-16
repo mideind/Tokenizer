@@ -701,7 +701,7 @@ ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
 # URL prefixes. Note that this list should not contain www since
 # www.something.com is a domain token, not a URL token.
-URL_PREFIXES = ("http://", "https://", "file://")
+URL_PREFIXES = ("http://", "https://", "file://", "ftp://", "ssh://", "sftp://", "smb://")
 
 TOP_LEVEL_DOMAINS = frozenset(
     (
@@ -739,6 +739,7 @@ TOP_LEVEL_DOMAINS = frozenset(
         "store",
         "gdn",
         "art",
+        "events",
         # ccTLDs
         "ac",
         "ad",
