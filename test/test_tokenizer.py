@@ -1165,6 +1165,426 @@ def test_abbrev():
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
+    tokens = list(t.tokenize("Nú er s. 550-1234 hjá bankanum."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Nú", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="s.", val=[('símanúmer', 0, 'hk', 'skst', 's.', '-')]),
+        Tok(kind=TOK.TELNO, txt="550-1234", val=('550-1234', '354')),
+        Tok(kind=TOK.WORD, txt="hjá", val=None),
+        Tok(kind=TOK.WORD, txt="bankanum", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég er með s. 550-1234."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="s.", val=[('símanúmer', 0, 'hk', 'skst', 's.', '-')]),
+        Tok(kind=TOK.TELNO, txt="550-1234", val=('550-1234', '354')),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég er með s. en hin er með símanúmer."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="s.", val=[('símanúmer', 0, 'hk', 'skst', 's.', '-')]),
+        Tok(kind=TOK.WORD, txt="en", val=None),
+        Tok(kind=TOK.WORD, txt="hin", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="símanúmer", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég er með s. Hin er með símanúmer."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="s.", val=[('símanúmer', 0, 'hk', 'skst', 's.', '-')]),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hin", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="símanúmer", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég er með s. Hinrik er með símanúmer."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="s.", val=[('símanúmer', 0, 'hk', 'skst', 's.', '-')]),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hinrik", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="símanúmer", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+
+    tokens = list(t.tokenize("Ég er með rknr. 0123-26-123456 í bankanum."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="rknr.", val=[('reikningsnúmer', 0, 'hk', 'skst', 'rknr.', '-')]),
+        Tok(kind=TOK.SERIALNUMBER, txt="0123-26-123456", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="bankanum", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég er með rknr. 0123-26-123456."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="rknr.", val=[('reikningsnúmer', 0, 'hk', 'skst', 'rknr.', '-')]),
+        Tok(kind=TOK.SERIALNUMBER, txt="0123-26-123456", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég er með rknr. en hin er með reikningsnúmer."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="rknr.", val=[('reikningsnúmer', 0, 'hk', 'skst', 'rknr.', '-')]),
+        Tok(kind=TOK.WORD, txt="en", val=None),
+        Tok(kind=TOK.WORD, txt="hin", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="reikningsnúmer", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+
+    tokens = list(t.tokenize("Hallur tók 11 frák. en Valur 12."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hallur", val=None),
+        Tok(kind=TOK.WORD, txt="tók", val=None),
+        Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
+        Tok(kind=TOK.WORD, txt="frák.", val=[('fráköst', 0, 'hk', 'skst', 'frák.', '-')]),
+        Tok(kind=TOK.WORD, txt="en", val=None),
+        Tok(kind=TOK.WORD, txt="Valur", val=None),
+        Tok(kind=TOK.NUMBER, txt="12", val=(12, None, None)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Hallur tók 11 frák. Marteinn tók 12."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hallur", val=None),
+        Tok(kind=TOK.WORD, txt="tók", val=None),
+        Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
+        Tok(kind=TOK.WORD, txt="frák.", val=[('fráköst', 0, 'hk', 'skst', 'frák.', '-')]),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Marteinn", val=None),
+        Tok(kind=TOK.WORD, txt="tók", val=None),
+        Tok(kind=TOK.NUMBER, txt="12", val=(12, None, None)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Hallur tók 11 frák. Hinn tók tólf."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hallur", val=None),
+        Tok(kind=TOK.WORD, txt="tók", val=None),
+        Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
+        Tok(kind=TOK.WORD, txt="frák.", val=[('fráköst', 0, 'hk', 'skst', 'frák.', '-')]),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hinn", val=None),
+        Tok(kind=TOK.WORD, txt="tók", val=None),
+        Tok(kind=TOK.WORD, txt="tólf", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+
+    tokens = list(t.tokenize("Ath. ekki ganga um gólf."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ath.", val=[('athuga', 0, 'so', 'skst', 'ath.', '-')]),
+        Tok(kind=TOK.WORD, txt="ekki", val=None),
+        Tok(kind=TOK.WORD, txt="ganga", val=None),
+        Tok(kind=TOK.WORD, txt="um", val=None),
+        Tok(kind=TOK.WORD, txt="gólf", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ath. Marteinn verður ekki við á morgun."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ath.", val=[('athuga', 0, 'so', 'skst', 'ath.', '-')]),
+        Tok(kind=TOK.WORD, txt="Marteinn", val=None),
+        Tok(kind=TOK.WORD, txt="verður", val=None),
+        Tok(kind=TOK.WORD, txt="ekki", val=None),
+        Tok(kind=TOK.WORD, txt="við", val=None),
+        Tok(kind=TOK.WORD, txt="á", val=None),
+        Tok(kind=TOK.WORD, txt="morgun", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Jón keypti átta kýr, ath. heimildir."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Jón", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.WORD, txt="átta", val=None),
+        Tok(kind=TOK.WORD, txt="kýr", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
+        Tok(kind=TOK.WORD, txt="ath.", val=[('athuga', 0, 'so', 'skst', 'ath.', '-')]),
+        Tok(kind=TOK.WORD, txt="heimildir", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Ég er ástfangin, ps. ekki lesa dagbókina mína."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="ástfangin", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
+        Tok(kind=TOK.WORD, txt="ps.", val=[('eftirskrift', 0, 'kvk', 'skst', 'ps.', '-')]),
+        Tok(kind=TOK.WORD, txt="ekki", val=None),
+        Tok(kind=TOK.WORD, txt="lesa", val=None),
+        Tok(kind=TOK.WORD, txt="dagbókina", val=None),
+        Tok(kind=TOK.WORD, txt="mína", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Vala er með M.Sc. í málfræði."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Vala", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="M.Sc.", val=[('Master of Science', 0, 'hk', 'erl', 'M.Sc.', '-')]),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="málfræði", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Vala jafnaði M.Sc. Halls."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Vala", val=None),
+        Tok(kind=TOK.WORD, txt="jafnaði", val=None),
+        Tok(kind=TOK.WORD, txt="M.Sc.", val=[('Master of Science', 0, 'hk', 'erl', 'M.Sc.', '-')]),
+        Tok(kind=TOK.WORD, txt="Halls", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Vala er með M.Sc. Hallur er með grunnskólapróf."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Vala", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="M.Sc.", val=[('Master of Science', 0, 'hk', 'erl', 'M.Sc.', '-')]),
+        Tok(kind=TOK.WORD, txt="Hallur", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="grunnskólapróf", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Vala er með M.Sc. Hinn er með grunnskólapróf."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Vala", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="M.Sc.", val=[('Master of Science', 0, 'hk', 'erl', 'M.Sc.', '-')]),
+        Tok(kind=TOK.WORD, txt="Hinn", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="með", val=None),
+        Tok(kind=TOK.WORD, txt="grunnskólapróf", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Það er kalt í dag m.v. veðurspána."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Það", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="kalt", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="dag", val=None),
+        Tok(kind=TOK.WORD, txt="m.v.", val=[('miðað við', 0, 'fs', 'frasi', 'm.v.', '-')]),
+        Tok(kind=TOK.WORD, txt="veðurspána", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Jóna er hávaxin m.v. Martein."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Jóna", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="hávaxin", val=None),
+        Tok(kind=TOK.WORD, txt="m.v.", val=[('miðað við', 0, 'fs', 'frasi', 'm.v.', '-')]),
+        Tok(kind=TOK.WORD, txt="Martein", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Jóna þarf að velja á milli matar vs. reikninga."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Jóna", val=None),
+        Tok(kind=TOK.WORD, txt="þarf", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="velja", val=None),
+        Tok(kind=TOK.WORD, txt="á", val=None),
+        Tok(kind=TOK.WORD, txt="milli", val=None),
+        Tok(kind=TOK.WORD, txt="matar", val=None),
+        Tok(kind=TOK.WORD, txt="vs.", val=[('gegn', 0, 'fs', 'skst', 'vs.', '-')]),
+        Tok(kind=TOK.WORD, txt="reikninga", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Jóna þarf að velja á milli Íslands vs. Svíþjóðar."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Jóna", val=None),
+        Tok(kind=TOK.WORD, txt="þarf", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="velja", val=None),
+        Tok(kind=TOK.WORD, txt="á", val=None),
+        Tok(kind=TOK.WORD, txt="milli", val=None),
+        Tok(kind=TOK.WORD, txt="Íslands", val=None),
+        Tok(kind=TOK.WORD, txt="vs.", val=[('gegn', 0, 'fs', 'skst', 'vs.', '-')]),
+        Tok(kind=TOK.WORD, txt="Svíþjóðar", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Ég keypti 3 km. af Marteini."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="3 km.", val=('m', 3000.0)),
+        Tok(kind=TOK.WORD, txt="af", val=None),
+        Tok(kind=TOK.WORD, txt="Marteini", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég jafnaði 3 km. Marteins."))
+    #assert tokens == [
+    #    Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+    #    Tok(kind=TOK.WORD, txt="Ég", val=None),
+    #    Tok(kind=TOK.WORD, txt="jafnaði", val=None),
+    #    Tok(kind=TOK.MEASUREMENT, txt="3 km.", val=('m', 3000.0)),
+    #    Tok(kind=TOK.WORD, txt="Marteins", val=None),
+    #    Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+    #    Tok(kind=TOK.S_END, txt=None, val=None),
+    #]
+    tokens = list(t.tokenize("Ég keypti 3 km. Hinn keypti átta."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="3 km", val=('m', 3000.0)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hinn", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.WORD, txt="átta", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Ég keypti 3 kcal. af Marteini."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="3 kcal.", val=('J', 12552)),
+        Tok(kind=TOK.WORD, txt="af", val=None),
+        Tok(kind=TOK.WORD, txt="Marteini", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+    tokens = list(t.tokenize("Ég jafnaði 3 kcal. Marteins."))
+    #assert tokens == [
+    #    Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+    #    Tok(kind=TOK.WORD, txt="Ég", val=None),
+    #    Tok(kind=TOK.WORD, txt="jafnaði", val=None),
+    #    Tok(kind=TOK.MEASUREMENT, txt="3 kcal.", val=('J', 12552)),
+    #    Tok(kind=TOK.WORD, txt="Marteins", val=None),
+    #    Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+    #    Tok(kind=TOK.S_END, txt=None, val=None),
+    #]
+    tokens = list(t.tokenize("Ég keypti 3 kcal. Hinn keypti átta."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="3 kcal", val=('J', 12552)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Hinn", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.WORD, txt="átta", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+
+
+    # m/s og km/klst.
+    tokens = list(t.tokenize("Úti var 18 m/s og kuldi."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Úti", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="18 m/s", val=('m/s', 18.0)),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.WORD, txt="kuldi", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+
+    tokens = list(t.tokenize("Bílarnir keyrðu á 14 km/klst. hraða."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Bílarnir", val=None),
+        Tok(kind=TOK.WORD, txt="keyrðu", val=None),
+        Tok(kind=TOK.WORD, txt="á", val=None),
+        Tok(kind=TOK.MEASUREMENT, txt="14 km/klst.", val=('m/s', 3.8920000000000003)),
+        Tok(kind=TOK.WORD, txt="hraða", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
 
 def test_overlap():
     # Make sure that there is no overlap between the punctuation sets
