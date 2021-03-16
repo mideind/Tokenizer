@@ -321,3 +321,19 @@ def test_tok_substitute_all():
     t.substitute_all("r", "")
     assert t == Tok(TOK.RAW, "Þessi veðu lengi.", None, s, [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 18, 19])
 
+
+def test_tok_substitute_longer():
+    s = "asdf"
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_longer((1, 2), "xyz")
+    assert t == Tok(TOK.RAW, "axyzdf", None, s, [0, 2, 2, 2, 2, 3])
+
+    s = "asdf"
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_longer((3, 4), "xyz")
+    assert t == Tok(TOK.RAW, "asdxyz", None, s, [0, 1, 2, 4, 4, 4])
+
+    s = "asdf"
+    t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    t.substitute_longer((0, 1), "xyz")
+    assert t == Tok(TOK.RAW, "xyzsdf", None, s, [1, 1, 1, 1, 2, 3])

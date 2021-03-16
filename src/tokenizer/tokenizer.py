@@ -108,13 +108,38 @@ class Tok:
 
     def substitute(self, span, new):
         """ Substitute a span with a single or empty character 'new'. """
-        substitute_length = span[1]-span[0]
-
         self.txt = self.txt[:span[0]] + new + self.txt[span[1]:]
-
         if self._is_tracking_original():
             # Remove origin entries that correspond to characters that are gone.
             self.origin_spans = self.origin_spans[:span[0]+len(new)] + self.origin_spans[span[1]:]
+
+
+    def substitute_longer(self, span, new):
+        """ Substitute a span with a potentially longer string.
+            This tracks origin differently from the regular substitution function.
+            Due to the inobviousness of how to assign origin to the new string we simply
+            make it have an empty origin.
+            This will probably cause some weirdness if this string later gets split or substituted
+            but I don't think that ever happens in the current implementation.
+        """
+        self.txt = self.txt[:span[0]] + new + self.txt[span[1]:]
+
+        if self._is_tracking_original():
+            head = self.origin_spans[:span[0]]
+            tail = self.origin_spans[span[1]:]
+
+            # The origin span of the new stuff will be of length 0 since we can't
+            # proprely attribute it to individual characters in the original string.
+
+            if len(tail) == 0:
+                # We're replacing the end of the string
+                # Can't pick the next element after the removed string since it doesn't exist
+                # Use the length instead
+                new_origin = len(self.original)
+            else:
+                new_origin = self.origin_spans[span[1]]
+
+            self.origin_spans = head + [new_origin]*len(new) + tail
 
 
     def substitute_all(self, old_str, new_char):
@@ -182,7 +207,14 @@ class Tok:
 
 
     def __repr__(self):
-        return f'Tok({self.kind}, "{self.txt}", {self.val}, "{self.original}", {self.origin_spans})'
+        def quoted_string_repr(obj):
+            if type(obj) == str:
+                return f'"{obj}"'
+            else:
+                return str(obj)
+
+        return f'Tok({self.kind}, {quoted_string_repr(self.txt)}, ' \
+               f'{self.val}, {quoted_string_repr(self.original)}, {self.origin_spans})'
 
 
 
@@ -1500,12 +1532,10 @@ def parse_tokens(txt, **options):
                         # This is a kludgy ordinal
                         key_tok, rt = rt.split(len(key))
                         if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
-                            # XXX TODO: We currently fail origin tracking in this case since the Tok class isn't 
-                            #           set up to handle substitutions that lengthen the string.
                             # Convert ordinals to corresponding word tokens:
                             # '1sti' -> 'fyrsti', '3ji' -> 'þriðji', etc.
-                            #yield TOK.Word(val)
-                            yield Tok(TOK.WORD, val, None)
+                            key_tok.substitute_longer((0, len(key)), val)
+                            yield TOK.Word(key_tok)
                         elif (
                             handle_kludgy_ordinals == KLUDGY_ORDINALS_TRANSLATE
                             and key in ORDINAL_NUMBERS
@@ -1989,9 +2019,12 @@ def parse_particles(token_stream, **options):
                     val = factor * token.val[1]
 
                 if convert_measurements:
-                    token = TOK.Measurement(
-                        # XXX: This is not currently well supported for origin tracking.
-                        Tok(TOK.RAW, token.txt[:-1] + " " + new_unit, None),  # 200 °C
+                    degree_symbol_span = (len(token.txt)-1, len(token.txt))
+                    # Remove the ° symbol
+                    token.substitute(degree_symbol_span, "")
+                    # Add it again in the correct place along with the unit
+                    token = token.concatenate(next_token, separator=" °")
+                    token = TOK.Measurement(token,
                         unit,  # K
                         val,  # 200 converted to Kelvin
                     )

@@ -456,3 +456,33 @@ def test_composite_phrases():
     assert char_indexes == [0, 24, 25]
     assert byte_indexes == [0, 25, 26]
 
+
+def test_lengthening_substitutions():
+    s = "Þetta er 3ji báturinn!"
+    #    0123456789012345678901
+    #    ^    ^  ^   ^        ^
+    #    x             x
+    #             !             lengthening happens here (3ji->þriðji)
+    toks = tokenizer.parse_tokens(s, handle_kludgy_ordinals=tokenizer.KLUDGY_ORDINALS_MODIFY)
+    char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
+    assert char_indexes == [0, 5, 8, 12, 21]
+    assert byte_indexes == [0, 6, 9, 13, 23]
+    toks = tokenizer.parse_tokens(s, handle_kludgy_ordinals=tokenizer.KLUDGY_ORDINALS_MODIFY)
+    char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
+    assert char_indexes == [0, 5, 8, 12, 21, 22]
+    assert byte_indexes == [0, 6, 9, 13, 23, 24]
+
+
+def test_converted_measurements():
+    s = "Stillið ofninn á 12° C til að baka kökuna."
+    #    012345678901234567890123456789012345678901
+    #    ^      ^      ^ ^     ^   ^  ^    ^      ^
+    #          x        x   x        x       x
+    toks = tokenizer.tokenize(s, convert_measurements=True)
+    char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
+    assert char_indexes == [0, 7, 14, 16, 22, 26, 29, 34, 41]
+    assert byte_indexes == [0, 8, 15, 18, 25, 29, 33, 38, 46]
+    toks = tokenizer.tokenize(s, convert_measurements=True)
+    char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
+    assert char_indexes == [0, 7, 14, 16, 22, 26, 29, 34, 41, 42]
+    assert byte_indexes == [0, 8, 15, 18, 25, 29, 33, 38, 46, 47]
