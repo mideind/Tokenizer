@@ -39,50 +39,51 @@
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from typing import Any, List, Optional
+from typing import Any, List, Sequence, Optional, Iterator, Iterable
 
 import re
 import datetime
 import unicodedata
 
-from .abbrev import Abbreviations
-
 # pylint: disable=unused-wildcard-import
 from .definitions import *
+from .abbrev import Abbreviations
 
 
 class Tok:
-
-    def __init__(self, kind: int, txt: str, val: Any, original: Optional[str] = None, origin_spans: Optional[List[int]] = None):
+    def __init__(
+        self,
+        kind: int,
+        txt: str,
+        val: ValType,
+        original: Optional[str] = None,
+        origin_spans: Optional[List[int]] = None,
+    ) -> None:
         # Type of token
-        self.kind = kind
+        self.kind: int = kind
         # Text of the token
-        self.txt = txt
+        self.txt: str = txt
         # Value of the token (e.g. if it is a date or currency)
-        self.val = val
+        self.val: ValType = val
         # The full original string of this token
         # If this is None then we're not tracking origins
-        self.original = original
+        self.original: Optional[str] = original
         # Each index in origin_spans maps from 'txt' (which may have substitutions) to 'original'
         # This is required to preserve 'original' correctly when splitting
-        self.origin_spans = origin_spans
+        self.origin_spans: Optional[List[int]] = origin_spans
 
-
-    def __eq__(self, other: Any):
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Tok):
             return False
-
-        return self.kind == other.kind \
-            and self.txt == other.txt \
-            and self.val == other.val \
-            and self.original == other.original \
+        return (
+            self.kind == other.kind
+            and self.txt == other.txt
+            and self.val == other.val
+            and self.original == other.original
             and self.origin_spans == other.origin_spans
+        )
 
-
-    def split(self, pos: int):
+    def split(self, pos: int) -> Tuple["Tok", "Tok"]:
         """ Split this token into two at 'pos'.
             The first token returned will have 'pos' characters and the second one will have the rest.
         """
@@ -90,29 +91,40 @@ class Tok:
         # TODO: What should we do with val?
 
         if self._is_tracking_original():
+            assert self.origin_spans is not None
+            assert self.original is not None
             if pos >= len(self.origin_spans):
                 l = Tok(self.kind, self.txt, self.val, self.original, self.origin_spans)
                 r = Tok(self.kind, "", None, "", [])
             else:
-                l = Tok(self.kind, self.txt[:pos], self.val,
-                        self.original[:self.origin_spans[pos]], self.origin_spans[:pos])
-                r = Tok(self.kind, self.txt[pos:], self.val,
-                        self.original[self.origin_spans[pos]:],
-                        [x-self.origin_spans[pos] for x in self.origin_spans[pos:]])
+                l = Tok(
+                    self.kind,
+                    self.txt[:pos],
+                    self.val,
+                    self.original[: self.origin_spans[pos]],
+                    self.origin_spans[:pos],
+                )
+                r = Tok(
+                    self.kind,
+                    self.txt[pos:],
+                    self.val,
+                    self.original[self.origin_spans[pos] :],
+                    [x - self.origin_spans[pos] for x in self.origin_spans[pos:]],
+                )
         else:
             l = Tok(self.kind, self.txt[:pos], self.val)
             r = Tok(self.kind, self.txt[pos:], self.val)
 
         return l, r
 
-
     def substitute(self, span, new):
         """ Substitute a span with a single or empty character 'new'. """
-        self.txt = self.txt[:span[0]] + new + self.txt[span[1]:]
+        self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
         if self._is_tracking_original():
             # Remove origin entries that correspond to characters that are gone.
-            self.origin_spans = self.origin_spans[:span[0]+len(new)] + self.origin_spans[span[1]:]
-
+            self.origin_spans = (
+                self.origin_spans[: span[0] + len(new)] + self.origin_spans[span[1] :]
+            )
 
     def substitute_longer(self, span, new):
         """ Substitute a span with a potentially longer string.
@@ -122,11 +134,11 @@ class Tok:
             This will probably cause some weirdness if this string later gets split or substituted
             but I don't think that ever happens in the current implementation.
         """
-        self.txt = self.txt[:span[0]] + new + self.txt[span[1]:]
+        self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
 
         if self._is_tracking_original():
-            head = self.origin_spans[:span[0]]
-            tail = self.origin_spans[span[1]:]
+            head = self.origin_spans[: span[0]]
+            tail = self.origin_spans[span[1] :]
 
             # The origin span of the new stuff will be of length 0 since we can't
             # proprely attribute it to individual characters in the original string.
@@ -139,10 +151,9 @@ class Tok:
             else:
                 new_origin = self.origin_spans[span[1]]
 
-            self.origin_spans = head + [new_origin]*len(new) + tail
+            self.origin_spans = head + [new_origin] * len(new) + tail
 
-
-    def substitute_all(self, old_str, new_char):
+    def substitute_all(self, old_str: str, new_char: str):
         """ Substitute all occurrences of 'old_str' with 'new_char'.
             The new character may be empty.
         """
@@ -151,17 +162,18 @@ class Tok:
         #       for a dead simple implementation.
         # TODO: Support arbitrary length substitutions? What does that do to origin tracking?
 
-        assert len(new_char) == 0 or len(new_char) == 1, f"'new_char' ({new_char}) was too long."
+        assert (
+            len(new_char) == 0 or len(new_char) == 1
+        ), f"'new_char' ({new_char}) was too long."
 
         while True:
             i = self.txt.find(old_str)
             if i == -1:
                 # No occurences of 'old_str' remain
                 break
-            self.substitute((i, i+len(old_str)), new_char)
+            self.substitute((i, i + len(old_str)), new_char)
 
-
-    def concatenate(self, other, *, separator="", metadata_from_other=False):
+    def concatenate(self, other: "Tok", *, separator: str="", metadata_from_other: bool=False) -> "Tok":
         """ Return a new token that consists of self with other concatenated to the end.
             A separator can optionally be supplied.
             The new token will have metadata (kind and val) from self unless 'metadata_from_other' is True.
@@ -177,22 +189,24 @@ class Tok:
         other_original = other.original if other.original else ""
         new_original = self_original + other_original
 
-        self_origin_spans = self.origin_spans if self.origin_spans else []
-        other_origin_spans = other.origin_spans if other.origin_spans else []
-        separator_origin_spans = [len(self_original)]*len(separator) if len(other_origin_spans) > 0 else []
-        new_origin_spans = self_origin_spans \
-                + separator_origin_spans \
-                + [i + len(self_original) for i in other_origin_spans]
+        self_origin_spans: List[int] = self.origin_spans or []
+        other_origin_spans = other.origin_spans or []
+        separator_origin_spans = (
+            [len(self_original)] * len(separator) if len(other_origin_spans) > 0 else []
+        )
+        new_origin_spans = (
+            self_origin_spans
+            + separator_origin_spans
+            + [i + len(self_original) for i in other_origin_spans]
+        )
 
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
-
 
     def _is_tracking_original(self):
         """ Return true iff this instance is tracking origin spans. """
         return self.original is not None and self.origin_spans is not None
 
-
-    def __getitem__(self, i):
+    def __getitem__(self, i: int) -> Union[int, str, ValType]:
         """ Backwards compatibility for when Tok was a namedtuple. """
         if not isinstance(i, int):
             raise NotImplementedError("Tok can only be indexed by int")
@@ -205,17 +219,18 @@ class Tok:
         else:
             raise IndexError("Tok can only be indexed by 0, 1 or 2")
 
+    def __repr__(self) -> str:
 
-    def __repr__(self):
-        def quoted_string_repr(obj):
-            if type(obj) == str:
+        def quoted_string_repr(obj: Any) -> str:
+            if isinstance(obj, str):
                 return f'"{obj}"'
             else:
                 return str(obj)
 
-        return f'Tok({self.kind}, {quoted_string_repr(self.txt)}, ' \
-               f'{self.val}, {quoted_string_repr(self.original)}, {self.origin_spans})'
-
+        return (
+            f"Tok({self.kind}, {quoted_string_repr(self.txt)}, "
+            f"{self.val}, {quoted_string_repr(self.original)}, {self.origin_spans})"
+        )
 
 
 class TOK:
@@ -444,7 +459,6 @@ class TOK:
             return t
         else:
             raise TypeError
-        
 
     @staticmethod
     def Timestampabs(t, y, mo, d, h, m, s):
@@ -1135,7 +1149,10 @@ def parse_digits(tok, convert_numbers):
 
     # Strange thing
     # !!! TODO: May want to mark this as an error
-    return TOK.Unknown(tok), Tok(TOK.RAW, "", None, "", []) # TODO: is this the correct thing for the rest token?
+    return (
+        TOK.Unknown(tok),
+        Tok(TOK.RAW, "", None, "", []),
+    )  # TODO: is this the correct thing for the rest token?
 
 
 def html_escape(match):
@@ -1147,11 +1164,11 @@ def html_escape(match):
     g = match.group(2)
     if g is not None:
         # Hex code: '#xABCD'
-        return match.span(), unicode_chr(int(g[2:], base=16))
+        return match.span(), chr(int(g[2:], base=16))
     g = match.group(3)
     assert g is not None
     # Decimal code: '#8930'
-    return match.span(), unicode_chr(int(g[1:]))
+    return match.span(), chr(int(g[1:]))
 
 
 def unicode_replacement(token):
@@ -1159,8 +1176,10 @@ def unicode_replacement(token):
     total_reduction = 0
     for m in UNICODE_REGEX.finditer(token.txt):
         span, new_letter = m.span(), UNICODE_REPLACEMENTS[m.group(0)]
-        token.substitute((span[0]-total_reduction, span[1]-total_reduction), new_letter)
-        total_reduction += (span[1] - span[0] - len(new_letter))
+        token.substitute(
+            (span[0] - total_reduction, span[1] - total_reduction), new_letter
+        )
+        total_reduction += span[1] - span[0] - len(new_letter)
     return token
 
 
@@ -1169,17 +1188,23 @@ def html_replacement(token):
     total_reduction = 0
     for m in HTML_ESCAPE_REGEX.finditer(token.txt):
         span, new_letter = html_escape(m)
-        token.substitute((span[0]-total_reduction, span[1]-total_reduction), new_letter)
-        total_reduction += (span[1] - span[0] - len(new_letter))
+        token.substitute(
+            (span[0] - total_reduction, span[1] - total_reduction), new_letter
+        )
+        total_reduction += span[1] - span[0] - len(new_letter)
     return token
 
 
-def generate_rough_tokens(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False,
-        one_sent_per_line=False):
+def generate_rough_tokens(
+    text_or_gen: Union[str, Iterable[str]],
+    replace_composite_glyphs: bool=True,
+    replace_html_escapes: bool=False,
+    one_sent_per_line: bool=False,
+) -> Iterator[Tok]:
     """ Generate rough tokens from a string or an iterable that contains strings """
     if text_or_gen is None:
         return
-    if is_str(text_or_gen):
+    if isinstance(text_or_gen, str):
         # The parameter is a single string: wrap it in an iterable
         text_or_gen = [text_or_gen]
     # Iterate through text_or_gen, which is assumed to yield strings
@@ -1223,6 +1248,7 @@ def generate_rough_tokens(text_or_gen, replace_composite_glyphs=True, replace_ht
 
                 while tok_big.txt != "":
                     res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
+                    assert res is not None
                     tok, tok_big = tok_big.split(res.span(0)[1])
 
                     # Remove whitespace from the start of the token
@@ -1302,7 +1328,9 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for rt in generate_rough_tokens(txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line):
+    for rt in generate_rough_tokens(
+        txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
+    ):
         # rt: raw token
 
         # Handle each sequence w of non-whitespace characters
@@ -1349,9 +1377,9 @@ def parse_tokens(txt, **options):
                     yield TOK.Punctuation(first_punct, normalized="„")
                     yield TOK.Word(word)
                     yield TOK.Punctuation(last_punct, normalized="“")
-                    #yield TOK.Punctuation(w[0], normalized="„")
-                    #yield TOK.Word(w[1:-1])
-                    #yield TOK.Punctuation(w[-1], normalized="“")
+                    # yield TOK.Punctuation(w[0], normalized="„")
+                    # yield TOK.Word(w[1:-1])
+                    # yield TOK.Punctuation(w[-1], normalized="“")
                     continue
             elif rt.txt[0] in SQUOTES and rt.txt[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
@@ -1362,9 +1390,9 @@ def parse_tokens(txt, **options):
                     yield TOK.Punctuation(first_punct, normalized="‚")
                     yield TOK.Word(word)
                     yield TOK.Punctuation(last_punct, normalized="‘")
-                    #yield TOK.Punctuation(w[0], normalized="‚")
-                    #yield TOK.Word(w[1:-1])
-                    #yield TOK.Punctuation(w[-1], normalized="‘")
+                    # yield TOK.Punctuation(w[0], normalized="‚")
+                    # yield TOK.Word(w[1:-1])
+                    # yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
 
         # Special case for leading quotes, which are interpreted
@@ -1396,7 +1424,7 @@ def parse_tokens(txt, **options):
                     # Treat ellipsis as one piece of punctuation
                     numdots = 0
                     for c in rt.txt:
-                        if c == '.':
+                        if c == ".":
                             numdots += 1
                         else:
                             break
@@ -1406,7 +1434,7 @@ def parse_tokens(txt, **options):
                     # Treat ellipsis as one piece of punctuation
                     numdots = 0
                     for c in rt.txt:
-                        if c == '…':
+                        if c == "…":
                             numdots += 1
                         else:
                             break
@@ -1532,10 +1560,14 @@ def parse_tokens(txt, **options):
             # (eventually prefixed by a '+' or '-')
             if rt.txt and (
                 rt.txt[0] in DIGITS_PREFIX
-                or (rt.txt[0] in SIGN_PREFIX and len(rt.txt) >= 2 and rt.txt[1] in DIGITS_PREFIX)
+                or (
+                    rt.txt[0] in SIGN_PREFIX
+                    and len(rt.txt) >= 2
+                    and rt.txt[1] in DIGITS_PREFIX
+                )
             ):
                 # Handle kludgy ordinals: '3ji', '5ti', etc.
-                for key, val in items(ORDINAL_ERRORS):
+                for key, val in ORDINAL_ERRORS.items():
                     if rt.txt.startswith(key):
                         # This is a kludgy ordinal
                         key_tok, rt = rt.split(len(key))
@@ -1590,25 +1622,36 @@ def parse_tokens(txt, **options):
                         ate = True
 
             # Check for currency abbreviations immediately followed by a number
-            if rt.txt and len(rt.txt) > 3 and rt.txt[0:3] in CURRENCY_ABBREV and rt.txt[3].isdigit():
+            if (
+                rt.txt
+                and len(rt.txt) > 3
+                and rt.txt[0:3] in CURRENCY_ABBREV
+                and rt.txt[3].isdigit()
+            ):
                 # XXX: This feels a little hacky
                 temp_tok = Tok(TOK.RAW, rt.txt[3:], None)
                 digit_tok, rest = parse_digits(temp_tok, convert_numbers)
                 if digit_tok.kind == TOK.NUMBER:
-                    amount, rt = rt.split(3+len(digit_tok.txt))
+                    amount, rt = rt.split(3 + len(digit_tok.txt))
                     yield TOK.Amount(amount, amount.txt[:3], digit_tok.val[0])
                     ate = True
 
             # Alphabetic characters
             # (or a hyphen immediately followed by alphabetic characters,
             # such as in 'þingkonur og -menn')
-            if rt.txt and rt.txt[0].isalpha(): # XXX: This does not seem to fit the comment above ('-'.isalpha()==False)
+            if (
+                rt.txt and rt.txt[0].isalpha()
+            ):  # XXX: This does not seem to fit the comment above ('-'.isalpha()==False)
                 ate = True
                 lw = len(rt.txt)
                 i = 1
                 while i < lw and (
                     rt.txt[i].isalpha()
-                    or (rt.txt[i] in PUNCT_INSIDE_WORD and i + 1 < lw and rt.txt[i + 1].isalpha())
+                    or (
+                        rt.txt[i] in PUNCT_INSIDE_WORD
+                        and i + 1 < lw
+                        and rt.txt[i + 1].isalpha()
+                    )
                 ):
                     # We allow dots to occur inside words in the case of
                     # abbreviations; also apostrophes are allowed within
@@ -1646,9 +1689,9 @@ def parse_tokens(txt, **options):
                     yield TOK.Word(word1)
                     yield TOK.Punctuation(punct)
                     yield TOK.Word(word2)
-                    #yield TOK.Word(a[0])
-                    #yield TOK.Punctuation(".")
-                    #yield TOK.Word(a[1])
+                    # yield TOK.Word(a[0])
+                    # yield TOK.Punctuation(".")
+                    # yield TOK.Word(a[1])
                 else:
                     if ww.endswith("-og") or ww.endswith("-eða"):
                         # Handle missing space before 'og'/'eða',
@@ -1662,9 +1705,9 @@ def parse_tokens(txt, **options):
                         yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
                         yield TOK.Word(word2)
 
-                        #yield TOK.Word(a[0])
-                        #yield TOK.Punctuation("-", normalized=COMPOSITE_HYPHEN)
-                        #yield TOK.Word(a[1])
+                        # yield TOK.Word(a[0])
+                        # yield TOK.Punctuation("-", normalized=COMPOSITE_HYPHEN)
+                        # yield TOK.Word(a[1])
                     else:
                         word, rt = rt.split(i)
                         yield TOK.Word(word)
@@ -1741,11 +1784,12 @@ def parse_particles(token_stream, **options):
             # Make the lookahead checks we're interested in
             # Check for currency symbol followed by number, e.g. $10
             if token.txt in CURRENCY_SYMBOLS:
-                for symbol, currabbr in items(CURRENCY_SYMBOLS):
+                for symbol, currabbr in CURRENCY_SYMBOLS.items():
                     if (
-                        token.kind == TOK.PUNCTUATION # XXX: this should probably be outside the loop
+                        token.kind
+                        == TOK.PUNCTUATION  # XXX: this should probably be outside the loop
                         and token.txt == symbol
-                        and next_token.kind == TOK.NUMBER # XXX: this also
+                        and next_token.kind == TOK.NUMBER  # XXX: this also
                     ):
                         token = TOK.Amount(
                             token.concatenate(next_token), currabbr, next_token.val[0]
@@ -1824,7 +1868,9 @@ def parse_particles(token_stream, **options):
                             token = next_token
                         else:
                             # Substitute the abbreviation and eat the period
-                            token = TOK.Word(token.concatenate(next_token), lookup(abbrev))
+                            token = TOK.Word(
+                                token.concatenate(next_token), lookup(abbrev)
+                            )
                     else:
                         # 'Regular' abbreviation in the middle of a sentence:
                         # Eat the period and yield the abbreviation as a single token
@@ -1842,7 +1888,9 @@ def parse_particles(token_stream, **options):
                         # If we now have hh.mm, parse it as such
                         a = "{0:.2f}".format(next_token.val[0]).split(".")
                         h, m = int(a[0]), int(a[1])
-                        token = TOK.Time(token.concatenate(next_token, separator=" "), h, m, 0)
+                        token = TOK.Time(
+                            token.concatenate(next_token, separator=" "), h, m, 0
+                        )
                     else:
                         # next_token.kind is TOK.TIME
                         token = TOK.Time(
@@ -1861,7 +1909,7 @@ def parse_particles(token_stream, **options):
                     # Match: coalesce and step to next token
                     token = TOK.Time(
                         token.concatenate(next_token, separator=" "),
-                        *CLOCK_NUMBERS[next_token.txt.lower()]
+                        *CLOCK_NUMBERS[next_token.txt.lower()],
                     )
                     next_token = next(token_stream)
 
@@ -1874,10 +1922,7 @@ def parse_particles(token_stream, **options):
                         # Match
                         temp_tok = token.concatenate(next_token, separator=" ")
                         temp_tok = temp_tok.concatenate(time_token, separator=" ")
-                        token = TOK.Time(
-                            temp_tok,
-                            *CLOCK_NUMBERS["hálf" + time_txt]
-                        )
+                        token = TOK.Time(temp_tok, *CLOCK_NUMBERS["hálf" + time_txt])
                         next_token = next(token_stream)
                     else:
                         # Not a match: must retreat
@@ -1922,7 +1967,9 @@ def parse_particles(token_stream, **options):
                     sign = next_token.txt
                     # Store promille as one-tenth of a percentage
                     factor = 1.0 if sign == "%" else 0.1
-                    token = TOK.Percent(token.concatenate(next_token), token.val[0] * factor)
+                    token = TOK.Percent(
+                        token.concatenate(next_token), token.val[0] * factor
+                    )
                     next_token = next(token_stream)
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
@@ -1986,7 +2033,9 @@ def parse_particles(token_stream, **options):
                     # Simple scaling factor
                     value *= factor
                 if unit in ("%", "‰"):
-                    token = TOK.Percent(token.concatenate(next_token, separator=" "), value)
+                    token = TOK.Percent(
+                        token.concatenate(next_token, separator=" "), value
+                    )
                 else:
                     token = TOK.Measurement(
                         token.concatenate(next_token, separator=" "), unit, value
@@ -2027,14 +2076,13 @@ def parse_particles(token_stream, **options):
                     val = factor * token.val[1]
 
                 if convert_measurements:
-                    degree_symbol_span = (len(token.txt)-1, len(token.txt))
+                    degree_symbol_span = (len(token.txt) - 1, len(token.txt))
                     # Remove the ° symbol
                     token.substitute(degree_symbol_span, "")
                     # Add it again in the correct place along with the unit
                     token = token.concatenate(next_token, separator=" °")
-                    token = TOK.Measurement(token,
-                        unit,  # K
-                        val,  # 200 converted to Kelvin
+                    token = TOK.Measurement(
+                        token, unit, val,  # K  # 200 converted to Kelvin
                     )
                 else:
                     token = TOK.Measurement(
@@ -2151,7 +2199,9 @@ def parse_sentences(token_stream):
                     _skip_me.substitute((0, len(_skip_me.txt)), "")
                     token = None
                     # 3. attach them to the front of the next token
-                    token = _skip_me.concatenate(next(token_stream), metadata_from_other=True)
+                    token = _skip_me.concatenate(
+                        next(token_stream), metadata_from_other=True
+                    )
                     continue
             elif token.kind == TOK.X_END:
                 assert not in_sentence
@@ -2323,7 +2373,13 @@ def parse_phrases_1(token_stream):
                 y, mo, d = token.val
                 h, m, s = next_token.val
                 token = TOK.Timestamp(
-                    token.concatenate(next_token, separator=" "), y=y, mo=mo, d=d, h=h, m=m, s=s
+                    token.concatenate(next_token, separator=" "),
+                    y=y,
+                    mo=mo,
+                    d=d,
+                    h=h,
+                    m=m,
+                    s=s,
                 )
                 # Eat the time token
                 next_token = next(token_stream)
@@ -2335,7 +2391,9 @@ def parse_phrases_1(token_stream):
             ):
                 # Check for country code in front of telephone number
                 token = TOK.Telno(
-                    token.concatenate(next_token, separator=" "), next_token.val[0], cc=token.txt
+                    token.concatenate(next_token, separator=" "),
+                    next_token.val[0],
+                    cc=token.txt,
                 )
                 next_token = next(token_stream)
 
@@ -2427,7 +2485,10 @@ def parse_date_and_time(token_stream):
                     )
                     if year != 0:
                         token = TOK.Date(
-                            token.concatenate(next_token, separator=" "), y=year, m=month, d=0
+                            token.concatenate(next_token, separator=" "),
+                            y=year,
+                            m=month,
+                            d=0,
                         )
                         # Eat the year token
                         next_token = next(token_stream)
@@ -2482,7 +2543,13 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestampabs(
-                        token.concatenate(next_token, separator=" "), y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.concatenate(next_token, separator=" "),
+                        y=y,
+                        mo=mo,
+                        d=d,
+                        h=h,
+                        m=m,
+                        s=s,
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -2494,7 +2561,13 @@ def parse_date_and_time(token_stream):
                     y, mo, d = token.val
                     h, m, s = next_token.val
                     token = TOK.Timestamprel(
-                        token.concatenate(next_token, separator=" "), y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.concatenate(next_token, separator=" "),
+                        y=y,
+                        mo=mo,
+                        d=d,
+                        h=h,
+                        m=m,
+                        s=s,
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -2553,7 +2626,8 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     # Retain the case of the last multiplier
                     token = convert_to_num(token)
                     token = TOK.Number(
-                        token.concatenate(next_token, separator=" "), token.val[0] * multiplier_next
+                        token.concatenate(next_token, separator=" "),
+                        token.val[0] * multiplier_next,
                     )
                     # Eat the multiplier token
                     next_token = next(token_stream)
@@ -2572,7 +2646,9 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     # A number followed by an ISO currency abbreviation
                     token = convert_to_num(token)
                     token = TOK.Amount(
-                        token.concatenate(next_token, separator=" "), next_token.txt, token.val[0]
+                        token.concatenate(next_token, separator=" "),
+                        next_token.txt,
+                        token.val[0],
                     )
                     next_token = next(token_stream)
                 else:
@@ -2585,7 +2661,9 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                         break
                     # We have '17 prósent': coalesce into a single token
                     token = convert_to_num(token)
-                    token = TOK.Percent(token.concatenate(next_token, separator=" "), token.val[0])
+                    token = TOK.Percent(
+                        token.concatenate(next_token, separator=" "), token.val[0]
+                    )
                     # Eat the percent word token
                     next_token = next(token_stream)
 
@@ -2597,7 +2675,9 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
             ):
                 curr = "ISK" if token.txt in ISK_AMOUNT_PRECEDING else token.txt
                 token = TOK.Amount(
-                    token.concatenate(next_token, separator=" "), curr, next_token.val[0]
+                    token.concatenate(next_token, separator=" "),
+                    curr,
+                    next_token.val[0],
                 )
                 next_token = next(token_stream)
 
@@ -2643,7 +2723,9 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                         # part of the composition, so it can be an unknown word.
                         _acc = tq[0]
                         for t in tq[1:] + [token, next_token]:
-                            _acc = _acc.concatenate(t, separator=" ", metadata_from_other=True)
+                            _acc = _acc.concatenate(
+                                t, separator=" ", metadata_from_other=True
+                            )
                         _acc.substitute_all(" -", "-")
                         _acc.substitute_all(" ,", ",")
                         token = _acc
@@ -2890,7 +2972,9 @@ def detokenize(tokens, normalize=False):
     return "".join(r)
 
 
-def calculate_indexes(tokens: List[Tok], last_is_end: bool = False) -> (List[int], List[int]):
+def calculate_indexes(
+    tokens: List[Tok], last_is_end: bool = False
+) -> Tuple[List[int], List[int]]:
     """ Calculate character and byte indexes for a token stream.
         The indexes are the start positions of each token in the original
         text that was tokenized.
@@ -2898,7 +2982,7 @@ def calculate_indexes(tokens: List[Tok], last_is_end: bool = False) -> (List[int
         at the end. This index is also the total length of the sequence.
     """
 
-    def byte_len(string):
+    def byte_len(string: str) -> int:
         return len(bytes(string, encoding="utf-8"))
 
     char_indexes = [0]
@@ -2906,13 +2990,15 @@ def calculate_indexes(tokens: List[Tok], last_is_end: bool = False) -> (List[int
 
     for t in tokens:
         if t.original:
-            char_indexes.append(char_indexes[-1]+len(t.original))
-            byte_indexes.append(byte_indexes[-1]+byte_len(t.original))
+            char_indexes.append(char_indexes[-1] + len(t.original))
+            byte_indexes.append(byte_indexes[-1] + byte_len(t.original))
         else:
             if t.txt:
                 # Origin tracking failed for this token.
                 # TODO: Can we do something better here? Or guarantee that it doesn't happen?
-                raise Exception(f"Origin tracking failed at {t.txt} near index {char_indexes[-1]}")
+                raise Exception(
+                    f"Origin tracking failed at {t.txt} near index {char_indexes[-1]}"
+                )
             else:
                 # This is some marker token that has no text
                 pass

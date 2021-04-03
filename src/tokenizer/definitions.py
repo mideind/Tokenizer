@@ -29,46 +29,20 @@
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from typing import Dict, FrozenSet, Tuple, Union, Callable, cast
 
-from typing import Dict, Tuple, Union, Callable
-
-import sys
 import re
 
 
-# Mask away difference between Python 2 and 3
-if sys.version_info >= (3, 0):
-    items = lambda d: d.items()
-    keys = lambda d: d.keys()
-    make_str = lambda s: s
-    unicode_chr = lambda c: chr(c)
-    unicode = str
-    is_str = lambda s: isinstance(s, str)
-    if sys.version_info >= (3, 5):
-        # On Python >= 3.5, the typing module is available
-        from typing import Callable
-else:
-    items = lambda d: d.iteritems()
-    keys = lambda d: d.iterkeys()
-
-    # pylint: disable=undefined-variable
-    def make_str(s):
-        if isinstance(s, unicode):
-            return s
-        # Assume that incoming byte strings are UTF-8 encoded
-        return s.decode("utf-8")
-
-    unicode_chr = lambda c: unichr(c)
-    is_str = lambda s: isinstance(s, (unicode, str))
+BinTuple = Tuple[str, int, str, str, str, str]
+ValType = Union[None, str, Tuple[str, ...], Tuple[int, str]]
 
 
-ACCENT = unicode_chr(769)
-UMLAUT = unicode_chr(776)
-SOFT_HYPHEN = unicode_chr(173)
-ZEROWIDTH_SPACE = unicode_chr(8203)
-ZEROWIDTH_NBSP = unicode_chr(65279)
+ACCENT = chr(769)
+UMLAUT = chr(776)
+SOFT_HYPHEN = chr(173)
+ZEROWIDTH_SPACE = chr(8203)
+ZEROWIDTH_NBSP = chr(65279)
 
 # Preprocessing of unicode characters before tokenization
 UNICODE_REPLACEMENTS = {
@@ -102,7 +76,7 @@ UNICODE_REPLACEMENTS = {
     ZEROWIDTH_NBSP: "",
 }
 UNICODE_REGEX = re.compile(
-    r"|".join(map(re.escape, keys(UNICODE_REPLACEMENTS))), re.UNICODE
+    r"|".join(map(re.escape, UNICODE_REPLACEMENTS.keys())), re.UNICODE
 )
 
 # Used for the first step of token splitting
@@ -388,7 +362,7 @@ CURRENCY_SYMBOLS = {
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS = {
+SI_UNITS: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
     # Distance
     "m": ("m", 1.0),
     "mm": ("m", 1.0e-3),
@@ -482,21 +456,23 @@ SI_UNITS = {
     "m/s": ("m/s", 1.0),
     "km/klst": ("m/s", 1000.0/(60*60)),
     #"km/klst.": ("m/s", 1000.0/(60*60)),
-}  # type: Dict[unicode, Tuple[unicode, Union[float, Callable[[float], float]]]]
+}
 
 DIRECTIONS = {
     "N": "Norður",
 }
 
-SI_UNITS_SET = frozenset(keys(SI_UNITS))
+_unit_lambda: Callable[[str], str] = lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit
+
+SI_UNITS_SET: FrozenSet[str] = frozenset(SI_UNITS.keys())
 SI_UNITS_REGEX_STRING = r"|".join(
     map(
         # If the unit ends with a letter, don't allow the next character
         # after it to be a letter (i.e. don't match '220Volts' as '220V')
-        lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit,
+        _unit_lambda,
         # Sort in descending order by length, so that longer strings
         # are matched before shorter ones
-        sorted(keys(SI_UNITS), key=lambda s: len(s), reverse=True),
+        sorted(SI_UNITS.keys(), key=len, reverse=True),
     )
 )
 SI_UNITS_REGEX = re.compile(r"({0})".format(SI_UNITS_REGEX_STRING), re.UNICODE)
@@ -506,7 +482,7 @@ CURRENCY_REGEX_STRING = r"|".join(
         # Sort in descending order by length, so that longer strings
         # are matched before shorter ones
         re.escape,
-        sorted(keys(CURRENCY_SYMBOLS), key=lambda s: len(s), reverse=True),
+        sorted(CURRENCY_SYMBOLS.keys(), key=lambda s: len(s), reverse=True),
     )
 )
 
@@ -594,7 +570,7 @@ ROMAN_NUMERAL_MAP = tuple(
 )
 
 
-def roman_to_int(s):
+def roman_to_int(s: str) -> int:
     """ Quick and dirty conversion of an already validated Roman numeral to integer """
     # Adapted from http://code.activestate.com/recipes/81611-roman-numerals/
     i = result = 0
@@ -995,11 +971,9 @@ TOP_LEVEL_DOMAINS = frozenset(
     )
 )
 
-# This is a small hack to satisfy the Mypy type checker
-_escape = lambda s: re.escape(s)  # type: Callable[[unicode], unicode]
-
 # Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
+_escape = cast(Callable[[str], str], re.escape)
 DOMAIN_REGEX = re.compile(
     r"({0})({1}*)$".format(
         r"|".join(r"\w\." + d for d in map(_escape, TOP_LEVEL_DOMAINS)),
@@ -1145,7 +1119,7 @@ MOLECULE_FILTER = re.compile(r"\d")
 KT_MAGIC = [3, 2, 7, 6, 5, 4, 0, 3, 2]
 
 
-def valid_ssn(kt):
+def valid_ssn(kt: str) -> bool:
     """ Validate Icelandic social security number """
     if not kt or len(kt) != 11 or kt[6] != "-":
         return False

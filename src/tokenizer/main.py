@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
-
 """
 
     Tokenizer for Icelandic text
@@ -37,27 +35,19 @@
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from __future__ import print_function
+from typing import TextIO, Dict, Iterator, Optional, List, Callable, Any, Tuple, cast
 
 import sys
 import argparse
 import json
 from functools import partial
 
-from .tokenizer import TOK, tokenize
-from .definitions import make_str
+from .definitions import BinTuple
+from .tokenizer import TOK, Tok, tokenize
 
 
-if sys.version_info >= (3, 0):
-    # Python 3: read and write strings from and to UTF-8 encoded files
-    ReadFile = argparse.FileType("r", encoding="utf-8")
-    WriteFile = argparse.FileType("w", encoding="utf-8")
-else:
-    # Python 2: read and write bytes, which are decoded from UTF-8 in the gen() function
-    ReadFile = argparse.FileType("r")
-    WriteFile = argparse.FileType("w")
+ReadFile = argparse.FileType("r", encoding="utf-8")
+WriteFile = argparse.FileType("w", encoding="utf-8")
 
 # Define the command line arguments
 
@@ -144,34 +134,35 @@ parser.add_argument(
 )
 
 
-def main():
+def main() -> None:
     """ Main function, called when the tokenize command is invoked """
 
     args = parser.parse_args()
-    options = dict()
+    options: Dict[str, bool] = dict()
 
-    def quote(s):
+    def quote(s: str) -> str:
         """ Return the string s within double quotes, and with any contained
             backslashes and double quotes escaped with a backslash """
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    def gen(f):
+    def gen(f: TextIO) -> Iterator[str]:
         """ Generate the lines of text in the input file """
         for line in f:
-            yield make_str(line)
+            yield line
 
-    def val(t, quote_word=False):
+    def val(t: Tok, quote_word: bool=False) -> Any:
         """ Return the value part of the token t """
         if t.val is None:
             return None
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
+            mm = cast(List[BinTuple], t.val)
             if quote_word:
                 # Return a |-delimited list of possible meanings,
                 # joined into a single string
-                return quote("|".join(m[0] for m in t.val))
+                return quote("|".join(m[0] for m in mm))
             # Return a list of all possible meanings
-            return [m[0] for m in t.val]
+            return [m[0] for m in mm]
         if t.kind in {TOK.PERCENT, TOK.NUMBER, TOK.CURRENCY}:
             return t.val[0]
         if t.kind == TOK.AMOUNT:
@@ -201,8 +192,9 @@ def main():
             return quote(t.val)
         return t.val
 
+    to_text: Callable[[Tok], str]
     if args.normalize:
-        to_text = lambda t: (t.val[1] if t.kind == TOK.PUNCTUATION else t.txt)
+        to_text = lambda t: (cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt)
     else:
         to_text = lambda t: t.txt
 
@@ -229,7 +221,7 @@ def main():
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
-    curr_sent = []
+    curr_sent: List[str] = []
 
     for t in tokenize(gen(args.infile), **options):
         if args.csv:
