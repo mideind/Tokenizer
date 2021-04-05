@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 
     Definitions used for tokenization of Icelandic text
@@ -29,14 +28,47 @@
 
 """
 
-from typing import Dict, FrozenSet, Tuple, Union, Callable, cast
+from typing import Dict, FrozenSet, Tuple, Union, Callable, List, Optional, cast
 
 import re
 
 
-BinTuple = Tuple[str, int, str, str, str, str]
-ValType = Union[None, str, Tuple[str, ...], Tuple[int, str]]
+BeginTuple = Tuple[int, Optional[int]]
+PunctuationTuple = Tuple[int, str]
+NumberTuple = Tuple[float, Optional[List[str]], Optional[List[str]]]
+DateTimeTuple = Tuple[int, int, int]
+MeasurementTuple = Tuple[str, float]
+TimeStampTuple = Tuple[int, int, int, int, int, int]
+AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
+TelnoTuple = Tuple[str, str]
+CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 
+BinTuple = Tuple[str, int, str, str, str, str]
+BinTupleList = List[BinTuple]
+
+PersonNameTuple = Tuple[str, str, str]
+PersonNameList = List[PersonNameTuple]
+
+# All possible contents of the Tok.val attribute
+ValType = Union[
+    None,
+    int,  # YEAR, ORDINAL
+    str,  # USERNAME
+    BeginTuple,  # S_BEGIN
+    PunctuationTuple,  # PUNCTUATION, NUMWLETTER
+    MeasurementTuple,  # MEASUREMENT
+    TelnoTuple,  # TELNO
+    DateTimeTuple,  # DATE, TIME
+    TimeStampTuple,  # TIMESTAMP
+    NumberTuple,  # PERCENT, NUMBER
+    AmountTuple,  # AMOUNT
+    CurrencyTuple,  # CURRENCY
+    BinTupleList,  # WORD
+    PersonNameList,  # PERSON
+]
+
+# This seems to be needed as a workaround for Pylance/Pyright
+_escape = cast(Callable[[str], str], re.escape)
 
 ACCENT = chr(769)
 UMLAUT = chr(776)
@@ -76,7 +108,7 @@ UNICODE_REPLACEMENTS = {
     ZEROWIDTH_NBSP: "",
 }
 UNICODE_REGEX = re.compile(
-    r"|".join(map(re.escape, UNICODE_REPLACEMENTS.keys())), re.UNICODE
+    r"|".join(map(_escape, UNICODE_REPLACEMENTS.keys())), re.UNICODE
 )
 
 # Used for the first step of token splitting
@@ -423,7 +455,7 @@ SI_UNITS: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
     "MWh": ("J", 3.6e9),
     "kWst": ("J", 3.6e6),
     "MWst": ("J", 3.6e9),
-    "kcal": ("J", 4184),
+    "kcal": ("J", 4184.0),
     "cal": ("J", 4.184),
     # Power
     "W": ("W", 1.0),
@@ -454,15 +486,17 @@ SI_UNITS: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
     "‰": ("‰", 0.1),
     # Velocity
     "m/s": ("m/s", 1.0),
-    "km/klst": ("m/s", 1000.0/(60*60)),
-    #"km/klst.": ("m/s", 1000.0/(60*60)),
+    "km/klst": ("m/s", 1000.0 / (60 * 60)),
+    # "km/klst.": ("m/s", 1000.0/(60*60)),
 }
 
 DIRECTIONS = {
     "N": "Norður",
 }
 
-_unit_lambda: Callable[[str], str] = lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit
+_unit_lambda: Callable[[str], str] = lambda unit: unit + r"(?!\w)" if unit[
+    -1
+].isalpha() else unit
 
 SI_UNITS_SET: FrozenSet[str] = frozenset(SI_UNITS.keys())
 SI_UNITS_REGEX_STRING = r"|".join(
@@ -481,7 +515,7 @@ CURRENCY_REGEX_STRING = r"|".join(
     map(
         # Sort in descending order by length, so that longer strings
         # are matched before shorter ones
-        re.escape,
+        _escape,
         sorted(CURRENCY_SYMBOLS.keys(), key=lambda s: len(s), reverse=True),
     )
 )
@@ -684,7 +718,15 @@ ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
 # URL prefixes. Note that this list should not contain www since
 # www.something.com is a domain token, not a URL token.
-URL_PREFIXES = ("http://", "https://", "file://", "ftp://", "ssh://", "sftp://", "smb://")
+URL_PREFIXES = (
+    "http://",
+    "https://",
+    "file://",
+    "ftp://",
+    "ssh://",
+    "sftp://",
+    "smb://",
+)
 
 TOP_LEVEL_DOMAINS = frozenset(
     (
@@ -973,7 +1015,6 @@ TOP_LEVEL_DOMAINS = frozenset(
 
 # Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
-_escape = cast(Callable[[str], str], re.escape)
 DOMAIN_REGEX = re.compile(
     r"({0})({1}*)$".format(
         r"|".join(r"\w\." + d for d in map(_escape, TOP_LEVEL_DOMAINS)),
