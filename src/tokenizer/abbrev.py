@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 
     Abbreviations module for tokenization of Icelandic text
@@ -38,6 +37,7 @@ from typing import Generic, Iterator, Optional, Set, List, Dict, TypeVar
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
+from pkg_resources import resource_stream  # type: ignore
 
 from .definitions import BinTuple
 
@@ -48,6 +48,7 @@ class ConfigError(Exception):
 
 
 _T = TypeVar("_T")
+
 
 class OrderedSet(Generic[_T]):
 
@@ -105,7 +106,7 @@ class Abbreviations:
     _lock = Lock()
 
     @staticmethod
-    def add(abbrev: str, meaning: str, gender: str, fl: Optional[str]=None) -> None:
+    def add(abbrev: str, meaning: str, gender: str, fl: Optional[str] = None) -> None:
         """ Add an abbreviation to the dictionary.
             Called from the config file handler. """
         # Check for sentence finishers
@@ -283,7 +284,6 @@ class Abbreviations:
             if len(Abbreviations.DICT):
                 # Already initialized
                 return
-            from pkg_resources import resource_stream  # type: ignore
 
             section = None
             with resource_stream(__name__, "Abbrev.conf") as config:

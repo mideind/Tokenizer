@@ -4,24 +4,16 @@
     TODO
 """
 
-
 import tokenizer
 
 Tok = tokenizer.Tok
 TOK = tokenizer.TOK
 
-# Mask away Python 2/3 difference
-# pylint: disable=undefined-variable
-import sys
-if sys.version_info >= (3, 0):
-    unicode_chr = lambda c: chr(c)
-else:
-    unicode_chr = lambda c: unichr(c)
-ACCENT = unicode_chr(769)
-UMLAUT = unicode_chr(776)
+ACCENT = chr(769)
+UMLAUT = chr(776)
 
 
-def test_split_simple():
+def test_split_simple() -> None:
     t = Tok(TOK.RAW, "boat", None)
     l, r = t.split(2)
 
@@ -29,7 +21,7 @@ def test_split_simple():
     assert r == Tok(TOK.RAW, "at", None)
 
 
-def test_split_simple_original():
+def test_split_simple_original() -> None:
     t = Tok(TOK.RAW, "boat", None, "boat", [0, 1, 2, 3])
     l, r = t.split(2)
 
@@ -37,7 +29,7 @@ def test_split_simple_original():
     assert r == Tok(TOK.RAW, "at", None, "at", [0, 1])
 
 
-def test_split_with_substitutions():
+def test_split_with_substitutions() -> None:
     # original: "a&123b". replace "&123" with "x" and end up with "axb"
     t = Tok(TOK.RAW, "axb", None, "a&123b", [0, 1, 5])
 
@@ -50,7 +42,7 @@ def test_split_with_substitutions():
     assert r2 == Tok(TOK.RAW, "b", None, "b", [0])
 
 
-def test_split_with_substitutions_with_whitespace_prefix():
+def test_split_with_substitutions_with_whitespace_prefix() -> None:
     # original: "  a&123b". strip whitespace and replace "&123" with "x" and end up with "axb"
     t = Tok(TOK.RAW, "axb", None, "  a&123b", [2, 3, 7])
 
@@ -63,7 +55,7 @@ def test_split_with_substitutions_with_whitespace_prefix():
     assert r2 == Tok(TOK.RAW, "b", None, "b", [0])
 
 
-def test_split_with_whitespace_prefix():
+def test_split_with_whitespace_prefix() -> None:
     t = Tok(TOK.RAW, "boat", None, "   boat", [3, 4, 5, 6])
     l, r = t.split(2)
 
@@ -71,7 +63,7 @@ def test_split_with_whitespace_prefix():
     assert r == Tok(TOK.RAW, "at", None, "at", [0, 1])
 
 
-def test_split_at_ends():
+def test_split_at_ends() -> None:
     t = Tok(TOK.RAW, "ab", None, "ab", [0, 1])
     l, r = t.split(0)
     assert l == Tok(TOK.RAW, "", None, "", [])
@@ -94,7 +86,7 @@ def test_split_at_ends():
     assert r == Tok(TOK.RAW, "", None)
 
 
-def test_split_with_negative_index():
+def test_split_with_negative_index() -> None:
     test_string = "abcde"
     t = Tok(TOK.RAW, test_string, None, test_string, list(range(len(test_string))))
     l, r = t.split(-2)
@@ -117,7 +109,7 @@ def test_split_on_empty_txt():
 """
 
 
-def test_substitute():
+def test_substitute() -> None:
     t = Tok(TOK.RAW, "a&123b", None, "a&123b", [0, 1, 2, 3, 4, 5])
     t.substitute((1, 5), "x")
     assert t == Tok(TOK.RAW, "axb", None, "a&123b", [0, 1, 5])
@@ -131,7 +123,7 @@ def test_substitute():
     assert t == Tok(TOK.RAW, "xab", None, "&123ab", [0, 4, 5])
 
 
-def test_substitute_bugfix_1():
+def test_substitute_bugfix_1() -> None:
     test_string = "xya" + ACCENT + "zu" + ACCENT + "w&aacute;o" + UMLAUT + "b"
     #              012    3         45    6         7890123456    7         8
     #              0123456789012345
@@ -150,7 +142,7 @@ def test_substitute_bugfix_1():
     assert t == Tok(kind=-1, txt='xyázúwáöb', val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
 
 
-def test_multiple_substitutions():
+def test_multiple_substitutions() -> None:
     t = Tok(TOK.RAW, "a&123b&456&789c", None, "a&123b&456&789c", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
     t.substitute((1, 5), "x")
     assert t == Tok(TOK.RAW, "axb&456&789c", None, "a&123b&456&789c", [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
@@ -160,7 +152,7 @@ def test_multiple_substitutions():
     assert t == Tok(TOK.RAW, "axbyzc", None, "a&123b&456&789c", [0, 1, 5, 6, 10, 14])
 
 
-def test_substitute_without_origin_tracking():
+def test_substitute_without_origin_tracking() -> None:
     t = Tok(TOK.RAW, "a&123b", None)
     t.substitute((1, 5), "x")
     assert t == Tok(TOK.RAW, "axb", None)
@@ -180,7 +172,7 @@ def test_substitute_without_origin_tracking():
     assert t == Tok(TOK.RAW, "axbyc", None)
 
 
-def test_substitute_that_removes():
+def test_substitute_that_removes() -> None:
     t = Tok(TOK.RAW, "a&123b", None, "a&123b", [0, 1, 2, 3, 4, 5])
     t.substitute((1, 5), "")
     assert t == Tok(TOK.RAW, "ab", None, "a&123b", [0, 5])
@@ -194,7 +186,7 @@ def test_substitute_that_removes():
     assert t == Tok(TOK.RAW, "ab", None, "ab&123", [0, 1])
     
 
-def test_split_without_origin_tracking():
+def test_split_without_origin_tracking() -> None:
     t = Tok(TOK.RAW, "boat", None)
     l, r = t.split(2)
 
@@ -236,28 +228,28 @@ def test_split_without_origin_tracking():
     assert r == Tok(TOK.RAW, "at", None)
 
 
-def test_html_escapes_with_origin_tracking():
+def test_html_escapes_with_origin_tracking() -> None:
     test_string = "xy&#x61;z&aacute;w&#97;b"
     tokens = list(tokenizer.generate_rough_tokens(test_string, replace_html_escapes=True))
     assert len(tokens) == 1
     assert tokens[0] == Tok(kind=TOK.RAW, txt="xyazáwab", val=None, original=test_string, origin_spans=[0, 1, 2, 8, 9, 17, 18, 23])
 
 
-def test_unicode_escapes_with_origin_tracking():
+def test_unicode_escapes_with_origin_tracking() -> None:
     test_string = "xya" + ACCENT + "zu" + ACCENT + "wo" + UMLAUT + "b"
     tokens = list(tokenizer.generate_rough_tokens(test_string, replace_composite_glyphs=True))
     assert len(tokens) == 1
     assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 10])
 
 
-def test_unicode_escapes_that_are_removed():
+def test_unicode_escapes_that_are_removed() -> None:
     test_string = "a\xadb\xadc"
     tokens = list(tokenizer.generate_rough_tokens(test_string, replace_composite_glyphs=True))
     assert len(tokens) == 1
     assert tokens[0] == Tok(kind=TOK.RAW, txt="abc", val=None, original=test_string, origin_spans=[0, 2, 4])
 
 
-def test_html_unicode_mix():
+def test_html_unicode_mix() -> None:
     test_string = "xya" + ACCENT + "zu" + ACCENT + "w&aacute;o" + UMLAUT + "b"
     #              012    3         45    6         7890123456    7         8
     tokens = list(tokenizer.generate_rough_tokens(test_string, replace_composite_glyphs=True, replace_html_escapes=True))
@@ -265,7 +257,7 @@ def test_html_unicode_mix():
     assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwáöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
 
 
-def test_tok_concatenation():
+def test_tok_concatenation() -> None:
     str1 = "asdf"
     tok1 = Tok(TOK.RAW, str1, None, str1, list(range(len(str1))))
     str2 = "jklæ"
@@ -281,7 +273,7 @@ def test_tok_concatenation():
     assert tok1.concatenate(tok2) == Tok(TOK.RAW, str1+str2, None, or1+or2, [0, 4, 8, 12, 14, 16])
 
 
-def test_tok_concatenation_with_separator():
+def test_tok_concatenation_with_separator() -> None:
     str1 = "asdf"
     tok1 = Tok(TOK.RAW, str1, None, str1, list(range(len(str1))))
     str2 = "jklæ"
@@ -299,7 +291,7 @@ def test_tok_concatenation_with_separator():
     assert tok1.concatenate(tok2, separator=sep) == Tok(TOK.RAW, str1+sep+str2, None, or1+or2, [0, 4, 8, 12, 12, 12, 12, 12, 12, 12, 14, 16])
 
 
-def test_tok_substitute_all():
+def test_tok_substitute_all() -> None:
     s = "asdf"
     t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
     t.substitute_all("d", "x")
@@ -322,7 +314,7 @@ def test_tok_substitute_all():
     assert t == Tok(TOK.RAW, "Þessi veðu lengi.", None, s, [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 18, 19])
 
 
-def test_tok_substitute_longer():
+def test_tok_substitute_longer() -> None:
     s = "asdf"
     t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
     t.substitute_longer((1, 2), "xyz")

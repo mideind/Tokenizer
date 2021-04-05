@@ -35,14 +35,14 @@
 
 """
 
-from typing import TextIO, Dict, Iterator, Optional, List, Callable, Any, Tuple, cast
+from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, cast
 
 import sys
 import argparse
 import json
 from functools import partial
 
-from .definitions import BinTuple
+from .definitions import AmountTuple, BinTuple, NumberTuple, PunctuationTuple
 from .tokenizer import TOK, Tok, tokenize
 
 
@@ -150,7 +150,7 @@ def main() -> None:
         for line in f:
             yield line
 
-    def val(t: Tok, quote_word: bool=False) -> Any:
+    def val(t: Tok, quote_word: bool = False) -> Any:
         """ Return the value part of the token t """
         if t.val is None:
             return None
@@ -164,16 +164,18 @@ def main() -> None:
             # Return a list of all possible meanings
             return [m[0] for m in mm]
         if t.kind in {TOK.PERCENT, TOK.NUMBER, TOK.CURRENCY}:
-            return t.val[0]
+            return cast(NumberTuple, t.val)[0]
         if t.kind == TOK.AMOUNT:
+            am = cast(AmountTuple, t.val)
             if quote_word:
                 # Format as "1234.56|USD"
-                return '"{0}|{1}"'.format(t.val[0], t.val[1])
-            return t.val[0], t.val[1]
+                return '"{0}|{1}"'.format(am[0], am[1])
+            return am[0], am[1]
         if t.kind == TOK.S_BEGIN:
             return None
         if t.kind == TOK.PUNCTUATION:
-            return quote(t.val[1]) if quote_word else t.val[1]
+            pt = cast(PunctuationTuple, t.val)
+            return quote(pt[1]) if quote_word else pt[1]
         if quote_word and t.kind in {
             TOK.DATE,
             TOK.TIME,
@@ -187,14 +189,17 @@ def main() -> None:
             TOK.MEASUREMENT,
         }:
             # Return a |-delimited list of numbers
-            return quote("|".join(str(v) for v in t.val))
+            vv = cast(Tuple[Any, ...], t.val)
+            return quote("|".join(str(v) for v in vv))
         if quote_word and isinstance(t.val, str):
             return quote(t.val)
         return t.val
 
     to_text: Callable[[Tok], str]
     if args.normalize:
-        to_text = lambda t: (cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt)
+        to_text = lambda t: (
+            cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt
+        )
     else:
         to_text = lambda t: t.txt
 
@@ -205,7 +210,9 @@ def main() -> None:
         options["coalesce_percent"] = True
 
     if args.keep_composite_glyphs:
-        options["replace_composite_glyphs"] = False  # True is the default in tokenizer.py
+        options[
+            "replace_composite_glyphs"
+        ] = False  # True is the default in tokenizer.py
 
     if args.replace_html_escapes:
         options["replace_html_escapes"] = True
@@ -238,7 +245,7 @@ def main() -> None:
                 print('0,"",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d = dict(k=TOK.descr[t.kind])
+            d: Dict[str, str] = dict(k=TOK.descr[t.kind])
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)

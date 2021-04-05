@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 """
 
     Tokenizer for Icelandic text
@@ -30,13 +29,13 @@
 
 """
 
-from __future__ import absolute_import
+from typing import Any
 
 import io
 import re
+
 from glob import glob
 from os.path import basename, dirname, join, splitext
-from typing import Any
 from setuptools import find_packages, setup  # type: ignore
 
 

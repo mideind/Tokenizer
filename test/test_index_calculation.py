@@ -13,7 +13,7 @@ UMLAUT = chr(776)
 EM_DASH = "\u2014"
 
 
-def test_small_easy_cases():
+def test_small_easy_cases() -> None:
     s = "Bara ASCII."
     #    01234567890
     #    ^   ^     ^
@@ -59,7 +59,7 @@ def test_small_easy_cases():
     assert byte_indexes == [0, 5, 8, 11]
 
 
-def test_small_difficult_cases():
+def test_small_difficult_cases() -> None:
     s = ""
     toks = tokenizer.parse_tokens([s])
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
@@ -342,7 +342,7 @@ def test_small_difficult_cases():
         assert byte_indexes == [0, 4, 8]
 
 
-def test_larger_case():
+def test_larger_case() -> None:
     s = "Þessi setning er í lengra lagi og er með bæði eins og tveggja bæta stafi."
     #    0123456789012345678901234567890123456789012345678901234567890123456789012
     #    ^    ^       ^  ^ ^      ^    ^  ^  ^   ^    ^    ^  ^       ^    ^     ^
@@ -357,7 +357,7 @@ def test_larger_case():
     assert byte_indexes == [0, 6, 14, 17, 20, 27, 32, 35, 38, 43, 50, 55, 58, 66, 72, 78, 79]
 
 
-def test_iterator_cases():
+def test_iterator_cases() -> None:
     s = ["Þessi ", "setning ", "er ", "í ", "lengra ", "lagi ", "og ", "er ", "með ", "bæði ", "eins ", "og ", "tveggja ", "bæta ", "stafi."]
     # (char and byte indexes in a similar test above)
     toks = tokenizer.parse_tokens(s)
@@ -397,7 +397,7 @@ def test_iterator_cases():
     assert byte_indexes == [0, 6, 14, 15, 25, 33, 34]
 
 
-def test_paragraph_markers():
+def test_paragraph_markers() -> None:
     s = " [[ Stutt setning. ]] [[ ]] [[ Önnur setning. ]]"
     #    012345678901234567890123456789012345678901234567
     #    ^  ^     ^       ^^  ^  ^  ^  ^     ^       ^^
@@ -428,7 +428,7 @@ def test_paragraph_markers():
     assert byte_indexes == [0, 3, 9, 17, 18, 21, 30, 37, 45, 46, 49]
 
 
-def test_composite_phrases():
+def test_composite_phrases() -> None:
     s = "Orða- og tengingasetning."
     #    0123456789012345678901234
     #    ^   ^^  ^               ^
@@ -457,7 +457,7 @@ def test_composite_phrases():
     assert byte_indexes == [0, 25, 26]
 
 
-def test_lengthening_substitutions():
+def test_lengthening_substitutions() -> None:
     s = "Þetta er 3ji báturinn!"
     #    0123456789012345678901
     #    ^    ^  ^   ^        ^
@@ -473,7 +473,7 @@ def test_lengthening_substitutions():
     assert byte_indexes == [0, 6, 9, 13, 23, 24]
 
 
-def test_converted_measurements():
+def test_converted_measurements() -> None:
     s = "Stillið ofninn á 12° C til að baka kökuna."
     #    012345678901234567890123456789012345678901
     #    ^      ^      ^ ^     ^   ^  ^    ^      ^

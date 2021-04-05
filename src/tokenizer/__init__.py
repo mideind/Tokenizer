@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 
     Copyright(C) 2021 Miðeind ehf.
@@ -26,8 +25,6 @@
         SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
-
-from __future__ import absolute_import
 
 from .definitions import (
     TP_LEFT, TP_CENTER, TP_RIGHT, TP_NONE, TP_WORD,
