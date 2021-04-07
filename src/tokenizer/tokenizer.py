@@ -45,7 +45,6 @@ from typing import (
     Optional,
     Iterator,
     Iterable,
-    Sequence,
     Tuple,
     Union,
     Match,
@@ -125,13 +124,29 @@ class Tok:
             return int(cast(NumberTuple, self.val)[0])
         raise ValueError("Expected NUMBER or ORDINAL token in Tok.ordinal()")
 
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Tok):
+    @property
+    def has_meanings(self) -> bool:
+        """ Return the meanings of this token if it is a word,
+            otherwise return an empty list """
+        if self.kind != TOK.WORD:
             return False
-        # Note that we don't compare the 'original' or 'origin_spans' attributes
-        return (
-            self.kind == other.kind and self.txt == other.txt and self.val == other.val
-        )
+        return bool(self.val)
+
+    @property
+    def meanings(self) -> BinTupleList:
+        """ Return the meanings of this token if it is a word,
+            otherwise return an empty list """
+        if self.kind != TOK.WORD:
+            return []
+        return cast(BinTupleList, self.val) or []
+
+    @property
+    def person_names(self) -> PersonNameList:
+        """ Return the person names of this token if it denotes a PERSON,
+            otherwise return an empty list """
+        if self.kind != TOK.PERSON:
+            return []
+        return cast(PersonNameList, self.val) or []
 
     def split(self, pos: int) -> Tuple["Tok", "Tok"]:
         """ Split this token into two at 'pos'.
@@ -255,6 +270,12 @@ class Tok:
 
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
 
+    @property
+    def as_tuple(self) -> Tuple[Any, ...]:
+        """ Return the contents of this token as a generic tuple,
+            suitable e.g. for serialization """
+        return (self.kind, self.txt, self.val)
+
     def __getitem__(self, i: int) -> Union[int, str, ValType]:
         """ Backwards compatibility for when Tok was a namedtuple. """
         if i == 0:
@@ -265,6 +286,25 @@ class Tok:
             return self.val
         else:
             raise IndexError("Tok can only be indexed by 0, 1 or 2")
+
+    def equal(self, other: "Tok") -> bool:
+        """ Equality of content between two tokens, i.e. ignoring the
+            'original' and 'origin_spans' attributes """
+        return (
+            self.kind == other.kind and self.txt == other.txt and self.val == other.val
+        )
+
+    def __eq__(self, other: Any) -> bool:
+        """ Full equality between two Tok instances """
+        if not isinstance(other, Tok):
+            return False
+        return (
+            self.kind == other.kind
+            and self.txt == other.txt
+            and self.val == other.val
+            and self.original == other.original
+            and self.origin_spans == other.origin_spans
+        )
 
     def __repr__(self) -> str:
         def quoted_string_repr(obj: Any) -> str:
@@ -390,7 +430,7 @@ class TOK:
 
     # Token descriptive names
 
-    descr = {
+    descr: Mapping[int, str] = {
         PUNCTUATION: "PUNCTUATION",
         TIME: "TIME",
         TIMESTAMP: "TIMESTAMP",
@@ -680,7 +720,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Word(t: Union[Tok, str], m: Optional[Sequence[BinTuple]] = None) -> Tok:
+    def Word(t: Union[Tok, str], m: Optional[BinTupleList] = None) -> Tok:
         # The m parameter is intended for a list of BIN_Meaning tuples
         # fetched from the BÍN database
         if isinstance(t, str):
@@ -2035,6 +2075,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
 
                 value = token.number
                 orig_unit = next_token.txt
+                unit: str
                 unit, factor_func = SI_UNITS[orig_unit]
                 if callable(factor_func):
                     # We have a lambda conversion function
@@ -2062,7 +2103,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     slashtok = next_token
                     next_token = next(token_stream)
                     if next_token.txt == "klst":
-                        unit: str = token.txt + "/" + next_token.txt
+                        unit = token.txt + "/" + next_token.txt
                         temp_tok = token.concatenate(slashtok)
                         temp_tok = temp_tok.concatenate(next_token)
                         token = TOK.Measurement(temp_tok, unit, value)
@@ -2089,7 +2130,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     val = factor_func * v
 
                 if convert_measurements:
-                    txt = token.txt
+                    txt: str = token.txt
                     lentoken = len(txt)
                     degree_symbol_span = (lentoken - 1, lentoken)
                     # Remove the ° symbol

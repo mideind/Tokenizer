@@ -57,19 +57,25 @@ CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 BinTuple = NamedTuple(
     "BinTuple",
     [
-        ("ord", str),
-        ("bin_id", int),
-        ("ofl", str),
-        ("hluti", str),
-        ("bmynd", str),
-        ("mark", str),
+        ("stofn", str),
+        ("utg", int),
+        ("ordfl", str),
+        ("fl", str),
+        ("ordmynd", str),
+        ("beyging", str),
     ],
 )
-
 BinTupleList = Sequence[BinTuple]
 
-PersonNameTuple = Tuple[str, str, str]
-PersonNameList = List[PersonNameTuple]
+PersonNameTuple = NamedTuple(
+    "PersonNameTuple",
+    [
+        ("name", str),
+        ("gender", Optional[str]),
+        ("case", Optional[str]),
+    ]
+)
+PersonNameList = Sequence[PersonNameTuple]
 
 # All possible contents of the Tok.val attribute
 ValType = Union[
