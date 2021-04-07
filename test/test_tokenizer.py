@@ -274,7 +274,7 @@ def test_single_tokens() -> None:
                 Tok(
                     TOK.WORD,
                     "m.kr.",
-                    [("milljónir króna", 0, "kvk", "skst", "m.kr.", "-")],
+                    [BinTuple("milljónir króna", 0, "kvk", "skst", "m.kr.", "-")],
                 ),
             ],
         ),
@@ -284,7 +284,7 @@ def test_single_tokens() -> None:
                 Tok(
                     TOK.WORD,
                     "ma.kr.",
-                    [("milljarðar króna", 0, "kk", "skst", "ma.kr.", "-")],
+                    [BinTuple("milljarðar króna", 0, "kk", "skst", "ma.kr.", "-")],
                 ),
             ],
         ),
@@ -294,9 +294,9 @@ def test_single_tokens() -> None:
         ),
         (
             "t.d.",
-            [Tok(TOK.WORD, "t.d.", [("til dæmis", 0, "ao", "frasi", "t.d.", "-")])],
+            [Tok(TOK.WORD, "t.d.", [BinTuple("til dæmis", 0, "ao", "frasi", "t.d.", "-")])],
         ),
-        ("hr.", TOK.WORD, [("herra", 0, "kk", "skst", "hr.", "-")]),
+        ("hr.", TOK.WORD, [BinTuple("herra", 0, "kk", "skst", "hr.", "-")]),
         (
             "dags. 10/7",
             [
@@ -304,21 +304,21 @@ def test_single_tokens() -> None:
                     TOK.WORD,
                     "dags.",
                     [
-                        ("dagsetja", 0, "so", "skst", "dags.", "-"),
-                        ("dagsettur", 0, "lo", "skst", "dags.", "-"),
+                        BinTuple("dagsetja", 0, "so", "skst", "dags.", "-"),
+                        BinTuple("dagsettur", 0, "lo", "skst", "dags.", "-"),
                     ],
                 ),
                 Tok(TOK.DATEREL, "10/7", (0, 7, 10)),
             ],
         ),
-        ("Hr.", TOK.WORD, [("herra", 0, "kk", "skst", "hr.", "-")]),
+        ("Hr.", TOK.WORD, [BinTuple("herra", 0, "kk", "skst", "hr.", "-")]),
         (
             "nk.",
-            [Tok(TOK.WORD, "nk.", [("næstkomandi", 0, "lo", "skst", "nk.", "-")]),],
+            [Tok(TOK.WORD, "nk.", [BinTuple("næstkomandi", 0, "lo", "skst", "nk.", "-")]),],
         ),
         (
             "sl.",
-            [Tok(TOK.WORD, "sl.", [("síðastliðinn", 0, "lo", "skst", "sl.", "-")]),],
+            [Tok(TOK.WORD, "sl.", [BinTuple("síðastliðinn", 0, "lo", "skst", "sl.", "-")]),],
         ),
         (
             "o.s.frv.",
@@ -326,7 +326,7 @@ def test_single_tokens() -> None:
                 Tok(
                     TOK.WORD,
                     "o.s.frv.",
-                    [("og svo framvegis", 0, "ao", "frasi", "o.s.frv.", "-")],
+                    [BinTuple("og svo framvegis", 0, "ao", "frasi", "o.s.frv.", "-")],
                 ),
             ],
         ),
@@ -1048,18 +1048,18 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="IBM",
-            val=[("International Business Machines", 0, "hk", "skst", "IBM", "-")],
+            val=[BinTuple("International Business Machines", 0, "hk", "skst", "IBM", "-")],
         ),
         Tok(
             kind=TOK.WORD,
             txt="t.d.",
-            val=[("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
+            val=[BinTuple("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(
             kind=TOK.WORD,
             txt="Mbl",
-            val=[("Morgunblaðið", 0, "hk", "skst", "Mbl", "-")],
+            val=[BinTuple("Morgunblaðið", 0, "hk", "skst", "Mbl", "-")],
         ),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1074,7 +1074,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="m.v.",
-            val=[("miðað við", 0, "fs", "frasi", "m.v.", "-")],
+            val=[BinTuple("miðað við", 0, "fs", "frasi", "m.v.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="Akureyri", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1089,7 +1089,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="t.d.",
-            val=[("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
+            val=[BinTuple("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="Guðmund", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1104,7 +1104,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="sérfr.",
-            val=[("sérfræðingur", 0, "kk", "skst", "sérfr.", "-")],
+            val=[BinTuple("sérfræðingur", 0, "kk", "skst", "sérfr.", "-")],
         ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1123,7 +1123,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="t.h.",
-            val=[("til hægri", 0, "ao", "frasi", "t.h.", "-")],
+            val=[BinTuple("til hægri", 0, "ao", "frasi", "t.h.", "-")],
         ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1132,7 +1132,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="t.v.",
-            val=[("til vinstri", 0, "ao", "frasi", "t.v.", "-")],
+            val=[BinTuple("til vinstri", 0, "ao", "frasi", "t.v.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(kind=TOK.WORD, txt="myndinni", val=None),
@@ -1149,8 +1149,8 @@ def test_abbrev() -> None:
             kind=TOK.WORD,
             txt="dags.",
             val=[
-                ("dagsetja", 0, "so", "skst", "dags.", "-"),
-                ("dagsettur", 0, "lo", "skst", "dags.", "-"),
+                BinTuple("dagsetja", 0, "so", "skst", "dags.", "-"),
+                BinTuple("dagsettur", 0, "lo", "skst", "dags.", "-"),
             ],
         ),
         Tok(kind=TOK.DATEREL, txt="20. maí", val=(0, 5, 20)),
@@ -1168,11 +1168,11 @@ def test_abbrev() -> None:
             kind=TOK.WORD,
             txt="hv.",
             val=[
-                ("hæstvirtur", 0, "lo", "skst", "hv.", "-"),
-                ("háttvirtur", 0, "lo", "skst", "hv.", "-"),
+                BinTuple("hæstvirtur", 0, "lo", "skst", "hv.", "-"),
+                BinTuple("háttvirtur", 0, "lo", "skst", "hv.", "-"),
             ],
         ),
-        Tok(kind=TOK.WORD, txt="þm.", val=[("þingmaður", 0, "kk", "skst", "þm.", "-")]),
+        Tok(kind=TOK.WORD, txt="þm.", val=[BinTuple("þingmaður", 0, "kk", "skst", "þm.", "-")]),
         Tok(kind=TOK.WORD, txt="Halldóru", val=None),
         Tok(kind=TOK.WORD, txt="Mogensen", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1201,7 +1201,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Nú", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(kind=TOK.WORD, txt="s.", val=[BinTuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
         Tok(kind=TOK.TELNO, txt="550-1234", val=("550-1234", "354")),
         Tok(kind=TOK.WORD, txt="hjá", val=None),
         Tok(kind=TOK.WORD, txt="bankanum", val=None),
@@ -1215,7 +1215,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(kind=TOK.WORD, txt="s.", val=[BinTuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
         Tok(kind=TOK.TELNO, txt="550-1234", val=("550-1234", "354")),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1227,7 +1227,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(kind=TOK.WORD, txt="s.", val=[BinTuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
         Tok(kind=TOK.WORD, txt="en", val=None),
         Tok(kind=TOK.WORD, txt="hin", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
@@ -1243,7 +1243,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(kind=TOK.WORD, txt="s.", val=[BinTuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Hin", val=None),
@@ -1260,7 +1260,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(kind=TOK.WORD, txt="s.", val=[BinTuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Hinrik", val=None),
@@ -1281,7 +1281,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="rknr.",
-            val=[("reikningsnúmer", 0, "hk", "skst", "rknr.", "-")],
+            val=[BinTuple("reikningsnúmer", 0, "hk", "skst", "rknr.", "-")],
         ),
         Tok(kind=TOK.SERIALNUMBER, txt="0123-26-123456", val=None),
         Tok(kind=TOK.WORD, txt="í", val=None),
@@ -1299,7 +1299,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="rknr.",
-            val=[("reikningsnúmer", 0, "hk", "skst", "rknr.", "-")],
+            val=[BinTuple("reikningsnúmer", 0, "hk", "skst", "rknr.", "-")],
         ),
         Tok(kind=TOK.SERIALNUMBER, txt="0123-26-123456", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1315,7 +1315,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="rknr.",
-            val=[("reikningsnúmer", 0, "hk", "skst", "rknr.", "-")],
+            val=[BinTuple("reikningsnúmer", 0, "hk", "skst", "rknr.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="en", val=None),
         Tok(kind=TOK.WORD, txt="hin", val=None),
@@ -1334,7 +1334,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="tók", val=None),
         Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
         Tok(
-            kind=TOK.WORD, txt="frák.", val=[("fráköst", 0, "hk", "skst", "frák.", "-")]
+            kind=TOK.WORD, txt="frák.", val=[BinTuple("fráköst", 0, "hk", "skst", "frák.", "-")]
         ),
         Tok(kind=TOK.WORD, txt="en", val=None),
         Tok(kind=TOK.WORD, txt="Valur", val=None),
@@ -1350,7 +1350,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="tók", val=None),
         Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
         Tok(
-            kind=TOK.WORD, txt="frák.", val=[("fráköst", 0, "hk", "skst", "frák.", "-")]
+            kind=TOK.WORD, txt="frák.", val=[BinTuple("fráköst", 0, "hk", "skst", "frák.", "-")]
         ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1368,7 +1368,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="tók", val=None),
         Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
         Tok(
-            kind=TOK.WORD, txt="frák.", val=[("fráköst", 0, "hk", "skst", "frák.", "-")]
+            kind=TOK.WORD, txt="frák.", val=[BinTuple("fráköst", 0, "hk", "skst", "frák.", "-")]
         ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1383,7 +1383,7 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Ath.", val=[("athuga", 0, "so", "skst", "ath.", "-")]),
+        Tok(kind=TOK.WORD, txt="Ath.", val=[BinTuple("athuga", 0, "so", "skst", "ath.", "-")]),
         Tok(kind=TOK.WORD, txt="ekki", val=None),
         Tok(kind=TOK.WORD, txt="ganga", val=None),
         Tok(kind=TOK.WORD, txt="um", val=None),
@@ -1395,7 +1395,7 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Ath.", val=[("athuga", 0, "so", "skst", "ath.", "-")]),
+        Tok(kind=TOK.WORD, txt="Ath.", val=[BinTuple("athuga", 0, "so", "skst", "ath.", "-")]),
         Tok(kind=TOK.WORD, txt="Marteinn", val=None),
         Tok(kind=TOK.WORD, txt="verður", val=None),
         Tok(kind=TOK.WORD, txt="ekki", val=None),
@@ -1414,7 +1414,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="átta", val=None),
         Tok(kind=TOK.WORD, txt="kýr", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
-        Tok(kind=TOK.WORD, txt="ath.", val=[("athuga", 0, "so", "skst", "ath.", "-")]),
+        Tok(kind=TOK.WORD, txt="ath.", val=[BinTuple("athuga", 0, "so", "skst", "ath.", "-")]),
         Tok(kind=TOK.WORD, txt="heimildir", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1431,7 +1431,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="ps.",
-            val=[("eftirskrift", 0, "kvk", "skst", "ps.", "-")],
+            val=[BinTuple("eftirskrift", 0, "kvk", "skst", "ps.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="ekki", val=None),
         Tok(kind=TOK.WORD, txt="lesa", val=None),
@@ -1451,7 +1451,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="M.Sc.",
-            val=[("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
+            val=[BinTuple("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="í", val=None),
         Tok(kind=TOK.WORD, txt="málfræði", val=None),
@@ -1467,7 +1467,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="M.Sc.",
-            val=[("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
+            val=[BinTuple("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="Halls", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1483,7 +1483,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="M.Sc.",
-            val=[("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
+            val=[BinTuple("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="Hallur", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
@@ -1502,7 +1502,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="M.Sc.",
-            val=[("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
+            val=[BinTuple("Master of Science", 0, "hk", "erl", "M.Sc.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="Hinn", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
@@ -1524,7 +1524,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="m.v.",
-            val=[("miðað við", 0, "fs", "frasi", "m.v.", "-")],
+            val=[BinTuple("miðað við", 0, "fs", "frasi", "m.v.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="veðurspána", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1540,7 +1540,7 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="m.v.",
-            val=[("miðað við", 0, "fs", "frasi", "m.v.", "-")],
+            val=[BinTuple("miðað við", 0, "fs", "frasi", "m.v.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="Martein", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1558,7 +1558,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(kind=TOK.WORD, txt="milli", val=None),
         Tok(kind=TOK.WORD, txt="matar", val=None),
-        Tok(kind=TOK.WORD, txt="vs.", val=[("gegn", 0, "fs", "skst", "vs.", "-")]),
+        Tok(kind=TOK.WORD, txt="vs.", val=[BinTuple("gegn", 0, "fs", "skst", "vs.", "-")]),
         Tok(kind=TOK.WORD, txt="reikninga", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1574,7 +1574,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(kind=TOK.WORD, txt="milli", val=None),
         Tok(kind=TOK.WORD, txt="Íslands", val=None),
-        Tok(kind=TOK.WORD, txt="vs.", val=[("gegn", 0, "fs", "skst", "vs.", "-")]),
+        Tok(kind=TOK.WORD, txt="vs.", val=[BinTuple("gegn", 0, "fs", "skst", "vs.", "-")]),
         Tok(kind=TOK.WORD, txt="Svíþjóðar", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),

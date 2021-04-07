@@ -152,7 +152,7 @@ class Abbreviations:
         # Append the abbreviation and its meaning in tuple form
         # Multiple meanings are supported for each abbreviation
         Abbreviations.DICT[abbrev].add(
-            (meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
+            BinTuple(meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
         )
         Abbreviations.MEANINGS.add(meaning)
         # Adding wrong versions of abbreviations
@@ -169,7 +169,7 @@ class Abbreviations:
                 # as abbreviations, even though they are listed as such
                 # in the form 'Í.' and 'Á.' for use within person names
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BinTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
 
         elif "." in abbrev:
@@ -182,7 +182,7 @@ class Abbreviations:
                 wabbrev = abbrev[:i] + abbrev[i + 1 :]
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BinTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
             if len(indices) > 2:
                 # 3 or 4 dots currently in vocabulary
@@ -200,7 +200,7 @@ class Abbreviations:
                 for wabbrev in wabbrevs:
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                     Abbreviations.WRONGDICT[wabbrev].add(
-                        (
+                        BinTuple(
                             meaning,
                             0,
                             gender,
@@ -214,7 +214,7 @@ class Abbreviations:
             Abbreviations.WRONGSINGLES.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
-                (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                BinTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)

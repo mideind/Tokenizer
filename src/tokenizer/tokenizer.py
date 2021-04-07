@@ -45,6 +45,7 @@ from typing import (
     Optional,
     Iterator,
     Iterable,
+    Sequence,
     Tuple,
     Union,
     Match,
@@ -122,17 +123,14 @@ class Tok:
             return cast(int, self.val)
         if self.kind == TOK.NUMBER:
             return int(cast(NumberTuple, self.val)[0])
-        assert False, "Expected NUMBER or ORDINAL token in Tok.ordinal()"
+        raise ValueError("Expected NUMBER or ORDINAL token in Tok.ordinal()")
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Tok):
             return False
+        # Note that we don't compare the 'original' or 'origin_spans' attributes
         return (
-            self.kind == other.kind
-            and self.txt == other.txt
-            and self.val == other.val
-            and self.original == other.original
-            and self.origin_spans == other.origin_spans
+            self.kind == other.kind and self.txt == other.txt and self.val == other.val
         )
 
     def split(self, pos: int) -> Tuple["Tok", "Tok"]:
@@ -682,7 +680,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Word(t: Union[Tok, str], m: Optional[List[BinTuple]] = None) -> Tok:
+    def Word(t: Union[Tok, str], m: Optional[Sequence[BinTuple]] = None) -> Tok:
         # The m parameter is intended for a list of BIN_Meaning tuples
         # fetched from the BÍN database
         if isinstance(t, str):
@@ -1353,13 +1351,14 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             yield rt
             continue
 
-        if rt.txt.isalpha() or rt.txt in SI_UNITS:
+        rtxt: str = rt.txt
+        if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
             yield TOK.Word(rt)
             continue
 
-        if len(rt.txt) > 1:
-            if rt.txt[0] in SIGN_PREFIX and rt.txt[1] in DIGITS_PREFIX:
+        if len(rtxt) > 1:
+            if rtxt[0] in SIGN_PREFIX and rtxt[1] in DIGITS_PREFIX:
                 # Digit, preceded by sign (+/-): parse as a number
                 # Note that we can't immediately parse a non-signed number
                 # here since kludges such as '3ja' and domain names such as '4chan.com'
@@ -1368,23 +1367,24 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield t
                 if not rt.txt:
                     continue
-            elif rt.txt[0] in COMPOSITE_HYPHENS and rt.txt[1].isalpha():
+            elif rtxt[0] in COMPOSITE_HYPHENS and rtxt[1].isalpha():
                 # This may be something like '-menn' in 'þingkonur og -menn'
                 i = 2
-                while i < len(rt.txt) and rt.txt[i].isalpha():
+                while i < len(rtxt) and rtxt[i].isalpha():
                     i += 1
                 # We allow -menn and -MENN, but not -Menn or -mEnn
                 # We don't allow -Á or -Í, i.e. single-letter uppercase combos
-                if rt.txt[:i].islower() or (i > 2 and rt.txt[:i].isupper()):
+                if rtxt[:i].islower() or (i > 2 and rtxt[:i].isupper()):
                     head, rt = rt.split(i)
                     yield TOK.Word(head)
 
         # Shortcut for quotes around a single word
-        if len(rt.txt) >= 3:
-            if rt.txt[0] in DQUOTES and rt.txt[-1] in DQUOTES:
+        rtxt = rt.txt
+        if len(rtxt) >= 3:
+            if rtxt[0] in DQUOTES and rtxt[-1] in DQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("„")
-                if rt.txt[1:-1].isalpha():
+                if rtxt[1:-1].isalpha():
                     first_punct, rt = rt.split(1)
                     word, last_punct = rt.split(-1)
                     yield TOK.Punctuation(first_punct, normalized="„")
@@ -1394,10 +1394,10 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     # yield TOK.Word(w[1:-1])
                     # yield TOK.Punctuation(w[-1], normalized="“")
                     continue
-            elif rt.txt[0] in SQUOTES and rt.txt[-1] in SQUOTES:
+            elif rtxt[0] in SQUOTES and rtxt[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("‚")
-                if rt.txt[1:-1].isalpha():
+                if rtxt[1:-1].isalpha():
                     first_punct, rt = rt.split(1)
                     word, last_punct = rt.split(-1)
                     yield TOK.Punctuation(first_punct, normalized="‚")
@@ -1410,8 +1410,9 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
 
         # Special case for leading quotes, which are interpreted
         # as opening quotes
-        if len(rt.txt) > 1:
-            if rt.txt[0] in DQUOTES:
+        rtxt = rt.txt
+        if len(rtxt) > 1:
+            if rtxt[0] in DQUOTES:
                 # Convert simple quotes to proper opening quotes
                 punct, rt = rt.split(1)
                 yield TOK.Punctuation(punct, normalized="„")
@@ -1426,27 +1427,28 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             ate = False
             while rt.txt and rt.txt[0] in PUNCTUATION:
                 ate = True
-                lw = len(rt.txt)
-                if rt.txt.startswith("[...]"):
+                rtxt = rt.txt
+                lw = len(rtxt)
+                if rtxt.startswith("[...]"):
                     punct, rt = rt.split(5)
                     yield TOK.Punctuation(punct, normalized="[…]")
-                elif rt.txt.startswith("[…]"):
+                elif rtxt.startswith("[…]"):
                     punct, rt = rt.split(3)
                     yield TOK.Punctuation(punct)
-                elif rt.txt.startswith("..."):
+                elif rtxt.startswith("..."):
                     # Treat ellipsis as one piece of punctuation
                     numdots = 0
-                    for c in rt.txt:
+                    for c in rtxt:
                         if c == ".":
                             numdots += 1
                         else:
                             break
                     dots, rt = rt.split(numdots)
                     yield TOK.Punctuation(dots, normalized="…")
-                elif rt.txt.startswith("…"):
+                elif rtxt.startswith("…"):
                     # Treat ellipsis as one piece of punctuation
                     numdots = 0
-                    for c in rt.txt:
+                    for c in rtxt:
                         if c == "…":
                             numdots += 1
                         else:
@@ -1460,36 +1462,36 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     punct, rt = rt.split(2)
                     yield TOK.Punctuation(punct, normalized=",")
                 # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
-                elif rt.txt.startswith(",,"):
+                elif rtxt.startswith(",,"):
                     # Probably an idiot trying to type opening double quotes with commas
                     punct, rt = rt.split(2)
                     yield TOK.Punctuation(punct, normalized="„")
-                elif lw == 2 and (rt.txt == "[[" or rt.txt == "]]"):
+                elif lw == 2 and (rtxt == "[[" or rtxt == "]]"):
                     # Begin or end paragraph marker
                     marker, rt = rt.split(2)
                     if marker.txt == "[[":
                         yield TOK.Begin_Paragraph(marker)
                     else:
                         yield TOK.End_Paragraph(marker)
-                elif rt.txt[0] in HYPHENS:
+                elif rtxt[0] in HYPHENS:
                     # Normalize all hyphens the same way
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct, normalized=HYPHEN)
-                elif rt.txt[0] in DQUOTES:
+                elif rtxt[0] in DQUOTES:
                     # Convert to a proper closing double quote
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct, normalized="“")
-                elif rt.txt[0] in SQUOTES:
+                elif rtxt[0] in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct, normalized="‘")
-                elif lw > 1 and rt.txt.startswith("#"):
+                elif lw > 1 and rtxt.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
                     break
-                elif lw > 1 and rt.txt.startswith("@"):
+                elif lw > 1 and rtxt.startswith("@"):
                     # Username on Twitter or other social media platforms
-                    s = re.match(r"\@[0-9a-z_]+", rt.txt)
+                    s = re.match(r"\@[0-9a-z_]+", rtxt)
                     if s:
                         g = s.group()
                         username, rt = rt.split(s.end())
@@ -1504,11 +1506,12 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             # End of punctuation loop
             # Check for specific token types other than punctuation
 
-            if rt.txt and "@" in rt.txt:
+            rtxt = rt.txt
+            if rtxt and "@" in rtxt:
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
                 # even though they're technically allowed according to the RFCs
-                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rt.txt)
+                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rtxt)
                 if s:
                     ate = True
                     email, rt = rt.split(s.end())
@@ -1522,12 +1525,13 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 num, rt = rt.split(1)
                 yield TOK.Number(num, unicodedata.numeric(num.txt[0]))
 
-            if rt.txt and rt.txt.startswith(URL_PREFIXES):
+            rtxt = rt.txt
+            if rtxt and rtxt.startswith(URL_PREFIXES):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
                 # the IETF RFC
                 endp = ""
-                w = rt.txt
+                w = rtxt
                 while w and w[-1] in RIGHT_PUNCTUATION:
                     endp = w[-1] + endp
                     w = w[:-1]
@@ -1535,10 +1539,10 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield TOK.Url(url)
                 ate = True
 
-            if rt.txt and len(rt.txt) >= 2 and re.match(r"#\w", rt.txt, re.UNICODE):
+            if rtxt and len(rtxt) >= 2 and re.match(r"#\w", rtxt, re.UNICODE):
                 # Handle hashtags. Eat all text up to next punctuation character
                 # so we can handle strings like "#MeToo-hreyfingin" as two words
-                w = rt.txt
+                w = rtxt
                 tag = w[:1]
                 w = w[1:]
                 while w and w[0] not in PUNCTUATION:
@@ -1552,15 +1556,16 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     yield TOK.Hashtag(tag_tok)
                 ate = True
 
+            rtxt = rt.txt
             # Domain name (e.g. greynir.is)
             if (
-                rt.txt
-                and len(rt.txt) >= MIN_DOMAIN_LENGTH
-                and rt.txt[0].isalnum()  # All domains start with an alphanumeric char
-                and "." in rt.txt[1:-2]  # Optimization, TLD is at least 2 chars
-                and DOMAIN_REGEX.search(rt.txt)
+                rtxt
+                and len(rtxt) >= MIN_DOMAIN_LENGTH
+                and rtxt[0].isalnum()  # All domains start with an alphanumeric char
+                and "." in rtxt[1:-2]  # Optimization, TLD is at least 2 chars
+                and DOMAIN_REGEX.search(rtxt)
             ):
-                w = rt.txt
+                w = rtxt
                 endp = ""
                 while w and w[-1] in PUNCTUATION:
                     endp = w[-1] + endp
@@ -1569,19 +1574,21 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield TOK.Domain(domain)
                 ate = True
 
+            rtxt = rt.txt
             # Numbers or other stuff starting with a digit
             # (eventually prefixed by a '+' or '-')
-            if rt.txt and (
-                rt.txt[0] in DIGITS_PREFIX
+            if rtxt and (
+                rtxt[0] in DIGITS_PREFIX
                 or (
-                    rt.txt[0] in SIGN_PREFIX
-                    and len(rt.txt) >= 2
-                    and rt.txt[1] in DIGITS_PREFIX
+                    rtxt[0] in SIGN_PREFIX
+                    and len(rtxt) >= 2
+                    and rtxt[1] in DIGITS_PREFIX
                 )
             ):
                 # Handle kludgy ordinals: '3ji', '5ti', etc.
                 for key, val in ORDINAL_ERRORS.items():
-                    if rt.txt.startswith(key):
+                    rtxt = rt.txt
+                    if rtxt.startswith(key):
                         # This is a kludgy ordinal
                         key_tok, rt = rt.split(len(key))
                         if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
@@ -2055,7 +2062,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     slashtok = next_token
                     next_token = next(token_stream)
                     if next_token.txt == "klst":
-                        unit = token.txt + "/" + next_token.txt
+                        unit: str = token.txt + "/" + next_token.txt
                         temp_tok = token.concatenate(slashtok)
                         temp_tok = temp_tok.concatenate(next_token)
                         token = TOK.Measurement(temp_tok, unit, value)
@@ -2082,19 +2089,17 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     val = factor_func * v
 
                 if convert_measurements:
-                    degree_symbol_span = (len(token.txt) - 1, len(token.txt))
+                    txt = token.txt
+                    lentoken = len(txt)
+                    degree_symbol_span = (lentoken - 1, lentoken)
                     # Remove the ° symbol
                     token.substitute(degree_symbol_span, "")
                     # Add it again in the correct place along with the unit
                     token = token.concatenate(next_token, separator=" °")
-                    token = TOK.Measurement(
-                        token, unit, val,  # K  # 200 converted to Kelvin
-                    )
+                    token = TOK.Measurement(token, unit, val,)
                 else:
                     token = TOK.Measurement(
-                        token.concatenate(next_token, separator=" "),  # 200° C
-                        unit,  # K
-                        val,  # 200 converted to Kelvin
+                        token.concatenate(next_token, separator=" "), unit, val,
                     )
 
                 next_token = next(token_stream)
@@ -2107,11 +2112,12 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             # We don't do this for measurement units which
             # have other meanings - such as 'gr' (grams), as
             # 'gr.' is probably the abbreviation for 'grein'. ]
+            txt = token.txt
             if (
                 token.kind == TOK.MEASUREMENT
                 and next_token.kind == TOK.PUNCTUATION
                 and next_token.txt == "."
-                and token.txt[-1].isalpha()
+                and txt[-1].isalpha()
                 # and token.txt.split()[-1] + "." not in Abbreviations.DICT
             ):
                 puncttoken = next_token
@@ -2138,7 +2144,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     yield token
                     token = puncttoken
                 else:
-                    token = TOK.Currency(token.concatenate(puncttoken), token.txt)
+                    txt = token.txt  # Hack to avoid Pylance/Pyright message
+                    token = TOK.Currency(token.concatenate(puncttoken), txt)
 
             # Cases such as 19 $, 199.99 $
             if (
@@ -2156,9 +2163,10 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             # Replace straight abbreviations
             # (i.e. those that don't end with a period)
             if token.kind == TOK.WORD and token.val is None:
-                if Abbreviations.has_meaning(token.txt):
+                txt = token.txt
+                if Abbreviations.has_meaning(txt):
                     # Add a meaning to the token
-                    token = TOK.Word(token, Abbreviations.get_meaning(token.txt))
+                    token = TOK.Word(token, Abbreviations.get_meaning(txt))
 
             # Yield the current token and advance to the lookahead
             yield token
@@ -2342,7 +2350,7 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # the abbreviation "gr.", we assume that the only
                     # interpretation of the abbreviation is "grein".
                     next_token = TOK.Word(
-                        next_token, [("grein", 0, "kvk", "skst", "gr.", "-")]
+                        next_token, [BinTuple("grein", 0, "kvk", "skst", "gr.", "-")]
                     )
 
                 month = month_for_token(next_token, True)

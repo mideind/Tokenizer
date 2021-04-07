@@ -28,7 +28,18 @@
 
 """
 
-from typing import Dict, FrozenSet, Tuple, Union, Callable, List, Optional, cast
+from typing import (
+    Dict,
+    FrozenSet,
+    Tuple,
+    Union,
+    Callable,
+    List,
+    Sequence,
+    Optional,
+    NamedTuple,
+    cast,
+)
 
 import re
 
@@ -43,8 +54,19 @@ AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
 TelnoTuple = Tuple[str, str]
 CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 
-BinTuple = Tuple[str, int, str, str, str, str]
-BinTupleList = List[BinTuple]
+BinTuple = NamedTuple(
+    "BinTuple",
+    [
+        ("ord", str),
+        ("bin_id", int),
+        ("ofl", str),
+        ("hluti", str),
+        ("bmynd", str),
+        ("mark", str),
+    ],
+)
+
+BinTupleList = Sequence[BinTuple]
 
 PersonNameTuple = Tuple[str, str, str]
 PersonNameList = List[PersonNameTuple]
