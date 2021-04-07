@@ -133,12 +133,12 @@ class Tok:
         return bool(self.val)
 
     @property
-    def meanings(self) -> BinTupleList:
+    def meanings(self) -> BINTupleList:
         """ Return the meanings of this token if it is a word,
             otherwise return an empty list """
         if self.kind != TOK.WORD:
             return []
-        return cast(BinTupleList, self.val) or []
+        return cast(BINTupleList, self.val) or []
 
     @property
     def person_names(self) -> PersonNameList:
@@ -720,7 +720,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Word(t: Union[Tok, str], m: Optional[BinTupleList] = None) -> Tok:
+    def Word(t: Union[Tok, str], m: Optional[BINTupleList] = None) -> Tok:
         # The m parameter is intended for a list of BIN_Meaning tuples
         # fetched from the BÍN database
         if isinstance(t, str):
@@ -1825,7 +1825,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             return txt not in Abbreviations.DICT
         return False
 
-    def lookup(abbrev: str) -> Optional[List[BinTuple]]:
+    def lookup(abbrev: str) -> Optional[List[BINTuple]]:
         """ Look up an abbreviation, both in original case and in lower case,
             and return either None if not found or a meaning list having one entry """
         m = Abbreviations.DICT.get(abbrev)
@@ -2361,7 +2361,7 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                 if abbrev in Abbreviations.FINISHERS:
                     token = TOK.Word(
                         token.concatenate(next_token),
-                        cast(Optional[List[BinTuple]], token.val),
+                        cast(Optional[List[BINTuple]], token.val),
                     )
                     next_token = next(token_stream)
 
@@ -2391,7 +2391,7 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # the abbreviation "gr.", we assume that the only
                     # interpretation of the abbreviation is "grein".
                     next_token = TOK.Word(
-                        next_token, [BinTuple("grein", 0, "kvk", "skst", "gr.", "-")]
+                        next_token, [BINTuple("grein", 0, "kvk", "skst", "gr.", "-")]
                     )
 
                 month = month_for_token(next_token, True)

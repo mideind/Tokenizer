@@ -54,8 +54,8 @@ AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
 TelnoTuple = Tuple[str, str]
 CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 
-BinTuple = NamedTuple(
-    "BinTuple",
+BINTuple = NamedTuple(
+    "BINTuple",
     [
         ("stofn", str),
         ("utg", int),
@@ -65,7 +65,7 @@ BinTuple = NamedTuple(
         ("beyging", str),
     ],
 )
-BinTupleList = Sequence[BinTuple]
+BINTupleList = Sequence[BINTuple]
 
 PersonNameTuple = NamedTuple(
     "PersonNameTuple",
@@ -91,7 +91,7 @@ ValType = Union[
     NumberTuple,  # PERCENT, NUMBER
     AmountTuple,  # AMOUNT
     CurrencyTuple,  # CURRENCY
-    BinTupleList,  # WORD
+    BINTupleList,  # WORD
     PersonNameList,  # PERSON
 ]
 

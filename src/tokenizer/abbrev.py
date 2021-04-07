@@ -39,7 +39,7 @@ from threading import Lock
 from collections import defaultdict, OrderedDict
 from pkg_resources import resource_stream  # type: ignore
 
-from .definitions import BinTuple
+from .definitions import BINTuple
 
 
 class ConfigError(Exception):
@@ -78,9 +78,9 @@ class Abbreviations:
         initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT: Dict[str, OrderedSet[BinTuple]] = defaultdict(OrderedSet)
+    DICT: Dict[str, OrderedSet[BINTuple]] = defaultdict(OrderedSet)
     # Wrong versions of abbreviations
-    WRONGDICT: Dict[str, OrderedSet[BinTuple]] = defaultdict(OrderedSet)
+    WRONGDICT: Dict[str, OrderedSet[BINTuple]] = defaultdict(OrderedSet)
     # All abbreviation meanings
     MEANINGS: Set[str] = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
@@ -152,7 +152,7 @@ class Abbreviations:
         # Append the abbreviation and its meaning in tuple form
         # Multiple meanings are supported for each abbreviation
         Abbreviations.DICT[abbrev].add(
-            BinTuple(meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
+            BINTuple(meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
         )
         Abbreviations.MEANINGS.add(meaning)
         # Adding wrong versions of abbreviations
@@ -169,7 +169,7 @@ class Abbreviations:
                 # as abbreviations, even though they are listed as such
                 # in the form 'Í.' and 'Á.' for use within person names
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    BinTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BINTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
 
         elif "." in abbrev:
@@ -182,7 +182,7 @@ class Abbreviations:
                 wabbrev = abbrev[:i] + abbrev[i + 1 :]
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    BinTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BINTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
             if len(indices) > 2:
                 # 3 or 4 dots currently in vocabulary
@@ -200,7 +200,7 @@ class Abbreviations:
                 for wabbrev in wabbrevs:
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                     Abbreviations.WRONGDICT[wabbrev].add(
-                        BinTuple(
+                        BINTuple(
                             meaning,
                             0,
                             gender,
@@ -214,7 +214,7 @@ class Abbreviations:
             Abbreviations.WRONGSINGLES.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
-                BinTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                BINTuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
@@ -232,7 +232,7 @@ class Abbreviations:
         return meaning in Abbreviations.MEANINGS
 
     @staticmethod
-    def get_meaning(abbrev: str) -> Optional[List[BinTuple]]:
+    def get_meaning(abbrev: str) -> Optional[List[BINTuple]]:
         """ Lookup meaning(s) of abbreviation, if available. """
         m = Abbreviations.DICT.get(abbrev)
         if not m:
