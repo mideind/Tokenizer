@@ -42,7 +42,7 @@ import argparse
 import json
 from functools import partial
 
-from .definitions import AmountTuple, BINTuple, NumberTuple, PunctuationTuple
+from .definitions import AmountTuple, BIN_Tuple, NumberTuple, PunctuationTuple
 from .tokenizer import TOK, Tok, tokenize
 
 
@@ -156,7 +156,7 @@ def main() -> None:
             return None
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
-            mm = cast(List[BINTuple], t.val)
+            mm = cast(List[BIN_Tuple], t.val)
             if quote_word:
                 # Return a |-delimited list of possible meanings,
                 # joined into a single string
