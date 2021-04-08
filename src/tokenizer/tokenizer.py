@@ -1391,6 +1391,11 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             yield rt
             continue
 
+        # !!! NOTE: The rtxt variable was introduced chiefly because of
+        # !!! a bug in Pylance/Pyright, causing it to lose track of the type of
+        # !!! the .txt attribute. Once Pylance/Pyright has been fixed, it is
+        # !!! probably a good idea to go back to using rt.txt since it
+        # !!! makes the code more resilient (if a bit slower).
         rtxt: str = rt.txt
         if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
