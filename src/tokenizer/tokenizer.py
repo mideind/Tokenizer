@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 
     Tokenizer for Icelandic text
@@ -39,28 +38,317 @@
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from collections import namedtuple
+from typing import (
+    Any,
+    List,
+    Mapping,
+    Optional,
+    Iterator,
+    Iterable,
+    Tuple,
+    Union,
+    Match,
+    cast,
+)
 
 import re
 import datetime
-import unicodedata
+import unicodedata  # type: ignore
 
+from .definitions import *
 from .abbrev import Abbreviations
 
-# pylint: disable=unused-wildcard-import
-from .definitions import *
 
+class Tok:
 
-# Named tuple for tokens
-Tok = namedtuple("Tok", ["kind", "txt", "val"])
+    """ Information about a single token """
+
+    def __init__(
+        self,
+        kind: int,
+        txt: Optional[str],
+        val: ValType,
+        original: Optional[str] = None,
+        origin_spans: Optional[List[int]] = None,
+    ) -> None:
+        # Type of token
+        self.kind: int = kind
+        # Text of the token
+        self.txt: str = txt or ""
+        # Value of the token (e.g. if it is a date or currency)
+        self.val: ValType = val
+        # The full original string of this token
+        # If this is None then we're not tracking origins
+        self.original: Optional[str] = original
+        # Each index in origin_spans maps from 'txt' (which may have substitutions) to 'original'
+        # This is required to preserve 'original' correctly when splitting
+        self.origin_spans: Optional[List[int]] = origin_spans
+
+    @property
+    def punctuation(self) -> str:
+        """ Return the punctuation symbol associated with the
+            token, if it is in fact a punctuation token """
+        if self.kind != TOK.PUNCTUATION:
+            # Hack: we return the Unicode 'unrecognized character'
+            # code, which will not match any 'x in s' checks
+            # where s is a legitimate string or set
+            return "\ufffd"
+        return cast(PunctuationTuple, self.val)[1]
+
+    @property
+    def number(self) -> float:
+        """ Return a float embedded in a Number or Year token """
+        if self.kind == TOK.YEAR:
+            return float(cast(int, self.val))
+        if self.kind == TOK.NUMBER:
+            return cast(NumberTuple, self.val)[0]
+        raise ValueError("Expected NUMBER or YEAR token in Tok.number()")
+
+    @property
+    def integer(self) -> int:
+        """ Return an integer from a token, which is assumed
+            to be a Number or a Year token """
+        if self.kind == TOK.YEAR:
+            return cast(int, self.val)
+        if self.kind == TOK.NUMBER:
+            return int(cast(NumberTuple, self.val)[0])
+        raise ValueError("Expected NUMBER or YEAR token in Tok.integer()")
+
+    @property
+    def ordinal(self) -> int:
+        """ Return an ordinal number from a token,
+            which is assumed to be a Number or an Ordinal token """
+        if self.kind == TOK.ORDINAL:
+            return cast(int, self.val)
+        if self.kind == TOK.NUMBER:
+            return int(cast(NumberTuple, self.val)[0])
+        raise ValueError("Expected NUMBER or ORDINAL token in Tok.ordinal()")
+
+    @property
+    def has_meanings(self) -> bool:
+        """ Return the meanings of this token if it is a word,
+            otherwise return an empty list """
+        if self.kind != TOK.WORD:
+            return False
+        return bool(self.val)
+
+    @property
+    def meanings(self) -> BIN_TupleList:
+        """ Return the meanings of this token if it is a word,
+            otherwise return an empty list """
+        if self.kind != TOK.WORD:
+            return []
+        return cast(BIN_TupleList, self.val) or []
+
+    @property
+    def person_names(self) -> PersonNameList:
+        """ Return the person names of this token if it denotes a PERSON,
+            otherwise return an empty list """
+        if self.kind != TOK.PERSON:
+            return []
+        return cast(PersonNameList, self.val) or []
+
+    def split(self, pos: int) -> Tuple["Tok", "Tok"]:
+        """ Split this token into two at 'pos'.
+            The first token returned will have 'pos' characters and the second one will have the rest.
+        """
+        # TODO: What happens if you split a token that has txt=="" and original!=""?
+        # TODO: What should we do with val?
+
+        l: Tok
+        r: Tok
+
+        if self.origin_spans is not None and self.original is not None:
+            if pos >= len(self.origin_spans):
+                l = Tok(self.kind, self.txt, self.val, self.original, self.origin_spans)
+                r = Tok(self.kind, "", None, "", [])
+            else:
+                l = Tok(
+                    self.kind,
+                    self.txt[:pos],
+                    self.val,
+                    self.original[: self.origin_spans[pos]],
+                    self.origin_spans[:pos],
+                )
+                r = Tok(
+                    self.kind,
+                    self.txt[pos:],
+                    self.val,
+                    self.original[self.origin_spans[pos] :],
+                    [x - self.origin_spans[pos] for x in self.origin_spans[pos:]],
+                )
+        else:
+            l = Tok(self.kind, self.txt[:pos], self.val)
+            r = Tok(self.kind, self.txt[pos:], self.val)
+
+        return l, r
+
+    def substitute(self, span: Tuple[int, int], new: str) -> None:
+        """ Substitute a span with a single or empty character 'new'. """
+        self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
+        if self.origin_spans is not None:
+            # Remove origin entries that correspond to characters that are gone.
+            self.origin_spans = (
+                self.origin_spans[: span[0] + len(new)] + self.origin_spans[span[1] :]
+            )
+
+    def substitute_longer(self, span: Tuple[int, int], new: str) -> None:
+        """ Substitute a span with a potentially longer string.
+            This tracks origin differently from the regular substitution function.
+            Due to the inobviousness of how to assign origin to the new string we simply
+            make it have an empty origin.
+            This will probably cause some weirdness if this string later gets split or substituted
+            but I don't think that ever happens in the current implementation.
+        """
+        self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
+
+        if self.origin_spans is not None and self.original is not None:
+            head = self.origin_spans[: span[0]]
+            tail = self.origin_spans[span[1] :]
+
+            # The origin span of the new stuff will be of length 0 since we can't
+            # proprely attribute it to individual characters in the original string.
+
+            if len(tail) == 0:
+                # We're replacing the end of the string
+                # Can't pick the next element after the removed string since it doesn't exist
+                # Use the length instead
+                new_origin = len(self.original)
+            else:
+                new_origin = self.origin_spans[span[1]]
+
+            self.origin_spans = head + [new_origin] * len(new) + tail
+
+    def substitute_all(self, old_str: str, new_char: str) -> None:
+        """ Substitute all occurrences of 'old_str' with 'new_char'.
+            The new character may be empty.
+        """
+        # NOTE: This implementation is worst-case-quadratic in the length of the token text.
+        #       Fortunately tokens are almost always (?) short so this is an acceptable tradeoff
+        #       for a dead simple implementation.
+        # TODO: Support arbitrary length substitutions? What does that do to origin tracking?
+
+        assert (
+            len(new_char) == 0 or len(new_char) == 1
+        ), f"'new_char' ({new_char}) was too long."
+
+        while True:
+            i = self.txt.find(old_str)
+            if i == -1:
+                # No occurences of 'old_str' remain
+                break
+            self.substitute((i, i + len(old_str)), new_char)
+
+    def concatenate(
+        self, other: "Tok", *, separator: str = "", metadata_from_other: bool = False
+    ) -> "Tok":
+        """ Return a new token that consists of self with other concatenated to the end.
+            A separator can optionally be supplied.
+            The new token will have metadata (kind and val) from self unless 'metadata_from_other' is True.
+        """
+        new_kind = self.kind if not metadata_from_other else other.kind
+        new_val = self.val if not metadata_from_other else other.val
+
+        self_txt = self.txt or ""
+        other_txt = other.txt or ""
+        new_txt = self_txt + separator + other_txt
+
+        self_original = self.original or ""
+        other_original = other.original or ""
+        new_original = self_original + other_original
+
+        self_origin_spans = self.origin_spans or []
+        other_origin_spans = other.origin_spans or []
+        separator_origin_spans: List[int] = (
+            [len(self_original)] * len(separator) if len(other_origin_spans) > 0 else []
+        )
+        new_origin_spans = (
+            self_origin_spans
+            + separator_origin_spans
+            + [i + len(self_original) for i in other_origin_spans]
+        )
+
+        return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
+
+    @property
+    def as_tuple(self) -> Tuple[Any, ...]:
+        """ Return the contents of this token as a generic tuple,
+            suitable e.g. for serialization """
+        return (self.kind, self.txt, self.val)
+
+    def __getitem__(self, i: int) -> Union[int, str, ValType]:
+        """ Backwards compatibility for when Tok was a namedtuple. """
+        if i == 0:
+            return self.kind
+        elif i == 1:
+            return self.txt
+        elif i == 2:
+            return self.val
+        else:
+            raise IndexError("Tok can only be indexed by 0, 1 or 2")
+
+    def equal(self, other: "Tok") -> bool:
+        """ Equality of content between two tokens, i.e. ignoring the
+            'original' and 'origin_spans' attributes """
+        return (
+            self.kind == other.kind and self.txt == other.txt and self.val == other.val
+        )
+
+    def __eq__(self, other: Any) -> bool:
+        """ Full equality between two Tok instances """
+        if not isinstance(other, Tok):
+            return False
+        return (
+            self.kind == other.kind
+            and self.txt == other.txt
+            and self.val == other.val
+            and self.original == other.original
+            and self.origin_spans == other.origin_spans
+        )
+
+    def __repr__(self) -> str:
+        def quoted_string_repr(obj: Any) -> str:
+            if isinstance(obj, str):
+                return f'"{obj}"'
+            else:
+                return str(obj)
+
+        return (
+            f"Tok({self.kind}, {quoted_string_repr(self.txt)}, "
+            f"{self.val}, {quoted_string_repr(self.original)}, {self.origin_spans})"
+        )
 
 
 class TOK:
 
-    """ Token types """
+    """
+    The TOK class contains constants that define token types and
+    constructors for creating token instances.
+
+    Each of the various constructors can accept as first parameter either
+    a string or a Tok object.
+    
+    The string version is the old one (from versions 2 and earlier).
+    These take in a string and sometimes value and return a token with
+    that string and value.
+    This should be preserved while there are downstream users that depend on
+    this behavior. The tokenizer does not use this internally.
+    
+    The Tok version of the constructors isn't really a constructor but rather
+    a converter. It takes in a token and returns a token with the given type 
+    and value but preserves other attributes, in particular origin tracking.
+    Note that the current version modifies the input and returns it again.
+    This particular detail should not be depended on (assume the input is eaten
+    and something new is returned).
+    
+    If, at some point, we can be reasonably certain that downstream users are
+    not using the string version any more we should consider removing it.
+    """
+
+    # Token types
+
+    # Raw minimally processed token
+    RAW = -1
 
     # Punctuation
     PUNCTUATION = 1
@@ -142,7 +430,7 @@ class TOK:
 
     # Token descriptive names
 
-    descr = {
+    descr: Mapping[int, str] = {
         PUNCTUATION: "PUNCTUATION",
         TIME: "TIME",
         TIMESTAMP: "TIMESTAMP",
@@ -183,10 +471,13 @@ class TOK:
     # Token constructors
 
     @staticmethod
-    def Punctuation(w, normalized=None):
+    def Punctuation(t: Union[Tok, str], normalized: Optional[str] = None) -> Tok:
         tp = TP_CENTER  # Default punctuation type
         if normalized is None:
-            normalized = w
+            if isinstance(t, str):
+                normalized = t
+            else:
+                normalized = t.txt
         if normalized and len(normalized) == 1:
             if normalized in LEFT_PUNCTUATION:
                 tp = TP_LEFT
@@ -194,178 +485,355 @@ class TOK:
                 tp = TP_RIGHT
             elif normalized in NONE_PUNCTUATION:
                 tp = TP_NONE
-        return Tok(TOK.PUNCTUATION, w, (tp, normalized))
+        if isinstance(t, str):
+            return Tok(TOK.PUNCTUATION, t, (tp, normalized))
+        t.kind = TOK.PUNCTUATION
+        t.val = (tp, normalized)
+        return t
 
     @staticmethod
-    def Time(w, h, m, s):
-        return Tok(TOK.TIME, w, (h, m, s))
+    def Time(t: Union[Tok, str], h: int, m: int, s: int) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.TIME, t, (h, m, s))
+        t.kind = TOK.TIME
+        t.val = (h, m, s)
+        return t
 
     @staticmethod
-    def Date(w, y, m, d):
-        return Tok(TOK.DATE, w, (y, m, d))
+    def Date(t: Union[Tok, str], y: int, m: int, d: int) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.DATE, t, (y, m, d))
+        t.kind = TOK.DATE
+        t.val = (y, m, d)
+        return t
 
     @staticmethod
-    def Dateabs(w, y, m, d):
-        return Tok(TOK.DATEABS, w, (y, m, d))
+    def Dateabs(t: Union[Tok, str], y: int, m: int, d: int) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.DATEABS, t, (y, m, d))
+        t.kind = TOK.DATEABS
+        t.val = (y, m, d)
+        return t
 
     @staticmethod
-    def Daterel(w, y, m, d):
-        return Tok(TOK.DATEREL, w, (y, m, d))
+    def Daterel(t: Union[Tok, str], y: int, m: int, d: int) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.DATEREL, t, (y, m, d))
+        t.kind = TOK.DATEREL
+        t.val = (y, m, d)
+        return t
 
     @staticmethod
-    def Timestamp(w, y, mo, d, h, m, s):
-        return Tok(TOK.TIMESTAMP, w, (y, mo, d, h, m, s))
+    def Timestamp(
+        t: Union[str, Tok], y: int, mo: int, d: int, h: int, m: int, s: int
+    ) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.TIMESTAMP, t, (y, mo, d, h, m, s))
+        t.kind = TOK.TIMESTAMP
+        t.val = (y, mo, d, h, m, s)
+        return t
 
     @staticmethod
-    def Timestampabs(w, y, mo, d, h, m, s):
-        return Tok(TOK.TIMESTAMPABS, w, (y, mo, d, h, m, s))
+    def Timestampabs(
+        t: Union[Tok, str], y: int, mo: int, d: int, h: int, m: int, s: int
+    ) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.TIMESTAMPABS, t, (y, mo, d, h, m, s))
+        t.kind = TOK.TIMESTAMPABS
+        t.val = (y, mo, d, h, m, s)
+        return t
 
     @staticmethod
-    def Timestamprel(w, y, mo, d, h, m, s):
-        return Tok(TOK.TIMESTAMPREL, w, (y, mo, d, h, m, s))
+    def Timestamprel(
+        t: Union[Tok, str], y: int, mo: int, d: int, h: int, m: int, s: int
+    ) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.TIMESTAMPREL, t, (y, mo, d, h, m, s))
+        t.kind = TOK.TIMESTAMPREL
+        t.val = (y, mo, d, h, m, s)
+        return t
 
     @staticmethod
-    def Year(w, n):
-        return Tok(TOK.YEAR, w, n)
+    def Year(t: Union[str, Tok], n: int) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.YEAR, t, n)
+        t.kind = TOK.YEAR
+        t.val = n
+        return t
 
     @staticmethod
-    def Telno(w, telno, cc="354"):
-        # The w parameter is the original token text,
+    def Telno(t: Union[str, Tok], telno: str, cc: str = "354") -> Tok:
+        # The t parameter is the original token text,
         # while telno has the standard form 'DDD-DDDD' (with hyphen)
         # cc is the country code
-        return Tok(TOK.TELNO, w, (telno, cc))
+        if isinstance(t, str):
+            return Tok(TOK.TELNO, t, (telno, cc))
+        t.kind = TOK.TELNO
+        t.val = (telno, cc)
+        return t
 
     @staticmethod
-    def Email(w):
-        return Tok(TOK.EMAIL, w, None)
+    def Email(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.EMAIL, t, None)
+        t.kind = TOK.EMAIL
+        t.val = None
+        return t
 
     @staticmethod
-    def Number(w, n, cases=None, genders=None):
+    def Number(
+        t: Union[str, Tok],
+        n: float,
+        cases: Optional[List[str]] = None,
+        genders: Optional[List[str]] = None,
+    ) -> Tok:
         # The cases parameter is a list of possible cases for this number
         # (if it was originally stated in words)
-        return Tok(TOK.NUMBER, w, (n, cases, genders))
+        if isinstance(t, str):
+            return Tok(TOK.NUMBER, t, (n, cases, genders))
+        t.kind = TOK.NUMBER
+        t.val = (n, cases, genders)
+        return t
 
     @staticmethod
-    def NumberWithLetter(w, n, c):
-        return Tok(TOK.NUMWLETTER, w, (n, c))
+    def NumberWithLetter(t: Union[str, Tok], n: int, c: str) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.NUMWLETTER, t, (n, c))
+        t.kind = TOK.NUMWLETTER
+        t.val = (n, c)
+        return t
 
     @staticmethod
-    def Currency(w, iso, cases=None, genders=None):
+    def Currency(
+        t: Union[str, Tok],
+        iso: str,
+        cases: Optional[List[str]] = None,
+        genders: Optional[List[str]] = None,
+    ) -> Tok:
         # The cases parameter is a list of possible cases for this currency name
         # (if it was originally stated in words, i.e. not abbreviated)
-        return Tok(TOK.CURRENCY, w, (iso, cases, genders))
+        if isinstance(t, str):
+            return Tok(TOK.CURRENCY, t, (iso, cases, genders))
+        t.kind = TOK.CURRENCY
+        t.val = (iso, cases, genders)
+        return t
 
     @staticmethod
-    def Amount(w, iso, n, cases=None, genders=None):
+    def Amount(
+        t: Union[str, Tok],
+        iso: str,
+        n: float,
+        cases: Optional[List[str]] = None,
+        genders: Optional[List[str]] = None,
+    ) -> Tok:
         # The cases parameter is a list of possible cases for this amount
         # (if it was originally stated in words)
-        return Tok(TOK.AMOUNT, w, (n, iso, cases, genders))
+        if isinstance(t, str):
+            return Tok(TOK.AMOUNT, t, (n, iso, cases, genders))
+        t.kind = TOK.AMOUNT
+        t.val = (n, iso, cases, genders)
+        return t
 
     @staticmethod
-    def Percent(w, n, cases=None, genders=None):
-        return Tok(TOK.PERCENT, w, (n, cases, genders))
+    def Percent(
+        t: Union[str, Tok],
+        n: float,
+        cases: Optional[List[str]] = None,
+        genders: Optional[List[str]] = None,
+    ):
+        if isinstance(t, str):
+            return Tok(TOK.PERCENT, t, (n, cases, genders))
+        t.kind = TOK.PERCENT
+        t.val = (n, cases, genders)
+        return t
 
     @staticmethod
-    def Ordinal(w, n):
-        return Tok(TOK.ORDINAL, w, n)
+    def Ordinal(t: Union[str, Tok], n: int) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.ORDINAL, t, n)
+        t.kind = TOK.ORDINAL
+        t.val = n
+        return t
 
     @staticmethod
-    def Url(w):
-        return Tok(TOK.URL, w, None)
+    def Url(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.URL, t, None)
+        t.kind = TOK.URL
+        t.val = None
+        return t
 
     @staticmethod
-    def Domain(w):
-        return Tok(TOK.DOMAIN, w, None)
+    def Domain(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.DOMAIN, t, None)
+        t.kind = TOK.DOMAIN
+        t.val = None
+        return t
 
     @staticmethod
-    def Hashtag(w):
-        return Tok(TOK.HASHTAG, w, None)
+    def Hashtag(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.HASHTAG, t, None)
+        t.kind = TOK.HASHTAG
+        t.val = None
+        return t
 
     @staticmethod
-    def Ssn(w):
-        return Tok(TOK.SSN, w, None)
+    def Ssn(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.SSN, t, None)
+        t.kind = TOK.SSN
+        t.val = None
+        return t
 
     @staticmethod
-    def Molecule(w):
-        return Tok(TOK.MOLECULE, w, None)
+    def Molecule(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.MOLECULE, t, None)
+        t.kind = TOK.MOLECULE
+        t.val = None
+        return t
 
     @staticmethod
-    def Username(w, username):
-        return Tok(TOK.USERNAME, w, username)
+    def Username(t: Union[str, Tok], username: str) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.USERNAME, t, username)
+        t.kind = TOK.USERNAME
+        t.val = username
+        return t
 
     @staticmethod
-    def SerialNumber(w):
-        return Tok(TOK.SERIALNUMBER, w, None)
+    def SerialNumber(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.SERIALNUMBER, t, None)
+        t.kind = TOK.SERIALNUMBER
+        t.val = None
+        return t
 
     @staticmethod
-    def Measurement(w, unit, val):
-        return Tok(TOK.MEASUREMENT, w, (unit, val))
+    def Measurement(t: Union[Tok, str], unit: str, val: float) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.MEASUREMENT, t, (unit, val))
+        t.kind = TOK.MEASUREMENT
+        t.val = (unit, val)
+        return t
 
     @staticmethod
-    def Word(w, m=None):
+    def Word(t: Union[Tok, str], m: Optional[BIN_TupleList] = None) -> Tok:
         # The m parameter is intended for a list of BIN_Meaning tuples
         # fetched from the BÍN database
-        return Tok(TOK.WORD, w, m)
+        if isinstance(t, str):
+            return Tok(TOK.WORD, t, m)
+        t.kind = TOK.WORD
+        t.val = m
+        return t
 
     @staticmethod
-    def Unknown(w):
-        return Tok(TOK.UNKNOWN, w, None)
+    def Unknown(t: Union[Tok, str]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.UNKNOWN, t, None)
+        t.kind = TOK.UNKNOWN
+        t.val = None
+        return t
 
     @staticmethod
-    def Person(w, m=None):
+    def Person(t: Union[str, Tok], m: Optional[List[PersonNameTuple]] = None) -> Tok:
         # The m parameter is intended for a list of PersonName tuples:
         # (name, gender, case)
-        return Tok(TOK.PERSON, w, m)
+        if isinstance(t, str):
+            return Tok(TOK.PERSON, t, m)
+        t.kind = TOK.PERSON
+        t.val = m
+        return t
 
     @staticmethod
-    def Entity(w):
-        return Tok(TOK.ENTITY, w, None)
+    def Entity(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.ENTITY, t, None)
+        t.kind = TOK.ENTITY
+        t.val = None
+        return t
 
     @staticmethod
-    def Company(w):
-        return Tok(TOK.COMPANY, w, None)
+    def Company(t: Union[str, Tok]) -> Tok:
+        if isinstance(t, str):
+            return Tok(TOK.COMPANY, t, None)
+        t.kind = TOK.COMPANY
+        t.val = None
+        return t
 
     @staticmethod
-    def Begin_Paragraph():
-        return Tok(TOK.P_BEGIN, None, None)
+    def Begin_Paragraph(t: Optional[Tok] = None) -> Tok:
+        if t is None:
+            return Tok(TOK.P_BEGIN, None, None)
+        t.kind = TOK.P_BEGIN
+        t.val = None
+        return t
 
     @staticmethod
-    def End_Paragraph():
-        return Tok(TOK.P_END, None, None)
+    def End_Paragraph(t: Optional[Tok] = None) -> Tok:
+        if t is None:
+            return Tok(TOK.P_END, None, None)
+        t.kind = TOK.P_END
+        t.val = None
+        return t
 
     @staticmethod
-    def Begin_Sentence(num_parses=0, err_index=None):
-        return Tok(TOK.S_BEGIN, None, (num_parses, err_index))
+    def Begin_Sentence(
+        t: Optional[Tok] = None, num_parses: int = 0, err_index: Optional[int] = None
+    ) -> Tok:
+        if t is None:
+            return Tok(TOK.S_BEGIN, None, (num_parses, err_index))
+        t.kind = TOK.S_BEGIN
+        t.val = (num_parses, err_index)
+        return t
 
     @staticmethod
-    def End_Sentence():
-        return Tok(TOK.S_END, None, None)
+    def End_Sentence(t: Optional[Tok] = None) -> Tok:
+        if t is None:
+            return Tok(TOK.S_END, None, None)
+        t.kind = TOK.S_END
+        t.val = None
+        return t
 
     @staticmethod
-    def End_Sentinel():
-        return Tok(TOK.X_END, None, None)
+    def End_Sentinel(t: Optional[Tok] = None) -> Tok:
+        if t is None:
+            return Tok(TOK.X_END, None, None)
+        t.kind = TOK.X_END
+        t.val = None
+        return t
 
     @staticmethod
-    def Split_Sentence():
-        return Tok(TOK.S_SPLIT, None, None)
+    def Split_Sentence(t: Optional[Tok] = None) -> Tok:
+        if t is None:
+            return Tok(TOK.S_SPLIT, None, None)
+        t.kind = TOK.S_SPLIT
+        t.val = None
+        return t
 
 
-def normalized_text(token):
+def normalized_text(token: Tok) -> str:
     """ Returns token text after normalizing punctuation """
-    return token.val[1] if token.kind == TOK.PUNCTUATION else token.txt
+    return (
+        cast(Tuple[int, str], token.val)[1]
+        if token.kind == TOK.PUNCTUATION
+        else token.txt
+    )
 
 
-def text_from_tokens(tokens):
+def text_from_tokens(tokens: Iterable[Tok]) -> str:
     """ Return text from a list of tokens, without normalization """
     return " ".join(t.txt for t in tokens if t.txt)
 
 
-def normalized_text_from_tokens(tokens):
+def normalized_text_from_tokens(tokens: Iterable[Tok]) -> str:
     """ Return text from a list of tokens, without normalization """
     return " ".join(filter(None, map(normalized_text, tokens)))
 
 
-def is_valid_date(y, m, d):
+def is_valid_date(y: int, m: int, d: int) -> bool:
     """ Returns True if y, m, d is a valid date """
     if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
         try:
@@ -376,9 +844,12 @@ def is_valid_date(y, m, d):
     return False
 
 
-def parse_digits(w, convert_numbers):
+def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
     """ Parse a raw token starting with a digit """
-    s = re.match(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)", w)
+    w = tok.txt
+    s: Optional[Match[str]] = re.match(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)", w)
+    g: str
+    n: str
     if s:
         # Looks like a 24-hour clock with milliseconds, H:M:S:MS
         # TODO use millisecond information in token
@@ -388,7 +859,8 @@ def parse_digits(w, convert_numbers):
         m = int(p[1])
         sec = int(p[2].split(",")[0])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
-            return TOK.Time(g, h, m, sec), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Time(t, h, m, sec), rest
 
     s = re.match(r"\d{1,2}:\d\d:\d\d(?!\d)", w)
     if s:
@@ -399,7 +871,8 @@ def parse_digits(w, convert_numbers):
         m = int(p[1])
         sec = int(p[2])
         if (0 <= h < 24) and (0 <= m < 60) and (0 <= sec < 60):
-            return TOK.Time(g, h, m, sec), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Time(t, h, m, sec), rest
 
     s = re.match(r"\d{1,2}:\d\d(?!\d)", w)
     if s:
@@ -409,7 +882,8 @@ def parse_digits(w, convert_numbers):
         h = int(p[0])
         m = int(p[1])
         if (0 <= h < 24) and (0 <= m < 60):
-            return TOK.Time(g, h, m, 0), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Time(t, h, m, 0), rest
 
     s = re.match(r"((\d{4}-\d\d-\d\d)|(\d{4}/\d\d/\d\d))(?!\d)", w)
     if s:
@@ -423,7 +897,8 @@ def parse_digits(w, convert_numbers):
         m = int(p[1])
         d = int(p[2])
         if is_valid_date(y, m, d):
-            return TOK.Date(g, y, m, d), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Date(t, y, m, d), rest
 
     s = (
         re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w)
@@ -449,7 +924,8 @@ def parse_digits(w, convert_numbers):
             # Probably wrong way (i.e. U.S. American way) around
             m, d = d, m
         if is_valid_date(y, m, d):
-            return TOK.Date(g, y, m, d), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Date(t, y, m, d), rest
 
     s = re.match(r"(\d{2})\.(\d{2})(?!\d)", w)
     if s:
@@ -460,7 +936,8 @@ def parse_digits(w, convert_numbers):
         d = int(s.group(1))
         m = int(s.group(2))
         if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
-            return TOK.Daterel(g, y=0, m=m, d=d), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Daterel(t, y=0, m=m, d=d), rest
 
     s = re.match(r"(\d{2})[-.](\d{4})(?!\d)", w)
     if s:
@@ -469,7 +946,8 @@ def parse_digits(w, convert_numbers):
         m = int(s.group(1))
         y = int(s.group(2))
         if (1776 <= y <= 2100) and (1 <= m <= 12):
-            return TOK.Daterel(g, y=y, m=m, d=0), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Daterel(t, y=y, m=m, d=0), rest
 
     # Note: the following must use re.UNICODE to make sure that
     # \w matches all Icelandic characters under Python 2
@@ -481,8 +959,9 @@ def parse_digits(w, convert_numbers):
         # Only match if the single character is not a
         # unit of measurement (e.g. 'A', 'l', 'V')
         if c not in SI_UNITS_SET:
-            n = int(g[:-1])
-            return TOK.NumberWithLetter(g, n, c), s.end()
+            nw = int(g[:-1])
+            t, rest = tok.split(s.end())
+            return TOK.NumberWithLetter(t, nw, c), rest
 
     s = NUM_WITH_UNIT_REGEX1.match(w)
     if s:
@@ -494,7 +973,8 @@ def parse_digits(w, convert_numbers):
         if unit in CURRENCY_SYMBOLS:
             # This is an amount with a currency symbol at the end
             iso = CURRENCY_SYMBOLS[unit]
-            return TOK.Amount(g, iso, val), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Amount(t, iso, val), rest
         unit, factor = SI_UNITS[unit]
         if callable(factor):
             val = factor(val)
@@ -502,8 +982,10 @@ def parse_digits(w, convert_numbers):
             # Simple scaling factor
             val *= factor
         if unit in ("%", "‰"):
-            return TOK.Percent(g, val), s.end()
-        return TOK.Measurement(g, unit, val), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Percent(t, val), rest
+        t, rest = tok.split(s.end())
+        return TOK.Measurement(t, unit, val), rest
 
     s = NUM_WITH_UNIT_REGEX2.match(w)
     if s:
@@ -515,20 +997,22 @@ def parse_digits(w, convert_numbers):
         if unit in CURRENCY_SYMBOLS:
             # This is an amount with a currency symbol at the end
             iso = CURRENCY_SYMBOLS[unit]
-            return TOK.Amount(g, iso, val), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Amount(t, iso, val), rest
         unit, factor = SI_UNITS[unit]
         if callable(factor):
             val = factor(val)
         else:
             # Simple scaling factor
             val *= factor
+        t, rest = tok.split(s.end())
         if convert_numbers:
-            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
-            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
-            g = re.sub("x", ".", g)  # Change 'x' to '.'
+            t.substitute_all(",", "x")  # Change thousands separator to 'x'
+            t.substitute_all(".", ",")  # Change decimal separator to ','
+            t.substitute_all("x", ".")  # Change 'x' to '.'
         if unit in ("%", "‰"):
-            return TOK.Percent(g, val), s.end()
-        return TOK.Measurement(g, unit, val), s.end()
+            return TOK.Percent(t, val), rest
+        return TOK.Measurement(t, unit, val), rest
 
     s = NUM_WITH_UNIT_REGEX3.match(w)
     if s:
@@ -539,11 +1023,12 @@ def parse_digits(w, convert_numbers):
         ln = s.group(1)
         vf = s.group(2)
         orig_unit = s.group(3)
-        value = float(ln) + unicodedata.numeric(vf)
+        value = float(ln) + cast(float, unicodedata.numeric(vf))
         if orig_unit in CURRENCY_SYMBOLS:
             # This is an amount with a currency symbol at the end
             iso = CURRENCY_SYMBOLS[orig_unit]
-            return TOK.Amount(g, iso, value), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Amount(t, iso, value), rest
         unit, factor = SI_UNITS[orig_unit]
         if callable(factor):
             value = factor(value)
@@ -551,8 +1036,10 @@ def parse_digits(w, convert_numbers):
             # Simple scaling factor
             value *= factor
         if unit in ("%", "‰"):
-            return TOK.Percent(g, value), s.end()
-        return TOK.Measurement(g, unit, value), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Percent(t, value), rest
+        t, rest = tok.split(s.end())
+        return TOK.Measurement(t, unit, value), rest
 
     s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
     if s:
@@ -560,12 +1047,12 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         ln = s.group(1)
         vf = s.group(2)
-        val = float(ln) + unicodedata.numeric(vf)
-        return TOK.Number(g, val), s.end()
+        val = float(ln) + cast(float, unicodedata.numeric(vf))
+        t, rest = tok.split(s.end())
+        return TOK.Number(t, val), rest
 
-    s = re.match(
-        r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w
-    )  # Can't end with digits.digits
+    # Can't end with digits.digits
+    s = re.match(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)
     if s:
         # Icelandic-style real number formatted with decimal comma (,)
         # and possibly thousands separators (.)
@@ -577,7 +1064,8 @@ def parse_digits(w, convert_numbers):
         else:
             n = re.sub(r"\.", "", g)  # Eliminate thousands separators
             n = re.sub(",", ".", n)  # Convert decimal comma to point
-            return TOK.Number(g, float(n)), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Number(t, float(n)), rest
 
     s = re.match(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)", w)
     if s:
@@ -585,7 +1073,8 @@ def parse_digits(w, convert_numbers):
         # (we need to check this before checking dd.mm dates)
         g = s.group()
         n = re.sub(r"\.", "", g)  # Eliminate thousands separators
-        return TOK.Number(g, int(n)), s.end()
+        t, rest = tok.split(s.end())
+        return TOK.Number(t, int(n)), rest
 
     s = re.match(r"\d{1,2}/\d{1,2}(?!\d)", w)
     if s:
@@ -602,48 +1091,56 @@ def parse_digits(w, convert_numbers):
             # This is probably a fraction, not a date
             # (1/2, 1/3, 1/4, 1/5, 1/6, 2/3, 2/5, 5/6 etc.)
             # Return a number
-            return TOK.Number(g, float(d) / m), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Number(t, float(d) / m), rest
         if m > 12 >= d:
             # Date is probably wrong way around
             m, d = d, m
         if (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
             # Looks like a (roughly) valid date
-            return TOK.Daterel(g, y=0, m=m, d=d), s.end()
+            t, rest = tok.split(s.end())
+            return TOK.Daterel(t, y=0, m=m, d=d), rest
 
     s = re.match(r"\d\d\d\d(?!\d)", w)
     if s:
-        n = int(s.group())
-        if 1776 <= n <= 2100:
+        nn = int(s.group())
+        if 1776 <= nn <= 2100:
             # Looks like a year
-            return TOK.Year(w[0:4], n), 4
+            t, rest = tok.split(4)
+            return TOK.Year(t, nn), rest
 
     s = re.match(r"\d{6}\-\d{4}(?!\d)", w)
     if s:
         # Looks like a social security number
         g = s.group()
         if valid_ssn(g):
-            return TOK.Ssn(w[0:11]), 11
+            t, rest = tok.split(11)
+            return TOK.Ssn(t), rest
 
     s = re.match(r"\d\d\d\-\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = s.group()
-        return TOK.Telno(telno, telno), 8
+        t, rest = tok.split(8)
+        return TOK.Telno(t, telno), rest
     if s:
         # Most likely some sort of serial number
         # Unknown token for now, don't want it separated
-        return TOK.SerialNumber(s.group()), s.end()
+        t, rest = tok.split(s.end())
+        return TOK.SerialNumber(t), rest
 
     s = re.match(r"\d+\-\d+(\-\d+)+", w)
     if s:
         # Multi-component serial number
-        return TOK.SerialNumber(s.group()), s.end()
+        t, rest = tok.split(s.end())
+        return TOK.SerialNumber(t), rest
 
     s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = w[0:3] + "-" + w[3:7]
-        return TOK.Telno(w[0:7], telno), 7
+        t, rest = tok.split(7)
+        return TOK.Telno(t, telno), rest
 
     s = re.match(r"\d+\.\d+(\.\d+)+", w)
     if s:
@@ -652,7 +1149,8 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
         n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
-        return TOK.Ordinal(g, int(n)), s.end()
+        t, rest = tok.split(s.end())
+        return TOK.Ordinal(t, int(n)), rest
 
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*\.\d+", w)
     if s:
@@ -661,11 +1159,12 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
+        t, rest = tok.split(s.end())
         if convert_numbers:
-            g = re.sub(",", "x", g)  # Change thousands separator to 'x'
-            g = re.sub(r"\.", ",", g)  # Change decimal separator to ','
-            g = re.sub("x", ".", g)  # Change 'x' to '.'
-        return TOK.Number(g, float(n)), s.end()
+            t.substitute_all(",", "x")  # Change thousands separator to 'x'
+            t.substitute_all(".", ",")  # Change decimal separator to ','
+            t.substitute_all("x", ".")  # Change 'x' to '.'
+        return TOK.Number(t, float(n)), rest
 
     s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
     if s:
@@ -673,87 +1172,162 @@ def parse_digits(w, convert_numbers):
         g = s.group()
         n = re.sub(",", "", g)  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
+        t, rest = tok.split(s.end())
         if convert_numbers:
-            g = re.sub(",", ".", g)  # Change thousands separator to a dot
-        return TOK.Number(g, int(n)), s.end()
+            # Change thousands separator to a dot
+            t.substitute_all(",", ".")
+        return TOK.Number(t, int(n)), rest
 
     # Strange thing
     # !!! TODO: May want to mark this as an error
-    return TOK.Unknown(w), len(w)
+    # !!! TODO: is this the correct thing for the rest token?
+    return (
+        TOK.Unknown(tok),
+        Tok(TOK.RAW, "", None, "", []),
+    )
 
 
-def html_escape(match):
+def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
     """ Regex substitution function for HTML escape codes """
     g = match.group(4)
     if g is not None:
         # HTML escape string: 'acute'
-        return HTML_ESCAPES[g]
+        return match.span(), HTML_ESCAPES[g]
     g = match.group(2)
     if g is not None:
         # Hex code: '#xABCD'
-        return unicode_chr(int(g[2:], base=16))
+        return match.span(), chr(int(g[2:], base=16))
     g = match.group(3)
     assert g is not None
     # Decimal code: '#8930'
-    return unicode_chr(int(g[1:]))
+    return match.span(), chr(int(g[1:]))
 
 
-def gen_from_string(txt, replace_composite_glyphs=True, replace_html_escapes=False, one_sent_per_line=False):
-    """ Generate rough tokens from a string """
-    if replace_composite_glyphs:
-        # Replace composite glyphs with single code points
-        txt = UNICODE_REGEX.sub(
-            lambda match: UNICODE_REPLACEMENTS[match.group(0)], txt,
+def unicode_replacement(token: Tok) -> Tok:
+    """ Replace some composite glyphs with single code points """
+    total_reduction = 0
+    for m in UNICODE_REGEX.finditer(token.txt):
+        span, new_letter = m.span(), UNICODE_REPLACEMENTS[m.group(0)]
+        token.substitute(
+            (span[0] - total_reduction, span[1] - total_reduction), new_letter
         )
-    if replace_html_escapes:
-        # Replace HTML escapes: '&aacute;' -> 'á'
-        txt = HTML_ESCAPE_REGEX.sub(html_escape, txt)
-    # If there are consecutive newlines in the string (i.e. two
-    # newlines separated only by whitespace), we interpret
-    # them as hard sentence boundaries
-    first = True
-    if one_sent_per_line:
-        # We know there's a single sentence per line
-        # Only split on newline
-        splitter = re.split(r"\n", txt)
-    else:
-        splitter = re.split(r"\n\s*\n", txt)
+        total_reduction += span[1] - span[0] - len(new_letter)
+    return token
 
-    for span in splitter:
-        if first:
-            first = False
-        else:
-            # Return a sentence splitting token in lieu of the
-            # newline pair that separates the spans
-            yield ""
-        for w in span.split():
-            if w:
-                yield w
 
-def gen(text_or_gen, replace_composite_glyphs=True, replace_html_escapes=False, one_sent_per_line=False):
-    """ Generate rough tokens from a string or a generator """
-    if text_or_gen is None:
-        return
-    if is_str(text_or_gen):
+def html_replacement(token: Tok) -> Tok:
+    """ Replace html escape sequences with their proper characters """
+    total_reduction = 0
+    for m in HTML_ESCAPE_REGEX.finditer(token.txt):
+        span, new_letter = html_escape(m)
+        token.substitute(
+            (span[0] - total_reduction, span[1] - total_reduction), new_letter
+        )
+        total_reduction += span[1] - span[0] - len(new_letter)
+    return token
+
+
+def generate_rough_tokens(
+    text_or_gen: Union[str, Iterable[str]],
+    replace_composite_glyphs: bool = True,
+    replace_html_escapes: bool = False,
+    one_sent_per_line: bool = False,
+) -> Iterator[Tok]:
+    """ Generate rough tokens from a string or an iterable
+        that contains strings """
+
+    if isinstance(text_or_gen, str):
+        if not text_or_gen:
+            # Empty string: yield nothing
+            return
         # The parameter is a single string: wrap it in an iterable
         text_or_gen = [text_or_gen]
+
     # Iterate through text_or_gen, which is assumed to yield strings
-    for txt in text_or_gen:
-        txt = txt.strip()
-        if not txt:
-            # Empty line: signal this to the consumer of the generator
-            yield ""
+    saved: Optional[Tok] = None
+
+    # The following declaration seems to be required for Pylance
+    big_text: str
+
+    for big_text in text_or_gen:
+
+        if not one_sent_per_line and not big_text:
+            # An explicit empty string in the input always
+            # causes a sentence split
+            yield TOK.Split_Sentence(saved)
+            saved = None
+            continue
+
+        if saved is not None:
+            big_text = (saved.original or "") + big_text
+            saved = None
+
+        # Force sentence splits
+        # Case 1: Two newlines with only whitespace between appear anywhere in 'big_text'.
+        #         I.e. force sentence split when we see an empty line.
+        # Case 2: 'big_txt' contains only whitespace.
+        #         This only means "empty line" if each element in text_or_gen is assumed to
+        #         be a line (even if they don't contain any newline characters).
+        #         That does not strictly have to be true and is not a declared assumption,
+        #         except in tests, but the tokenizer has had this behavior for a long time.
+
+        if one_sent_per_line:
+            # We know there's a single sentence per line
+            # Only split on newline
+            sentence_split_pattern = r"(\n)"
         else:
-            # Convert to a Unicode string (if Python 2.7)
-            txt = make_str(txt)
-            # Yield the contained rough tokens
-            for w in gen_from_string(
-                txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
-            ):
-                yield w
+            sentence_split_pattern = r"(\n\s*\n|^\s*$)"
+
+        splits = re.split(sentence_split_pattern, big_text)
+        # We know that splits will contain alternatively useful text and the splitting
+        # pattern, starting and ending with useful text. See the documentation on
+        # re.split.
+        is_text = True
+        for text in splits:
+            if is_text:
+                # 'text' is text to be tokenized
+                tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
+                if replace_composite_glyphs:
+                    # Replace composite glyphs with single code points
+                    tok_big = unicode_replacement(tok_big)
+                if replace_html_escapes:
+                    # Replace HTML escapes: '&aacute;' -> 'á'
+                    tok_big = html_replacement(tok_big)
+
+                while tok_big.txt != "":
+                    res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
+                    assert res is not None
+                    tok, tok_big = tok_big.split(res.span(0)[1])
+
+                    # Remove whitespace from the start of the token
+                    tok.substitute(res.span(1), "")
+                    if tok.txt == "":
+                        # We have some trailing whitespace at the end of a 'big_text'
+                        # This can only be the last item in 'splits'.
+                        # See ROUGH_TOKEN_REGEX to convince yourself this is true.
+                        # Save this bit and attach it to the front of the next 'big_text'
+                        # since we don't want to yield a word token with empty text.
+                        saved = tok
+                    else:
+                        yield tok
+            else:
+                # 'text' is the split pattern
+                tok_split = Tok(TOK.RAW, text, None, text, list(range(len(text))))
+                # This token should have no output text, but we still want to preserve its origin.
+                tok_split.substitute((0, len(text)), "")
+                yield TOK.Split_Sentence(tok_split)
+            is_text = not is_text
+
+    if saved:
+        # There is trailing whitespace at the end of everything.
+        # The only option to conserve this is to emit a token with empty text.
+        # Set the type to S_SPLIT to get proper sentence detection in later phases.
+        yield TOK.Split_Sentence(saved)
 
 
-def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
+def could_be_end_of_sentence(
+    next_token: Tok, test_set: FrozenSet[int] = TOK.TEXT, multiplier: bool = False
+) -> bool:
     """ Return True if next_token could be ending the current sentence or
         starting the next one """
     return next_token.kind in TOK.END or (
@@ -769,7 +1343,7 @@ def could_be_end_of_sentence(next_token, test_set=TOK.TEXT, multiplier=False):
     )
 
 
-def parse_tokens(txt, **options):
+def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok]:
     """ Generator that parses contiguous text into a stream of tokens """
 
     # Obtain individual flags from the options dict
@@ -803,231 +1377,270 @@ def parse_tokens(txt, **options):
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    for w in gen(txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line):
+    rt: Tok
+
+    for rt in generate_rough_tokens(
+        txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
+    ):
+        # rt: raw token
 
         # Handle each sequence w of non-whitespace characters
 
-        if not w:
-            # An empty string signals an empty line, which splits sentences
-            yield TOK.Split_Sentence()
+        if rt.kind == TOK.S_SPLIT:
+            # Sentence split markers require no further processing. Yield them immediately.
+            yield rt
             continue
 
-
-        if w.isalpha() or w in SI_UNITS:
+        # !!! NOTE: The rtxt variable was introduced chiefly because of
+        # !!! a bug in Pylance/Pyright, causing it to lose track of the type of
+        # !!! the .txt attribute. Once Pylance/Pyright has been fixed, it is
+        # !!! probably a good idea to go back to using rt.txt since it
+        # !!! makes the code more resilient (if a bit slower).
+        rtxt: str = rt.txt
+        if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
-            yield TOK.Word(w)
+            yield TOK.Word(rt)
             continue
 
-        if len(w) > 1:
-            if w[0] in SIGN_PREFIX and w[1] in DIGITS_PREFIX:
+        if len(rtxt) > 1:
+            if rtxt[0] in SIGN_PREFIX and rtxt[1] in DIGITS_PREFIX:
                 # Digit, preceded by sign (+/-): parse as a number
                 # Note that we can't immediately parse a non-signed number
                 # here since kludges such as '3ja' and domain names such as '4chan.com'
                 # need to be handled separately below
-                t, eaten = parse_digits(w, convert_numbers)
+                t, rt = parse_digits(rt, convert_numbers)
                 yield t
-                w = w[eaten:]
-                if not w:
+                if not rt.txt:
                     continue
-            elif w[0] in COMPOSITE_HYPHENS and w[1].isalpha():
+            elif rtxt[0] in COMPOSITE_HYPHENS and rtxt[1].isalpha():
                 # This may be something like '-menn' in 'þingkonur og -menn'
                 i = 2
-                while i < len(w) and w[i].isalpha():
+                while i < len(rtxt) and rtxt[i].isalpha():
                     i += 1
                 # We allow -menn and -MENN, but not -Menn or -mEnn
                 # We don't allow -Á or -Í, i.e. single-letter uppercase combos
-                if w[:i].islower() or (i > 2 and w[:i].isupper()):
-                    yield TOK.Word(w[:i])
-                    w = w[i:]
+                if rtxt[:i].islower() or (i > 2 and rtxt[:i].isupper()):
+                    head, rt = rt.split(i)
+                    yield TOK.Word(head)
 
         # Shortcut for quotes around a single word
-        if len(w) >= 3:
-            if w[0] in DQUOTES and w[-1] in DQUOTES:
+        rtxt = rt.txt
+        if len(rtxt) >= 3:
+            if rtxt[0] in DQUOTES and rtxt[-1] in DQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("„")
-                if w[1:-1].isalpha():
-                    yield TOK.Punctuation(w[0], normalized="„")
-                    yield TOK.Word(w[1:-1])
-                    yield TOK.Punctuation(w[-1], normalized="“")
+                if rtxt[1:-1].isalpha():
+                    first_punct, rt = rt.split(1)
+                    word, last_punct = rt.split(-1)
+                    yield TOK.Punctuation(first_punct, normalized="„")
+                    yield TOK.Word(word)
+                    yield TOK.Punctuation(last_punct, normalized="“")
+                    # yield TOK.Punctuation(w[0], normalized="„")
+                    # yield TOK.Word(w[1:-1])
+                    # yield TOK.Punctuation(w[-1], normalized="“")
                     continue
-            elif w[0] in SQUOTES and w[-1] in SQUOTES:
+            elif rtxt[0] in SQUOTES and rtxt[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
                 # yield TOK.Punctuation("‚")
-                if w[1:-1].isalpha():
-                    yield TOK.Punctuation(w[0], normalized="‚")
-                    yield TOK.Word(w[1:-1])
-                    yield TOK.Punctuation(w[-1], normalized="‘")
+                if rtxt[1:-1].isalpha():
+                    first_punct, rt = rt.split(1)
+                    word, last_punct = rt.split(-1)
+                    yield TOK.Punctuation(first_punct, normalized="‚")
+                    yield TOK.Word(word)
+                    yield TOK.Punctuation(last_punct, normalized="‘")
+                    # yield TOK.Punctuation(w[0], normalized="‚")
+                    # yield TOK.Word(w[1:-1])
+                    # yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
 
         # Special case for leading quotes, which are interpreted
         # as opening quotes
-        if len(w) > 1:
-            if w[0] in DQUOTES:
+        rtxt = rt.txt
+        if len(rtxt) > 1:
+            if rtxt[0] in DQUOTES:
                 # Convert simple quotes to proper opening quotes
-                yield TOK.Punctuation(w[0], normalized="„")
-                w = w[1:]
-            elif w[0] in SQUOTES:
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized="„")
+            elif rt.txt[0] in SQUOTES:
                 # Convert simple quotes to proper opening quotes
-                yield TOK.Punctuation(w[0], normalized="‚")
-                w = w[1:]
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized="‚")
 
         # More complex case of mixed punctuation, letters and numbers
-        while w:
+        while rt.txt:
             # Handle punctuation
             ate = False
-            while w and w[0] in PUNCTUATION:
+            while rt.txt and rt.txt[0] in PUNCTUATION:
                 ate = True
-                lw = len(w)
-                if w.startswith("[...]"):
-                    yield TOK.Punctuation("[...]", normalized="[…]")
-                    w = w[5:]
-                elif w.startswith("[…]"):
-                    yield TOK.Punctuation("[…]")
-                    w = w[3:]
-                elif w.startswith("..."):
+                rtxt = rt.txt
+                lw = len(rtxt)
+                if rtxt.startswith("[...]"):
+                    punct, rt = rt.split(5)
+                    yield TOK.Punctuation(punct, normalized="[…]")
+                elif rtxt.startswith("[…]"):
+                    punct, rt = rt.split(3)
+                    yield TOK.Punctuation(punct)
+                elif rtxt.startswith("..."):
                     # Treat ellipsis as one piece of punctuation
-                    dots = "..."
-                    wdots = w[3:]
-                    while wdots.startswith("."):
-                        dots += "."
-                        wdots = wdots[1:]
+                    numdots = 0
+                    for c in rtxt:
+                        if c == ".":
+                            numdots += 1
+                        else:
+                            break
+                    dots, rt = rt.split(numdots)
                     yield TOK.Punctuation(dots, normalized="…")
-                    w = wdots
-                elif w.startswith("…"):
+                elif rtxt.startswith("…"):
                     # Treat ellipsis as one piece of punctuation
-                    dots = "…"
-                    wdots = w[1:]
-                    while wdots.startswith("…"):
-                        dots += "…"
-                        wdots = wdots[1:]
+                    numdots = 0
+                    for c in rtxt:
+                        if c == "…":
+                            numdots += 1
+                        else:
+                            break
+                    dots, rt = rt.split(numdots)
                     yield TOK.Punctuation(dots, normalized="…")
                     # TODO LAGA Hér ætti að safna áfram.
-                    w = wdots
                 # TODO Was at the end of a word or by itself, should be ",".
                 # Won't correct automatically, check for M6
-                elif w == ",,":
-                    yield TOK.Punctuation(",,", normalized=",")
-                    w = ""
+                elif rt.txt == ",,":
+                    punct, rt = rt.split(2)
+                    yield TOK.Punctuation(punct, normalized=",")
                 # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
-                elif w.startswith(",,"):
+                elif rtxt.startswith(",,"):
                     # Probably an idiot trying to type opening double quotes with commas
-                    yield TOK.Punctuation(",,", normalized="„")
-                    w = w[2:]
-                elif lw == 2 and (w == "[[" or w == "]]"):
+                    punct, rt = rt.split(2)
+                    yield TOK.Punctuation(punct, normalized="„")
+                elif lw == 2 and (rtxt == "[[" or rtxt == "]]"):
                     # Begin or end paragraph marker
-                    if w == "[[":
-                        yield TOK.Begin_Paragraph()
+                    marker, rt = rt.split(2)
+                    if marker.txt == "[[":
+                        yield TOK.Begin_Paragraph(marker)
                     else:
-                        yield TOK.End_Paragraph()
-                    w = w[2:]
-                elif w[0] in HYPHENS:
+                        yield TOK.End_Paragraph(marker)
+                elif rtxt[0] in HYPHENS:
                     # Normalize all hyphens the same way
-                    yield TOK.Punctuation(w[0], normalized=HYPHEN)
-                    w = w[1:]
-                elif w[0] in DQUOTES:
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct, normalized=HYPHEN)
+                elif rtxt[0] in DQUOTES:
                     # Convert to a proper closing double quote
-                    yield TOK.Punctuation(w[0], normalized="“")
-                    w = w[1:]
-                elif w[0] in SQUOTES:
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct, normalized="“")
+                elif rtxt[0] in SQUOTES:
                     # Left with a single quote, convert to proper closing quote
-                    yield TOK.Punctuation(w[0], normalized="‘")
-                    w = w[1:]
-                elif lw > 1 and w.startswith("#"):
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct, normalized="‘")
+                elif lw > 1 and rtxt.startswith("#"):
                     # Might be a hashtag, processed later
                     ate = False
                     break
-                elif lw > 1 and w.startswith("@"):
+                elif lw > 1 and rtxt.startswith("@"):
                     # Username on Twitter or other social media platforms
-                    s = re.match(r"\@[0-9a-z_]+", w)
+                    s = re.match(r"\@[0-9a-z_]+", rtxt)
                     if s:
                         g = s.group()
-                        yield TOK.Username(g, g[1:])
-                        w = w[s.end() :]
+                        username, rt = rt.split(s.end())
+                        yield TOK.Username(username, g[1:])
                     else:
-                        yield TOK.Punctuation("@")
-                        w = w[1:]
+                        punct, rt = rt.split(1)
+                        yield TOK.Punctuation(punct)
                 else:
-                    yield TOK.Punctuation(w[0])
-                    w = w[1:]
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct)
 
             # End of punctuation loop
             # Check for specific token types other than punctuation
 
-            if w and "@" in w:
+            rtxt = rt.txt
+            if rtxt and "@" in rtxt:
                 # Check for valid e-mail
                 # Note: we don't allow double quotes (simple or closing ones) in e-mails here
                 # even though they're technically allowed according to the RFCs
-                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", w)
+                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rtxt)
                 if s:
                     ate = True
-                    yield TOK.Email(s.group())
-                    w = w[s.end() :]
+                    email, rt = rt.split(s.end())
+                    yield TOK.Email(email)
 
             # Unicode single-char vulgar fractions
             # TODO: Support multiple-char unicode fractions that
             # use super/subscript w. DIVISION SLASH (U+2215)
-            if w and w[0] in SINGLECHAR_FRACTIONS:
+            if rt.txt and rt.txt[0] in SINGLECHAR_FRACTIONS:
                 ate = True
-                yield TOK.Number(w[0], unicodedata.numeric(w[0]))
-                w = w[1:]
+                num, rt = rt.split(1)
+                yield TOK.Number(num, unicodedata.numeric(num.txt[0]))
 
-            if w and w.startswith(URL_PREFIXES):
+            rtxt = rt.txt
+            if rtxt and rtxt.startswith(URL_PREFIXES):
                 # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
                 # even though many of them are actually allowed according to
                 # the IETF RFC
                 endp = ""
+                w = rtxt
                 while w and w[-1] in RIGHT_PUNCTUATION:
                     endp = w[-1] + endp
                     w = w[:-1]
-                yield TOK.Url(w)
+                url, rt = rt.split(len(w))
+                yield TOK.Url(url)
                 ate = True
-                w = endp
 
-            if w and len(w) >= 2 and re.match(r"#\w", w, re.UNICODE):
+            if rtxt and len(rtxt) >= 2 and re.match(r"#\w", rtxt, re.UNICODE):
                 # Handle hashtags. Eat all text up to next punctuation character
                 # so we can handle strings like "#MeToo-hreyfingin" as two words
+                w = rtxt
                 tag = w[:1]
                 w = w[1:]
                 while w and w[0] not in PUNCTUATION:
                     tag += w[0]
                     w = w[1:]
+                tag_tok, rt = rt.split(len(tag))
                 if re.match(r"#\d+$", tag):
                     # Hash is being used as a number sign, e.g. "#12"
-                    yield TOK.Ordinal(tag, int(tag[1:]))
+                    yield TOK.Ordinal(tag_tok, int(tag[1:]))
                 else:
-                    yield TOK.Hashtag(tag)
+                    yield TOK.Hashtag(tag_tok)
                 ate = True
 
+            rtxt = rt.txt
             # Domain name (e.g. greynir.is)
             if (
-                w
-                and len(w) >= MIN_DOMAIN_LENGTH
-                and w[0].isalnum()  # All domains start with an alphanumeric char
-                and "." in w[1:-2]  # Optimization, TLD is at least 2 chars
-                and DOMAIN_REGEX.search(w)
+                rtxt
+                and len(rtxt) >= MIN_DOMAIN_LENGTH
+                and rtxt[0].isalnum()  # All domains start with an alphanumeric char
+                and "." in rtxt[1:-2]  # Optimization, TLD is at least 2 chars
+                and DOMAIN_REGEX.search(rtxt)
             ):
+                w = rtxt
                 endp = ""
                 while w and w[-1] in PUNCTUATION:
                     endp = w[-1] + endp
                     w = w[:-1]
-                yield TOK.Domain(w)
+                domain, rt = rt.split(len(w))
+                yield TOK.Domain(domain)
                 ate = True
-                w = endp
 
+            rtxt = rt.txt
             # Numbers or other stuff starting with a digit
             # (eventually prefixed by a '+' or '-')
-            if w and (
-                w[0] in DIGITS_PREFIX
-                or (w[0] in SIGN_PREFIX and len(w) >= 2 and w[1] in DIGITS_PREFIX)
+            if rtxt and (
+                rtxt[0] in DIGITS_PREFIX
+                or (
+                    rtxt[0] in SIGN_PREFIX
+                    and len(rtxt) >= 2
+                    and rtxt[1] in DIGITS_PREFIX
+                )
             ):
                 # Handle kludgy ordinals: '3ji', '5ti', etc.
-                for key, val in items(ORDINAL_ERRORS):
-                    if w.startswith(key):
+                for key, val in ORDINAL_ERRORS.items():
+                    rtxt = rt.txt
+                    if rtxt.startswith(key):
                         # This is a kludgy ordinal
+                        key_tok, rt = rt.split(len(key))
                         if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
                             # Convert ordinals to corresponding word tokens:
                             # '1sti' -> 'fyrsti', '3ji' -> 'þriðji', etc.
-                            yield TOK.Word(val)
+                            key_tok.substitute_longer((0, len(key)), val)
+                            yield TOK.Word(key_tok)
                         elif (
                             handle_kludgy_ordinals == KLUDGY_ORDINALS_TRANSLATE
                             and key in ORDINAL_NUMBERS
@@ -1036,64 +1649,72 @@ def parse_tokens(txt, **options):
                             # i.e. '1sti' -> TOK.Ordinal('1sti', 1),
                             # but leave other kludgy constructs ('2ja')
                             # as word tokens
-                            yield TOK.Ordinal(key, ORDINAL_NUMBERS[key])
+                            yield TOK.Ordinal(key_tok, ORDINAL_NUMBERS[key])
                         else:
                             # No special handling of kludgy ordinals:
                             # yield them unchanged as word tokens
-                            yield TOK.Word(key)
-                        eaten = len(key)
+                            yield TOK.Word(key_tok)
                         break  # This skips the for loop 'else'
                 else:
                     # Not a kludgy ordinal: eat tokens starting with a digit
-                    t, eaten = parse_digits(w, convert_numbers)
+                    t, rt = parse_digits(rt, convert_numbers)
                     yield t
                 # Continue where the digits parser left off
                 ate = True
-                w = w[eaten:]
 
-                if w:
+                if rt.txt:
                     # Check for an SI unit immediately following a number
-                    r = SI_UNITS_REGEX.match(w)
+                    r = SI_UNITS_REGEX.match(rt.txt)
                     if r:
-                        unit = r.group()
                         # Handle the case where a measurement unit is
                         # immediately following a number, without an intervening space
                         # (note that some of them contain nonalphabetic characters,
                         # so they won't be caught by the isalpha() check below)
+                        unit, rt = rt.split(r.end())
                         yield TOK.Word(unit)
-                        w = w[len(unit) :]
 
             # Check for molecular formula ('H2SO4')
-            if w:
-                r = MOLECULE_REGEX.match(w)
+            if rt.txt:
+                r = MOLECULE_REGEX.match(rt.txt)
                 if r is not None:
                     g = r.group()
                     if g not in Abbreviations.DICT and MOLECULE_FILTER.search(g):
                         # Correct format, containing at least one digit
                         # and not separately defined as an abbreviation:
                         # We assume that this is a molecular formula
-                        yield TOK.Molecule(g)
+                        molecule, rt = rt.split(r.end())
+                        yield TOK.Molecule(molecule)
                         ate = True
-                        w = w[r.end() :]
 
             # Check for currency abbreviations immediately followed by a number
-            if w and len(w) > 3 and w[0:3] in CURRENCY_ABBREV and w[3].isdigit():
-                t, eaten = parse_digits(w[3:], convert_numbers)
-                if t.kind == TOK.NUMBER:
-                    yield (TOK.Amount(w[: 3 + eaten], w[:3], t.val[0]))
+            if (
+                len(rt.txt) > 3
+                and rt.txt[0:3] in CURRENCY_ABBREV
+                and rt.txt[3].isdigit()
+            ):
+                # XXX: This feels a little hacky
+                temp_tok = Tok(TOK.RAW, rt.txt[3:], None)
+                digit_tok, _ = parse_digits(temp_tok, convert_numbers)
+                if digit_tok.kind == TOK.NUMBER:
+                    amount, rt = rt.split(3 + len(digit_tok.txt))
+                    yield TOK.Amount(amount, amount.txt[:3], digit_tok.number)
                     ate = True
-                    w = w[3 + eaten :]
 
             # Alphabetic characters
             # (or a hyphen immediately followed by alphabetic characters,
             # such as in 'þingkonur og -menn')
-            if w and w[0].isalpha():
+            if rt.txt and rt.txt[0].isalpha():
+                # XXX: This does not seem to fit the comment above ('-'.isalpha()==False)
                 ate = True
-                lw = len(w)
+                lw = len(rt.txt)
                 i = 1
                 while i < lw and (
-                    w[i].isalpha()
-                    or (w[i] in PUNCT_INSIDE_WORD and i + 1 < lw and w[i + 1].isalpha())
+                    rt.txt[i].isalpha()
+                    or (
+                        rt.txt[i] in PUNCT_INSIDE_WORD
+                        and i + 1 < lw
+                        and rt.txt[i + 1].isalpha()
+                    )
                 ):
                     # We allow dots to occur inside words in the case of
                     # abbreviations; also apostrophes are allowed within
@@ -1101,14 +1722,14 @@ def parse_tokens(txt, **options):
                     # (O'Malley, Mary's, it's, childrens', O‘Donnell).
                     # The same goes for ² and ³
                     i += 1
-                if i < lw and w[i] in PUNCT_ENDING_WORD:
+                if i < lw and rt.txt[i] in PUNCT_ENDING_WORD:
                     i += 1
                 # Make a special check for the occasional erroneous source text
                 # case where sentences run together over a period without a space:
                 # 'sjávarútvegi.Það'
                 # TODO STILLING Viljum merkja sem villu fyrir málrýni, og hafa
                 # sem mögulega stillingu.
-                ww = w[0:i]
+                ww: str = rt.txt[0:i]
                 a = ww.split(".")
                 if (
                     len(a) == 2
@@ -1121,59 +1742,74 @@ def parse_tokens(txt, **options):
                     # The second part must start with an uppercase letter
                     and a[1][0].isupper()
                     # Corner case: an abbrev such as 'f.Kr' should not be split
-                    and w[0 : i + 1] not in Abbreviations.DICT
+                    and rt.txt[0 : i + 1] not in Abbreviations.DICT
                 ):
                     # We have a lowercase word immediately followed by a period
                     # and an uppercase word
-                    yield TOK.Word(a[0])
-                    yield TOK.Punctuation(".")
-                    yield TOK.Word(a[1])
+                    word1, rt = rt.split(len(a[0]))
+                    punct, rt = rt.split(1)
+                    word2, rt = rt.split(len(a[1]))
+                    yield TOK.Word(word1)
+                    yield TOK.Punctuation(punct)
+                    yield TOK.Word(word2)
+                    # yield TOK.Word(a[0])
+                    # yield TOK.Punctuation(".")
+                    # yield TOK.Word(a[1])
                 else:
                     if ww.endswith("-og") or ww.endswith("-eða"):
                         # Handle missing space before 'og'/'eða',
                         # such as 'fjármála-og efnahagsráðuneyti'
                         a = ww.split("-")
-                        yield TOK.Word(a[0])
-                        yield TOK.Punctuation("-", normalized=COMPOSITE_HYPHEN)
-                        yield TOK.Word(a[1])
+
+                        word1, rt = rt.split(len(a[0]))
+                        punct, rt = rt.split(1)
+                        word2, rt = rt.split(len(a[1]))
+                        yield TOK.Word(word1)
+                        yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
+                        yield TOK.Word(word2)
+
+                        # yield TOK.Word(a[0])
+                        # yield TOK.Punctuation("-", normalized=COMPOSITE_HYPHEN)
+                        # yield TOK.Word(a[1])
                     else:
-                        yield TOK.Word(ww)
-                w = w[i:]
-                if w and w[0] in COMPOSITE_HYPHENS:
+                        word, rt = rt.split(i)
+                        yield TOK.Word(word)
+
+                if rt.txt and rt.txt[0] in COMPOSITE_HYPHENS:
                     # This is a hyphen or en dash directly appended to a word:
                     # might be a continuation ('fjármála- og efnahagsráðuneyti')
                     # Yield a special hyphen as a marker
-                    yield TOK.Punctuation(w[0], normalized=COMPOSITE_HYPHEN)
-                    w = w[1:]
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
 
             # Special case for quotes attached on the right hand side to other stuff,
             # assumed to be closing quotes rather than opening ones
-            if w:
-                if w[0] in SQUOTES:
-                    yield TOK.Punctuation(w[0], normalized="‘")
-                    w = w[1:]
+            if rt.txt:
+                if rt.txt[0] in SQUOTES:
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct, normalized="‘")
                     ate = True
-                elif w[0] in DQUOTES:
-                    yield TOK.Punctuation(w[0], normalized="“")
-                    w = w[1:]
+                elif rt.txt[0] in DQUOTES:
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct, normalized="“")
                     ate = True
 
             if not ate:
                 # Ensure that we eat everything, even unknown stuff
-                yield TOK.Unknown(w[0])
-                w = w[1:]
+                unk, rt = rt.split(1)
+                yield TOK.Unknown(unk)
 
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
 
 
-def parse_particles(token_stream, **options):
+def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok]:
     """ Parse a stream of tokens looking for 'particles'
         (simple token pairs and abbreviations) and making substitutions """
 
     convert_measurements = options.pop("convert_measurements", False)
 
-    def is_abbr_with_period(txt):
+    def is_abbr_with_period(txt: str) -> bool:
         """ Return True if the given token text is an abbreviation
             when followed by a period """
         if "." in txt:
@@ -1194,7 +1830,7 @@ def parse_particles(token_stream, **options):
             return txt not in Abbreviations.DICT
         return False
 
-    def lookup(abbrev):
+    def lookup(abbrev: str) -> Optional[List[BIN_Tuple]]:
         """ Look up an abbreviation, both in original case and in lower case,
             and return either None if not found or a meaning list having one entry """
         m = Abbreviations.DICT.get(abbrev)
@@ -1202,7 +1838,7 @@ def parse_particles(token_stream, **options):
             m = Abbreviations.DICT.get(abbrev.lower())
         return list(m) if m else None
 
-    token = None
+    token = cast(Tok, None)
     try:
         # Maintain a one-token lookahead
         token = next(token_stream)
@@ -1210,18 +1846,16 @@ def parse_particles(token_stream, **options):
             next_token = next(token_stream)
             # Make the lookahead checks we're interested in
             # Check for currency symbol followed by number, e.g. $10
-            if token.txt in CURRENCY_SYMBOLS:
-                for symbol, currabbr in items(CURRENCY_SYMBOLS):
-                    if (
-                        token.kind == TOK.PUNCTUATION
-                        and token.txt == symbol
-                        and next_token.kind == TOK.NUMBER
-                    ):
-                        token = TOK.Amount(
-                            token.txt + next_token.txt, currabbr, next_token.val[0]
-                        )
-                        next_token = next(token_stream)
-                        break
+            if (
+                token.kind == TOK.PUNCTUATION
+                and token.txt in CURRENCY_SYMBOLS
+                and (next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR)
+            ):
+                currabbr = CURRENCY_SYMBOLS[token.txt]
+                token = TOK.Amount(
+                    token.concatenate(next_token), currabbr, next_token.number
+                )
+                next_token = next(token_stream)
 
             # Special case for a DATEREL token of the form "25.10.",
             # i.e. with a trailing period: It can end a sentence
@@ -1234,13 +1868,13 @@ def parse_particles(token_stream, **options):
                         token = next_token
                     else:
                         # This is something like 'Ég fæddist 25.9. í Svarfaðardal.'
-                        y, m, d = token.val
-                        token = TOK.Daterel(token.txt + ".", y, m, d)
+                        y, m, d = cast(Tuple[int, int, int], token.val)
+                        token = TOK.Daterel(token.concatenate(next_token), y, m, d)
                     next_token = next_next_token
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
-            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] == ".":
+            if next_token.punctuation == ".":
                 if (
                     token.kind == TOK.WORD
                     and token.txt[-1] != "."
@@ -1278,7 +1912,7 @@ def parse_particles(token_stream, **options):
                             # seems to be starting just after it.
                             # Yield the abbreviation without a trailing dot,
                             # and then an 'extra' period token to end the current sentence.
-                            token = TOK.Word(token.txt, lookup(abbrev))
+                            token = TOK.Word(token, lookup(abbrev))
                             yield token
                             # Set token to the period
                             token = next_token
@@ -1294,11 +1928,13 @@ def parse_particles(token_stream, **options):
                             token = next_token
                         else:
                             # Substitute the abbreviation and eat the period
-                            token = TOK.Word(abbrev, lookup(abbrev))
+                            token = TOK.Word(
+                                token.concatenate(next_token), lookup(abbrev)
+                            )
                     else:
                         # 'Regular' abbreviation in the middle of a sentence:
                         # Eat the period and yield the abbreviation as a single token
-                        token = TOK.Word(abbrev, lookup(abbrev))
+                        token = TOK.Word(token.concatenate(next_token), lookup(abbrev))
 
                     next_token = follow_token
 
@@ -1306,21 +1942,23 @@ def parse_particles(token_stream, **options):
             if next_token.kind == TOK.TIME or next_token.kind == TOK.NUMBER:
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     # Match: coalesce and step to next token
-                    txt = token.txt
                     if next_token.kind == TOK.NUMBER:
                         # next_token.txt may be a real number, i.e. 13,40,
                         # which may have been converted from 13.40
                         # If we now have hh.mm, parse it as such
-                        a = "{0:.2f}".format(next_token.val[0]).split(".")
+                        a = "{0:.2f}".format(next_token.number).split(".")
                         h, m = int(a[0]), int(a[1])
-                        token = TOK.Time(txt + " " + next_token.txt, h, m, 0)
+                        token = TOK.Time(
+                            token.concatenate(next_token, separator=" "), h, m, 0
+                        )
                     else:
                         # next_token.kind is TOK.TIME
+                        dt = cast(DateTimeTuple, next_token.val)
                         token = TOK.Time(
-                            txt + " " + next_token.txt,
-                            next_token.val[0],
-                            next_token.val[1],
-                            next_token.val[2],
+                            token.concatenate(next_token, separator=" "),
+                            dt[0],
+                            dt[1],
+                            dt[2],
                         )
                     next_token = next(token_stream)
 
@@ -1329,11 +1967,10 @@ def parse_particles(token_stream, **options):
                 next_token.kind == TOK.WORD and next_token.txt.lower() in CLOCK_NUMBERS
             ):
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
-                    txt = token.txt
                     # Match: coalesce and step to next token
                     token = TOK.Time(
-                        txt + " " + next_token.txt,
-                        *CLOCK_NUMBERS[next_token.txt.lower()]
+                        token.concatenate(next_token, separator=" "),
+                        *CLOCK_NUMBERS[next_token.txt.lower()],
                     )
                     next_token = next(token_stream)
 
@@ -1344,10 +1981,9 @@ def parse_particles(token_stream, **options):
                     time_txt = time_token.txt.lower() if time_token.txt else ""
                     if time_txt in CLOCK_NUMBERS and not time_txt.startswith("hálf"):
                         # Match
-                        token = TOK.Time(
-                            token.txt + " " + next_token.txt + " " + time_token.txt,
-                            *CLOCK_NUMBERS["hálf" + time_txt]
-                        )
+                        temp_tok = token.concatenate(next_token, separator=" ")
+                        temp_tok = temp_tok.concatenate(time_token, separator=" ")
+                        token = TOK.Time(temp_tok, *CLOCK_NUMBERS["hálf" + time_txt])
                         next_token = next(token_stream)
                     else:
                         # Not a match: must retreat
@@ -1358,17 +1994,14 @@ def parse_particles(token_stream, **options):
             # Words like 'hálftólf' are only used in temporal expressions
             # so can stand alone
             if token.txt in CLOCK_HALF:
-                token = TOK.Time(token.txt, *CLOCK_NUMBERS[token.txt])
+                token = TOK.Time(token, *CLOCK_NUMBERS[token.txt])
 
             # Coalesce 'árið' + [year|number] into year
             if (token.kind == TOK.WORD and token.txt.lower() in YEAR_WORD) and (
                 next_token.kind == TOK.YEAR or next_token.kind == TOK.NUMBER
             ):
                 token = TOK.Year(
-                    token.txt + " " + next_token.txt,
-                    next_token.val
-                    if next_token.kind == TOK.YEAR
-                    else next_token.val[0],
+                    token.concatenate(next_token, separator=" "), next_token.integer,
                 )
                 next_token = next(token_stream)
 
@@ -1380,24 +2013,25 @@ def parse_particles(token_stream, **options):
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                w = token.txt + " " + next_token.txt
                 telno = token.txt + "-" + next_token.txt
-                token = TOK.Telno(w, telno)
+                token = TOK.Telno(token.concatenate(next_token, separator=" "), telno)
                 next_token = next(token_stream)
 
             # Coalesce percentages or promilles into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] in ("%", "‰"):
+            if next_token.punctuation in ("%", "‰"):
                 if token.kind == TOK.NUMBER:
                     # Percentage: convert to a single 'tight' percentage token
                     # In this case, there are no cases and no gender
                     sign = next_token.txt
                     # Store promille as one-tenth of a percentage
                     factor = 1.0 if sign == "%" else 0.1
-                    token = TOK.Percent(token.txt + " " + sign, token.val[0] * factor)
+                    token = TOK.Percent(
+                        token.concatenate(next_token), token.number * factor
+                    )
                     next_token = next(token_stream)
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
-            if next_token.kind == TOK.PUNCTUATION and next_token.val[1] == ".":
+            if next_token.punctuation == ".":
                 if (
                     token.kind == TOK.NUMBER
                     and not ("." in token.txt or "," in token.txt)
@@ -1413,10 +2047,7 @@ def parse_particles(token_stream, **options):
                     follow_token = next(token_stream)
                     if (
                         follow_token.kind in TOK.END
-                        or (
-                            follow_token.kind == TOK.PUNCTUATION
-                            and follow_token.val[1] in {"„", '"'}
-                        )
+                        or follow_token.punctuation in {"„", '"'}
                         or (
                             follow_token.kind == TOK.WORD
                             and follow_token.txt[0].isupper()
@@ -1434,11 +2065,11 @@ def parse_particles(token_stream, **options):
                         # OK: replace the number/Roman numeral and the period
                         # with an ordinal token
                         num = (
-                            token.val[0]
+                            token.integer
                             if token.kind == TOK.NUMBER
                             else roman_to_int(token.txt)
                         )
-                        token = TOK.Ordinal(token.txt + ".", num)
+                        token = TOK.Ordinal(token.concatenate(next_token), num)
                         # Continue with the following word
                         next_token = follow_token
 
@@ -1447,20 +2078,24 @@ def parse_particles(token_stream, **options):
                 token.kind == TOK.NUMBER or token.kind == TOK.YEAR
             ) and next_token.txt in SI_UNITS:
 
-                value = token.val[0] if token.kind == TOK.NUMBER else token.val
+                value = token.number
                 orig_unit = next_token.txt
-                unit, factor = SI_UNITS[orig_unit]
-                if callable(factor):
+                unit: str
+                unit, factor_func = SI_UNITS[orig_unit]
+                if callable(factor_func):
                     # We have a lambda conversion function
-                    value = factor(value)  # pylint: disable=not-callable
+                    value = factor_func(value)
                 else:
                     # Simple scaling factor
-                    value *= factor
+                    assert isinstance(factor_func, float)
+                    value *= factor_func
                 if unit in ("%", "‰"):
-                    token = TOK.Percent(token.txt + " " + next_token.txt, value)
+                    token = TOK.Percent(
+                        token.concatenate(next_token, separator=" "), value
+                    )
                 else:
                     token = TOK.Measurement(
-                        token.txt + " " + next_token.txt, unit, value
+                        token.concatenate(next_token, separator=" "), unit, value
                     )
                 next_token = next(token_stream)
 
@@ -1474,7 +2109,9 @@ def parse_particles(token_stream, **options):
                     next_token = next(token_stream)
                     if next_token.txt == "klst":
                         unit = token.txt + "/" + next_token.txt
-                        token = TOK.Measurement(unit, unit, value)
+                        temp_tok = token.concatenate(slashtok)
+                        temp_tok = temp_tok.concatenate(next_token)
+                        token = TOK.Measurement(temp_tok, unit, value)
                         # Eat extra unit
                         next_token = next(token_stream)
                     else:
@@ -1483,29 +2120,32 @@ def parse_particles(token_stream, **options):
 
             if (
                 token.kind == TOK.MEASUREMENT
-                and token.val[0] == "°"
+                and cast(MeasurementTuple, token.val)[0] == "°"
                 and next_token.kind == TOK.WORD
                 and next_token.txt in {"C", "F", "K"}
             ):
                 # Handle 200° C
                 new_unit = "°" + next_token.txt
-                unit, factor = SI_UNITS[new_unit]
-                if callable(factor):
-                    val = factor(token.val[1])
+                unit, factor_func = SI_UNITS[new_unit]
+                v = cast(MeasurementTuple, token.val)[1]
+                if callable(factor_func):
+                    val = factor_func(v)
                 else:
-                    val = factor * token.val[1]
+                    assert isinstance(factor_func, float)
+                    val = factor_func * v
 
                 if convert_measurements:
-                    token = TOK.Measurement(
-                        token.txt[:-1] + " " + new_unit,  # 200 °C
-                        unit,  # K
-                        val,  # 200 converted to Kelvin
-                    )
+                    txt: str = token.txt
+                    lentoken = len(txt)
+                    degree_symbol_span = (lentoken - 1, lentoken)
+                    # Remove the ° symbol
+                    token.substitute(degree_symbol_span, "")
+                    # Add it again in the correct place along with the unit
+                    token = token.concatenate(next_token, separator=" °")
+                    token = TOK.Measurement(token, unit, val,)
                 else:
                     token = TOK.Measurement(
-                        token.txt + " " + next_token.txt,  # 200° C
-                        unit,  # K
-                        val,  # 200 converted to Kelvin
+                        token.concatenate(next_token, separator=" "), unit, val,
                     )
 
                 next_token = next(token_stream)
@@ -1518,11 +2158,12 @@ def parse_particles(token_stream, **options):
             # We don't do this for measurement units which
             # have other meanings - such as 'gr' (grams), as
             # 'gr.' is probably the abbreviation for 'grein'. ]
+            txt = token.txt
             if (
                 token.kind == TOK.MEASUREMENT
                 and next_token.kind == TOK.PUNCTUATION
                 and next_token.txt == "."
-                and token.txt[-1].isalpha()
+                and txt[-1].isalpha()
                 # and token.txt.split()[-1] + "." not in Abbreviations.DICT
             ):
                 puncttoken = next_token
@@ -1532,9 +2173,9 @@ def parse_particles(token_stream, **options):
                     yield token
                     token = puncttoken
                 else:
-                    unit, value = token.val
+                    unit, value = cast(MeasurementTuple, token.val)
                     # Add the period to the token text
-                    token = TOK.Measurement(token.txt + ".", unit, value)
+                    token = TOK.Measurement(token.concatenate(puncttoken), unit, value)
 
             # Cases such as USD. 44
             if (
@@ -1549,7 +2190,8 @@ def parse_particles(token_stream, **options):
                     yield token
                     token = puncttoken
                 else:
-                    token = TOK.Currency(token.txt + ".", token.txt)
+                    txt = token.txt  # Hack to avoid Pylance/Pyright message
+                    token = TOK.Currency(token.concatenate(puncttoken), txt)
 
             # Cases such as 19 $, 199.99 $
             if (
@@ -1558,18 +2200,19 @@ def parse_particles(token_stream, **options):
                 and next_token.txt in CURRENCY_SYMBOLS
             ):
                 token = TOK.Amount(
-                    token.txt + " " + next_token.txt,
+                    token.concatenate(next_token, separator=" "),
                     CURRENCY_SYMBOLS[next_token.txt],
-                    token.val[0],
+                    token.number,
                 )
                 next_token = next(token_stream)
 
             # Replace straight abbreviations
             # (i.e. those that don't end with a period)
             if token.kind == TOK.WORD and token.val is None:
-                if Abbreviations.has_meaning(token.txt):
+                txt = token.txt
+                if Abbreviations.has_meaning(txt):
                     # Add a meaning to the token
-                    token = TOK.Word(token.txt, Abbreviations.get_meaning(token.txt))
+                    token = TOK.Word(token, Abbreviations.get_meaning(txt))
 
             # Yield the current token and advance to the lookahead
             yield token
@@ -1581,13 +2224,13 @@ def parse_particles(token_stream, **options):
             yield token
 
 
-def parse_sentences(token_stream):
+def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
     """ Parse a stream of tokens looking for sentences, i.e. substreams within
         blocks delimited by sentence finishers (periods, question marks,
         exclamation marks, etc.) """
 
     in_sentence = False
-    token = None
+    token = cast(Tok, None)
     tok_begin_sentence = TOK.Begin_Sentence()
     tok_end_sentence = TOK.End_Sentence()
 
@@ -1600,14 +2243,25 @@ def parse_sentences(token_stream):
             if token.kind == TOK.P_BEGIN or token.kind == TOK.P_END:
                 # Block start or end: finish the current sentence, if any
                 if in_sentence:
+                    # If there's whitespace (or something else) hanging on token,
+                    # then move it to the end of sentence token.
                     yield tok_end_sentence
                     in_sentence = False
                 if token.kind == TOK.P_BEGIN and next_token.kind == TOK.P_END:
                     # P_BEGIN immediately followed by P_END: skip both and continue
                     # The double assignment to token is necessary to ensure that
                     # we are in a correct state if next() raises StopIteration
-                    token = None
-                    token = next(token_stream)
+
+                    # To preserve origin tracking through this operation we must:
+                    # 1. squish the two tokens together
+                    _skip_me = token.concatenate(next_token, metadata_from_other=True)
+                    # 2. replace their text with nothing (while preserving the original text)
+                    _skip_me.substitute((0, len(_skip_me.txt)), "")
+                    token = cast(Tok, None)
+                    # 3. attach them to the front of the next token
+                    token = _skip_me.concatenate(
+                        next(token_stream), metadata_from_other=True
+                    )
                     continue
             elif token.kind == TOK.X_END:
                 assert not in_sentence
@@ -1616,43 +2270,37 @@ def parse_sentences(token_stream):
                 # sentence, if any, even if no ending punctuation has
                 # been encountered
                 if in_sentence:
-                    yield tok_end_sentence
-                in_sentence = False
-                # Swallow the S_SPLIT token
-                token = next_token
+                    yield TOK.End_Sentence(token)
+                    in_sentence = False
+                    token = next_token
+                else:
+                    # Swallow the S_SPLIT token but preserve any origin whitespace
+                    token = token.concatenate(next_token, metadata_from_other=True)
                 continue
             else:
                 if not in_sentence:
                     # This token starts a new sentence
                     yield tok_begin_sentence
                     in_sentence = True
-                if (
-                    token.kind == TOK.PUNCTUATION
-                    and token.val[1] in END_OF_SENTENCE
-                    and not (
-                        token.val[1]
-                        == "…"  # Excluding sentences with ellipsis in the middle
-                        and not could_be_end_of_sentence(next_token)
-                    )
+                if token.punctuation in END_OF_SENTENCE and not (
+                    token.punctuation
+                    == "…"  # Excluding sentences with ellipsis in the middle
+                    and not could_be_end_of_sentence(next_token)
                 ):
                     # Combining punctuation ('??!!!')
                     while (
-                        token.val[1] in PUNCT_COMBINATIONS
-                        and next_token.txt in PUNCT_COMBINATIONS
+                        token.punctuation in PUNCT_COMBINATIONS
+                        and next_token.punctuation in PUNCT_COMBINATIONS
                     ):
                         # The normalized form comes from the first token except with "…?"
-                        v = token.val[1]
-                        if token.val[1] == "…" and next_token.val[1] == "?":
-                            v = next_token.val[1]
-                        next_token = TOK.Punctuation(token.txt + next_token.txt, v)
-                        token = next_token
+                        v = token.punctuation
+                        if v == "…" and next_token.punctuation == "?":
+                            v = next_token.punctuation
+                        token = TOK.Punctuation(token.concatenate(next_token), v)
                         next_token = next(token_stream)
                     # We may be finishing a sentence with not only a period but also
                     # right parenthesis and quotation marks
-                    while (
-                        next_token.kind == TOK.PUNCTUATION
-                        and next_token.val[1] in SENTENCE_FINISHERS
-                    ):
+                    while next_token.punctuation in SENTENCE_FINISHERS:
                         yield token
                         token = next_token
                         next_token = next(token_stream)
@@ -1683,27 +2331,28 @@ def parse_sentences(token_stream):
         yield tok_end_sentence
 
 
-def match_stem_list(token, stems):
+def match_stem_list(token: Tok, stems: Mapping[str, float]) -> Optional[float]:
     """ Find the stem of a word token in given dict, or return None if not found """
     if token.kind != TOK.WORD:
         return None
     return stems.get(token.txt.lower(), None)
 
 
-def month_for_token(token, after_ordinal=False):
+def month_for_token(token: Tok, after_ordinal: bool = False) -> Optional[int]:
     """ Return a number, 1..12, corresponding to a month name,
         or None if the token does not contain a month name """
     if not after_ordinal and token.txt in MONTH_BLACKLIST:
         # Special case for 'Ágúst', which we do not recognize
         # as a month name unless it follows an ordinal number
         return None
-    return match_stem_list(token, MONTHS)
+    m = match_stem_list(token, MONTHS)
+    return None if m is None else int(m)
 
 
-def parse_phrases_1(token_stream):
+def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
     """ Handle dates and times """
 
-    token = None
+    token = cast(Tok, None)
     try:
 
         # Maintain a one-token lookahead
@@ -1715,12 +2364,15 @@ def parse_phrases_1(token_stream):
             if token.kind == TOK.WORD and next_token.txt == ".":
                 abbrev = token.txt + next_token.txt
                 if abbrev in Abbreviations.FINISHERS:
-                    token = TOK.Word(abbrev, token.val)
+                    token = TOK.Word(
+                        token.concatenate(next_token),
+                        cast(Optional[List[BIN_Tuple]], token.val),
+                    )
                     next_token = next(token_stream)
 
             # Coalesce [year|number] + ['e.Kr.'|'f.Kr.'] into year
             if token.kind == TOK.YEAR or token.kind == TOK.NUMBER:
-                val = token.val if token.kind == TOK.YEAR else token.val[0]
+                val = token.integer
                 nval = None
                 if next_token.txt in BCE:  # f.Kr.
                     # Yes, we set year X BCE as year -X ;-)
@@ -1728,10 +2380,10 @@ def parse_phrases_1(token_stream):
                 elif next_token.txt in CE:  # e.Kr.
                     nval = val
                 if nval is not None:
-                    token = TOK.Year(token.txt + " " + next_token.txt, nval)
+                    token = TOK.Year(token.concatenate(next_token, separator=" "), nval)
                     next_token = next(token_stream)
                     if next_token.txt == ".":
-                        token = TOK.Year(token.txt + next_token.txt, nval)
+                        token = TOK.Year(token.concatenate(next_token), nval)
                         next_token = next(token_stream)
             # TODO: "5 mars" greinist sem dagsetning, vantar punktinn.
             # Check for [number | ordinal] [month name]
@@ -1744,16 +2396,16 @@ def parse_phrases_1(token_stream):
                     # the abbreviation "gr.", we assume that the only
                     # interpretation of the abbreviation is "grein".
                     next_token = TOK.Word(
-                        "gr.", [("grein", 0, "kvk", "skst", "gr.", "-")]
+                        next_token, [BIN_Tuple("grein", 0, "kvk", "skst", "gr.", "-")]
                     )
 
                 month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
-                        token.txt + " " + next_token.txt,
+                        token.concatenate(next_token, separator=" "),
                         y=0,
                         m=month,
-                        d=token.val if token.kind == TOK.ORDINAL else token.val[0],
+                        d=token.ordinal,
                     )
                     # Eat the month name token
                     next_token = next(token_stream)
@@ -1761,13 +2413,14 @@ def parse_phrases_1(token_stream):
             # Check for [date] [year]
             if token.kind == TOK.DATE and next_token.kind == TOK.YEAR:
 
-                if not token.val[0]:
+                dt = cast(DateTimeTuple, token.val)
+                if not dt[0]:
                     # No year yet: add it
                     token = TOK.Date(
-                        token.txt + " " + next_token.txt,
-                        y=next_token.val,
-                        m=token.val[1],
-                        d=token.val[2],
+                        token.concatenate(next_token, separator=" "),
+                        y=cast(int, next_token.val),
+                        m=dt[1],
+                        d=dt[2],
                     )
                     # Eat the year token
                     next_token = next(token_stream)
@@ -1775,10 +2428,16 @@ def parse_phrases_1(token_stream):
             # Check for [date] [time]
             if token.kind == TOK.DATE and next_token.kind == TOK.TIME:
                 # Create a time stamp
-                y, mo, d = token.val
-                h, m, s = next_token.val
+                y, mo, d = cast(DateTimeTuple, token.val)
+                h, m, s = cast(DateTimeTuple, next_token.val)
                 token = TOK.Timestamp(
-                    token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                    token.concatenate(next_token, separator=" "),
+                    y=y,
+                    mo=mo,
+                    d=d,
+                    h=h,
+                    m=m,
+                    s=s,
                 )
                 # Eat the time token
                 next_token = next(token_stream)
@@ -1790,7 +2449,9 @@ def parse_phrases_1(token_stream):
             ):
                 # Check for country code in front of telephone number
                 token = TOK.Telno(
-                    token.txt + " " + next_token.txt, next_token.val[0], cc=token.txt
+                    token.concatenate(next_token, separator=" "),
+                    cast(TelnoTuple, next_token.val)[0],
+                    cc=token.txt,
                 )
                 next_token = next(token_stream)
 
@@ -1806,10 +2467,10 @@ def parse_phrases_1(token_stream):
         yield token
 
 
-def parse_date_and_time(token_stream):
+def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
     """ Handle dates and times, absolute and relative. """
 
-    token = None
+    token = cast(Tok, None)
     try:
 
         # Maintain a one-token lookahead
@@ -1823,23 +2484,15 @@ def parse_date_and_time(token_stream):
             # DATEABS and DATEREL made
             # Check for [number | ordinal] [month name]
             if (
-                token.kind == TOK.ORDINAL
-                or token.kind == TOK.NUMBER
-                # or (token.txt and token.txt.lower() in DAYS_OF_MONTH)
+                token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER
             ) and next_token.kind == TOK.WORD:
                 month = month_for_token(next_token, True)
                 if month is not None:
                     token = TOK.Date(
-                        token.txt + " " + next_token.txt,
+                        token.concatenate(next_token, separator=" "),
                         y=0,
                         m=month,
-                        d=(
-                            token.val
-                            if token.kind == TOK.ORDINAL
-                            else token.val[0]
-                            # if token.kind == TOK.NUMBER
-                            # else DAYS_OF_MONTH[token.txt.lower()]
-                        ),
+                        d=token.ordinal,
                     )
                     # Eat the month name token
                     next_token = next(token_stream)
@@ -1848,21 +2501,20 @@ def parse_date_and_time(token_stream):
             if token.kind == TOK.DATE and (
                 next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR
             ):
-                if not token.val[0]:
+                dt = cast(DateTimeTuple, token.val)
+                if not dt[0]:
                     # No year yet: add it
-                    year = (
-                        next_token.val
-                        if next_token.kind == TOK.YEAR
-                        else next_token.val[0]
-                        if 1776 <= next_token.val[0] <= 2100
-                        else 0
-                    )
+                    year = next_token.integer
+                    if next_token.kind == TOK.NUMBER and not (1776 <= year <= 2100):
+                        # If the year is specified by a number, don't
+                        # accept it if it is outside the range 1776-2100
+                        year = 0
                     if year != 0:
                         token = TOK.Date(
-                            token.txt + " " + next_token.txt,
+                            token.concatenate(next_token, separator=" "),
                             y=year,
-                            m=token.val[1],
-                            d=token.val[2],
+                            m=dt[1],
+                            d=dt[2],
                         )
                         # Eat the year token
                         next_token = next(token_stream)
@@ -1873,16 +2525,15 @@ def parse_date_and_time(token_stream):
             ):
                 month = month_for_token(token)
                 if month is not None:
-                    year = (
-                        next_token.val
-                        if next_token.kind == TOK.YEAR
-                        else next_token.val[0]
-                        if 1776 <= next_token.val[0] <= 2100
-                        else 0
-                    )
+                    year = next_token.integer
+                    if next_token.kind == TOK.NUMBER and not (1776 <= year <= 2100):
+                        year = 0
                     if year != 0:
                         token = TOK.Date(
-                            token.txt + " " + next_token.txt, y=year, m=month, d=0
+                            token.concatenate(next_token, separator=" "),
+                            y=year,
+                            m=month,
+                            d=0,
                         )
                         # Eat the year token
                         next_token = next(token_stream)
@@ -1893,39 +2544,38 @@ def parse_date_and_time(token_stream):
                 # Don't automatically interpret "mar", etc. as month names,
                 # since they are ambiguous
                 if month is not None and token.txt not in AMBIGUOUS_MONTH_NAMES:
-                    token = TOK.Daterel(token.txt, y=0, m=month, d=0)
+                    token = TOK.Daterel(token, y=0, m=month, d=0)
 
             # Split DATE into DATEABS and DATEREL
             if token.kind == TOK.DATE:
-                if token.val[0] and token.val[1] and token.val[2]:
-                    token = TOK.Dateabs(
-                        token.txt, y=token.val[0], m=token.val[1], d=token.val[2]
-                    )
+                dt = cast(DateTimeTuple, token.val)
+                if dt[0] and dt[1] and dt[2]:
+                    token = TOK.Dateabs(token, y=dt[0], m=dt[1], d=dt[2])
                 else:
-                    token = TOK.Daterel(
-                        token.txt, y=token.val[0], m=token.val[1], d=token.val[2]
-                    )
+                    token = TOK.Daterel(token, y=dt[0], m=dt[1], d=dt[2])
 
             # Split TIMESTAMP into TIMESTAMPABS and TIMESTAMPREL
             if token.kind == TOK.TIMESTAMP:
-                if all(x != 0 for x in token.val[0:3]):
+                ts = cast(TimeStampTuple, token.val)
+                if all(x != 0 for x in ts[0:3]):
                     # Year, month and day all non-zero (h, m, s can be zero)
-                    token = TOK.Timestampabs(token.txt, *token.val)
+                    token = TOK.Timestampabs(token, *ts)
                 else:
-                    token = TOK.Timestamprel(token.txt, *token.val)
+                    token = TOK.Timestamprel(token, *ts)
 
             # Swallow "e.Kr." and "f.Kr." postfixes
             if token.kind == TOK.DATEABS:
+                dt = cast(DateTimeTuple, token.val)
                 if next_token.kind == TOK.WORD and next_token.txt in CE_BCE:
-                    y = token.val[0]
+                    y = dt[0]
                     if next_token.txt in BCE:
                         # Change year to negative number
                         y = -y
                     token = TOK.Dateabs(
-                        token.txt + " " + next_token.txt,
+                        token.concatenate(next_token, separator=" "),
                         y=y,
-                        m=token.val[1],
-                        d=token.val[2],
+                        m=dt[1],
+                        d=dt[2],
                     )
                     # Swallow the postfix
                     next_token = next(token_stream)
@@ -1934,10 +2584,16 @@ def parse_date_and_time(token_stream):
             if token.kind == TOK.DATEABS:
                 if next_token.kind == TOK.TIME:
                     # Create an absolute time stamp
-                    y, mo, d = token.val
-                    h, m, s = next_token.val
+                    y, mo, d = cast(DateTimeTuple, token.val)
+                    h, m, s = cast(DateTimeTuple, next_token.val)
                     token = TOK.Timestampabs(
-                        token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.concatenate(next_token, separator=" "),
+                        y=y,
+                        mo=mo,
+                        d=d,
+                        h=h,
+                        m=m,
+                        s=s,
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -1946,10 +2602,16 @@ def parse_date_and_time(token_stream):
             if token.kind == TOK.DATEREL:
                 if next_token.kind == TOK.TIME:
                     # Create a time stamp
-                    y, mo, d = token.val
-                    h, m, s = next_token.val
+                    y, mo, d = cast(DateTimeTuple, token.val)
+                    h, m, s = cast(DateTimeTuple, next_token.val)
                     token = TOK.Timestamprel(
-                        token.txt + " " + next_token.txt, y=y, mo=mo, d=d, h=h, m=m, s=s
+                        token.concatenate(next_token, separator=" "),
+                        y=y,
+                        mo=mo,
+                        d=d,
+                        h=h,
+                        m=m,
+                        s=s,
                     )
                     # Eat the time token
                     next_token = next(token_stream)
@@ -1966,10 +2628,12 @@ def parse_date_and_time(token_stream):
         yield token
 
 
-def parse_phrases_2(token_stream, coalesce_percent=False):
+def parse_phrases_2(
+    token_stream: Iterator[Tok], coalesce_percent: bool = False
+) -> Iterator[Tok]:
     """ Handle numbers, amounts and composite words. """
 
-    token = None
+    token = cast(Tok, None)
     try:
 
         # Maintain a one-token lookahead
@@ -1982,7 +2646,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
             # Logic for numbers and fractions that are partially or entirely
             # written out in words
 
-            def number(tok):
+            def number(tok: Tok) -> Optional[float]:
                 """ If the token denotes a number, return that number - or None """
                 if tok.txt.lower() == "áttu":
                     # Do not accept 'áttu' (stem='átta', no kvk) as a number
@@ -1999,16 +2663,17 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
 
                 multiplier_next = number(next_token)
 
-                def convert_to_num(token):
+                def convert_to_num(token: Tok) -> Tok:
                     if multiplier is not None:
-                        token = TOK.Number(token.txt, multiplier)
+                        token = TOK.Number(token, multiplier)
                     return token
 
                 if multiplier_next is not None:
                     # Retain the case of the last multiplier
                     token = convert_to_num(token)
                     token = TOK.Number(
-                        token.txt + " " + next_token.txt, token.val[0] * multiplier_next
+                        token.concatenate(next_token, separator=" "),
+                        token.number * multiplier_next,
                     )
                     # Eat the multiplier token
                     next_token = next(token_stream)
@@ -2018,16 +2683,18 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                     # but we try to retain the previous case information if any
                     token = convert_to_num(token)
                     token = TOK.Amount(
-                        token.txt + " " + next_token.txt,
+                        token.concatenate(next_token, separator=" "),
                         "ISK",
-                        token.val[0] * AMOUNT_ABBREV[next_token.txt],
+                        token.number * AMOUNT_ABBREV[next_token.txt],
                     )
                     next_token = next(token_stream)
                 elif next_token.txt in CURRENCY_ABBREV:
                     # A number followed by an ISO currency abbreviation
                     token = convert_to_num(token)
                     token = TOK.Amount(
-                        token.txt + " " + next_token.txt, next_token.txt, token.val[0]
+                        token.concatenate(next_token, separator=" "),
+                        next_token.txt,
+                        token.number,
                     )
                     next_token = next(token_stream)
                 else:
@@ -2040,7 +2707,9 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                         break
                     # We have '17 prósent': coalesce into a single token
                     token = convert_to_num(token)
-                    token = TOK.Percent(token.txt + " " + next_token.txt, token.val[0])
+                    token = TOK.Percent(
+                        token.concatenate(next_token, separator=" "), token.number
+                    )
                     # Eat the percent word token
                     next_token = next(token_stream)
 
@@ -2052,25 +2721,23 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
             ):
                 curr = "ISK" if token.txt in ISK_AMOUNT_PRECEDING else token.txt
                 token = TOK.Amount(
-                    token.txt + " " + next_token.txt, curr, next_token.val[0]
+                    token.concatenate(next_token, separator=" "),
+                    curr,
+                    next_token.number,
                 )
                 next_token = next(token_stream)
 
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
-            tq = []
-            while (
-                token.kind == TOK.WORD
-                and next_token.kind == TOK.PUNCTUATION
-                and next_token.val[1] == COMPOSITE_HYPHEN
-            ):
+            tq: List[Tok] = []
+            while token.kind == TOK.WORD and next_token.punctuation == COMPOSITE_HYPHEN:
                 # Accumulate the prefix in tq
                 tq.append(token)
-                tq.append(TOK.Punctuation(next_token.txt, normalized=HYPHEN))
+                tq.append(TOK.Punctuation(next_token, normalized=HYPHEN))
                 # Check for optional comma after the prefix
                 comma_token = next(token_stream)
-                if comma_token.kind == TOK.PUNCTUATION and comma_token.val[1] == ",":
+                if comma_token.punctuation == ",":
                     # A comma is present: append it to the queue
                     # and skip to the next token
                     tq.append(comma_token)
@@ -2096,9 +2763,14 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
                         # the last word, but an amalgamated token text.
                         # Note: there is no meaning check for the first
                         # part of the composition, so it can be an unknown word.
-                        txt = " ".join(t.txt for t in tq + [token, next_token])
-                        txt = txt.replace(" -", "-").replace(" ,", ",")
-                        token = TOK.Word(txt)
+                        _acc = tq[0]
+                        for t in tq[1:] + [token, next_token]:
+                            _acc = _acc.concatenate(
+                                t, separator=" ", metadata_from_other=True
+                            )
+                        _acc.substitute_all(" -", "-")
+                        _acc.substitute_all(" ,", ",")
+                        token = _acc
                         next_token = next(token_stream)
                 else:
                     # Incorrect prediction: make amends and continue
@@ -2117,7 +2789,7 @@ def parse_phrases_2(token_stream, coalesce_percent=False):
         yield token
 
 
-def tokenize(text_or_gen, **options):
+def tokenize(text_or_gen: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok]:
     """ Tokenize text in several phases, returning a generator
         (iterable sequence) of tokens that processes tokens on-demand. """
 
@@ -2141,28 +2813,35 @@ def tokenize(text_or_gen, **options):
     return (t for t in token_stream if t.kind != TOK.X_END)
 
 
-def tokenize_without_annotation(text_or_gen, **options):
+def tokenize_without_annotation(
+    text_or_gen: Union[str, Iterable[str]], **options: Any
+) -> Iterator[Tok]:
     """ Tokenize without the last pass which can be done more thoroughly if BÍN
         annotation is available, for instance in GreynirPackage. """
     return tokenize(text_or_gen, with_annotation=False, **options)
 
 
-def split_into_sentences(text_or_gen, **options):
+def split_into_sentences(
+    text_or_gen: Union[str, Iterable[str]], **options: Any
+) -> Iterator[str]:
     """ Shallow tokenization of the input text, which can be either
         a text string or a generator of lines of text (such as a file).
         This function returns a generator of strings, where each string
         is a sentence, and tokens are separated by spaces. """
+    to_text: Callable[[Tok], str]
     if options.pop("normalize", False):
         to_text = normalized_text
     else:
         to_text = lambda t: t.txt
-    curr_sent = []
+    curr_sent: List[str] = []
     for t in tokenize_without_annotation(text_or_gen, **options):
         if t.kind in TOK.END:
             # End of sentence/paragraph
-            if curr_sent:
+            # Note that curr_sent can be an empty list,
+            # and in that case we yield an empty string
+            if t.kind == TOK.S_END or t.kind == TOK.S_SPLIT:
                 yield " ".join(curr_sent)
-                curr_sent = []
+            curr_sent = []
         else:
             txt = to_text(t)
             if txt:
@@ -2171,24 +2850,22 @@ def split_into_sentences(text_or_gen, **options):
         yield " ".join(curr_sent)
 
 
-def mark_paragraphs(txt):
+def mark_paragraphs(txt: str) -> str:
     """ Insert paragraph markers into plaintext, by newlines """
     if not txt:
         return "[[ ]]"
     return "[[ " + " ]] [[ ".join(txt.split("\n")) + " ]]"
 
 
-def paragraphs(tokens):
+def paragraphs(tokens: Iterable[Tok]) -> Iterator[List[Tuple[int, List[Tok]]]]:
+
     """ Generator yielding paragraphs from token iterable. Each paragraph is a list
         of sentence tuples. Sentence tuples consist of the index of the first token
         of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
         sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
         tokens. """
 
-    if not tokens:
-        return
-
-    def valid_sent(sent):
+    def valid_sent(sent: Optional[List[Tok]]) -> bool:
         """ Return True if the token list in sent is a proper
             sentence that we want to process further """
         if not sent:
@@ -2196,9 +2873,9 @@ def paragraphs(tokens):
         # A sentence with only punctuation is not valid
         return any(t[0] != TOK.PUNCTUATION for t in sent)
 
-    sent = []  # Current sentence
+    sent: List[Tok] = []  # Current sentence
     sent_begin = 0
-    current_p = []  # Current paragraph
+    current_p: List[Tuple[int, List[Tok]]] = []  # Current paragraph
 
     for ix, t in enumerate(tokens):
         t0 = t[0]
@@ -2245,12 +2922,12 @@ RE_SPLIT_STR = (
 RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 
-def correct_spaces(s):
+def correct_spaces(s: str) -> str:
     """ Utility function to split and re-compose a string
         with correct spacing between tokens.
         NOTE that this function uses a quick-and-dirty approach
         which may not handle all edge cases! """
-    r = []
+    r: List[str] = []
     last = TP_NONE
     double_quote_count = 0
     for w in RE_SPLIT.split(s):
@@ -2305,12 +2982,12 @@ def correct_spaces(s):
     return "".join(r)
 
 
-def detokenize(tokens, normalize=False):
+def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
     """ Utility function to convert an iterable of tokens back
         to a correctly spaced string. If normalize is True,
         punctuation is normalized before assembling the string. """
-    to_text = normalized_text if normalize else lambda t: t.txt
-    r = []
+    to_text: Callable[[Tok], str] = normalized_text if normalize else lambda t: t.txt
+    r: List[str] = []
     last = TP_NONE
     double_quote_count = 0
     for t in tokens:
@@ -2340,3 +3017,41 @@ def detokenize(tokens, normalize=False):
             r.append(w)
         last = this
     return "".join(r)
+
+
+def calculate_indexes(
+    tokens: Iterable[Tok], last_is_end: bool = False
+) -> Tuple[List[int], List[int]]:
+    """ Calculate character and byte indexes for a token stream.
+        The indexes are the start positions of each token in the original
+        text that was tokenized.
+        'last_is_end' determines whether to include a "past-the-end" index
+        at the end. This index is also the total length of the sequence.
+    """
+
+    def byte_len(string: str) -> int:
+        return len(bytes(string, encoding="utf-8"))
+
+    char_indexes = [0]
+    byte_indexes = [0]
+
+    for t in tokens:
+        if t.original:
+            char_indexes.append(char_indexes[-1] + len(t.original))
+            byte_indexes.append(byte_indexes[-1] + byte_len(t.original))
+        else:
+            if t.txt:
+                # Origin tracking failed for this token.
+                # TODO: Can we do something better here? Or guarantee that it doesn't happen?
+                raise Exception(
+                    f"Origin tracking failed at {t.txt} near index {char_indexes[-1]}"
+                )
+            else:
+                # This is some marker token that has no text
+                pass
+
+    if not last_is_end:
+        char_indexes = char_indexes[:-1]
+        byte_indexes = byte_indexes[:-1]
+
+    return char_indexes, byte_indexes

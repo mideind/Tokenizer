@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 
     test_detokenize.py
@@ -31,21 +30,18 @@
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
 import tokenizer as t
 
 
-def test_detokenize():
+def test_detokenize() -> None:
 
     options = { "normalize": True }
 
-    def should_be_equal(s):
+    def should_be_equal(s: str) -> None:
         toklist = t.tokenize(s, **options)
         assert s == t.detokenize(toklist, **options)
 
-    def should_be(s1, s2):
+    def should_be(s1: str, s2: str) -> None:
         toklist = t.tokenize(s1, **options)
         assert s2 == t.detokenize(toklist, **options)
 

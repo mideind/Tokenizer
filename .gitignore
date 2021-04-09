@@ -114,3 +114,6 @@ ENV/
 # mypy
 .mypy_cache/
 mypy.ini
+
+# Vim swap files
+.*.swp

@@ -1,4 +1,3 @@
-# -*- encoding: utf-8 -*-
 """
 
     Abbreviations module for tokenization of Icelandic text
@@ -34,13 +33,13 @@
 
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-from typing import Set, List, Dict, Any
+from typing import Generic, Iterator, Optional, Set, List, Dict, TypeVar
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
+from pkg_resources import resource_stream  # type: ignore
+
+from .definitions import BIN_Tuple
 
 
 class ConfigError(Exception):
@@ -48,25 +47,28 @@ class ConfigError(Exception):
     pass
 
 
-class OrderedSet:
+_T = TypeVar("_T")
+
+
+class OrderedSet(Generic[_T]):
 
     """ Shim class to provide an ordered set API on top
         of an OrderedDict. This is necessary to make abbreviation
         lookups predictable and repeatable, which they would not be
         if a standard Python set() was used. """
 
-    def __init__(self):
-        self._dict = OrderedDict()
+    def __init__(self) -> None:
+        self._dict: Dict[_T, None] = OrderedDict()
 
-    def add(self, item):
+    def add(self, item: _T) -> None:
         """ Add an item at the end of the ordered set """
         if item not in self._dict:
             self._dict[item] = None
 
-    def __contains__(self, item):
+    def __contains__(self, item: _T) -> bool:
         return item in self._dict
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[_T]:
         return self._dict.__iter__()
 
 
@@ -76,35 +78,35 @@ class Abbreviations:
         initialized from the config file """
 
     # Dictionary of abbreviations and their meanings
-    DICT = defaultdict(OrderedSet)  # type: Dict[str, Any]
+    DICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # Wrong versions of abbreviations
-    WRONGDICT = defaultdict(OrderedSet)  # type: Dict[str, Any]
+    WRONGDICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # All abbreviation meanings
-    MEANINGS = set()  # type: Set[str]
+    MEANINGS: Set[str] = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
-    SINGLES = set()  # type: Set[str]
+    SINGLES: Set[str] = set()
     # Set of abbreviations without periods, e.g. "td", "osfrv"
-    WRONGSINGLES = set()  # type: Set[str]
+    WRONGSINGLES: Set[str] = set()
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
-    FINISHERS = set()  # type: Set[str]
+    FINISHERS: Set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences,
     # marked with an exclamation mark in the config file
-    NOT_FINISHERS = set()  # type: Set[str]
+    NOT_FINISHERS: Set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
-    NAME_FINISHERS = set()  # type: Set[str]
+    NAME_FINISHERS: Set[str] = set()
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS = defaultdict(list)  # type: Dict[str, List[str]]
+    WRONGDOTS: Dict[str, List[str]] = defaultdict(list)
     # Word forms that should never be interpreted as abbreviations
-    NOT_ABBREVIATIONS = set()  # type: Set[str]
+    NOT_ABBREVIATIONS: Set[str] = set()
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
 
     @staticmethod
-    def add(abbrev, meaning, gender, fl=None):
+    def add(abbrev: str, meaning: str, gender: str, fl: Optional[str] = None) -> None:
         """ Add an abbreviation to the dictionary.
             Called from the config file handler. """
         # Check for sentence finishers
@@ -150,7 +152,7 @@ class Abbreviations:
         # Append the abbreviation and its meaning in tuple form
         # Multiple meanings are supported for each abbreviation
         Abbreviations.DICT[abbrev].add(
-            (meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
+            BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
         )
         Abbreviations.MEANINGS.add(meaning)
         # Adding wrong versions of abbreviations
@@ -167,7 +169,7 @@ class Abbreviations:
                 # as abbreviations, even though they are listed as such
                 # in the form 'Í.' and 'Á.' for use within person names
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
 
         elif "." in abbrev:
@@ -180,7 +182,7 @@ class Abbreviations:
                 wabbrev = abbrev[:i] + abbrev[i + 1 :]
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
                 )
             if len(indices) > 2:
                 # 3 or 4 dots currently in vocabulary
@@ -188,7 +190,7 @@ class Abbreviations:
                 i1 = indices[0]
                 i2 = indices[1]
                 i3 = indices[2]
-                wabbrevs = []
+                wabbrevs: List[str] = []
                 # 1 and 2 removed
                 wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i2] + abbrev[i2 + 1 :])
                 # 1 and 3 removed
@@ -198,7 +200,7 @@ class Abbreviations:
                 for wabbrev in wabbrevs:
                     Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                     Abbreviations.WRONGDICT[wabbrev].add(
-                        (
+                        BIN_Tuple(
                             meaning,
                             0,
                             gender,
@@ -212,7 +214,7 @@ class Abbreviations:
             Abbreviations.WRONGSINGLES.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
-                (meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
@@ -222,15 +224,15 @@ class Abbreviations:
             Abbreviations.NAME_FINISHERS.add(abbrev)
 
     @staticmethod
-    def has_meaning(abbrev):
+    def has_meaning(abbrev: str) -> bool:
         return abbrev in Abbreviations.DICT or abbrev in Abbreviations.WRONGDICT
 
     @staticmethod
-    def has_abbreviation(meaning):
+    def has_abbreviation(meaning: str) -> bool:
         return meaning in Abbreviations.MEANINGS
 
     @staticmethod
-    def get_meaning(abbrev):
+    def get_meaning(abbrev: str) -> Optional[List[BIN_Tuple]]:
         """ Lookup meaning(s) of abbreviation, if available. """
         m = Abbreviations.DICT.get(abbrev)
         if not m:
@@ -238,7 +240,7 @@ class Abbreviations:
         return list(m) if m else None
 
     @staticmethod
-    def _handle_abbreviations(s):
+    def _handle_abbreviations(s: str) -> None:
         """ Handle abbreviations in the settings section """
         # Format: abbrev[*] = "meaning" gender (kk|kvk|hk)
         # An asterisk after an abbreviation ending with a period
@@ -269,7 +271,7 @@ class Abbreviations:
         Abbreviations.add(abbrev, m[1], gender, fl)
 
     @staticmethod
-    def _handle_not_abbreviations(s):
+    def _handle_not_abbreviations(s: str) -> None:
         """ Handle not_abbreviations in the settings section """
         if len(s) < 3 or s[0] != '"' or s[-1] != '"':
             raise ConfigError("not_abbreviations should be enclosed in double quotes")
@@ -282,7 +284,6 @@ class Abbreviations:
             if len(Abbreviations.DICT):
                 # Already initialized
                 return
-            from pkg_resources import resource_stream  # type: ignore
 
             section = None
             with resource_stream(__name__, "Abbrev.conf") as config:

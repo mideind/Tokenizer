@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 """
 
     Tokenizer for Icelandic text
@@ -30,16 +29,17 @@
 
 """
 
-from __future__ import absolute_import
+from typing import Any
 
 import io
 import re
+
 from glob import glob
 from os.path import basename, dirname, join, splitext
 from setuptools import find_packages, setup  # type: ignore
 
 
-def read(*names, **kwargs):
+def read(*names: str, **kwargs: Any) -> str:
     try:
         return io.open(
             join(dirname(__file__), *names),
@@ -48,13 +48,16 @@ def read(*names, **kwargs):
     except (IOError, OSError):
         return ""
 
+# Load version string from file
+__version__ = "[missing]"
+exec(open(join("src", "tokenizer", "version.py")).read())
 
 setup(
     name="tokenizer",
-    version="2.5.0",  # Also update src/tokenizer/__init__.py
+    version=__version__,
     license="MIT",
     description="A tokenizer for Icelandic text",
-    long_description=u"{0}\n{1}".format(
+    long_description="{0}\n{1}".format(
         re.compile("^.. start-badges.*^.. end-badges", re.M | re.S)
             .sub("", read("README.rst")
         ),
@@ -79,9 +82,7 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Natural Language :: Icelandic",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -93,11 +94,6 @@ setup(
         "Topic :: Text Processing :: Linguistic",
     ],
     keywords=["nlp", "tokenizer", "icelandic"],
-    # Install the typing module if it isn't already in the
-    # Python standard library (i.e. in versions prior to 3.5)
-    install_requires=[
-        "typing;python_version<'3.5'"
-    ],
     # Set up a tokenize command (tokenize.exe on Windows),
     # which calls main() in src/tokenizer/main.py
     entry_points={

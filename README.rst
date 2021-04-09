@@ -12,7 +12,7 @@ Tokenization is a necessary first step in many natural language processing
 tasks, such as word counting, parsing, spell checking, corpus generation, and
 statistical analysis of text.
 
-**Tokenizer** is a compact pure-Python (2 and 3) executable
+**Tokenizer** is a compact pure-Python (>= 3.6) executable
 program and module for tokenizing Icelandic text. It converts input text to
 streams of *tokens*, where each token is a separate word, punctuation sign,
 number/amount, date, e-mail, URL/URI, etc. It also segments the token stream
@@ -194,10 +194,6 @@ An example of shallow tokenization from Python code goes something like this:
 
 .. code-block:: python
 
-    from __future__ import print_function
-    # The following import is optional but convenient under Python 2.7
-    from __future__ import unicode_literals
-
     from tokenizer import split_into_sentences
 
     # A string to be tokenized, containing two sentences
@@ -213,12 +209,12 @@ An example of shallow tokenization from Python code goes something like this:
         tokens = sentence.split()
 
         # Print the tokens, comma-separated
-        print(", ".join(tokens))
+        print("|".join(tokens))
 
 The program outputs::
 
-    3., janúar, sl., keypti, ég, 64kWst, rafbíl, .
-    Hann, kostaði, €30.000, .
+    3.|janúar|sl.|keypti|ég|64kWst|rafbíl|.
+    Hann|kostaði|€30.000|.
 
 Deep tokenization example
 =========================
@@ -227,8 +223,6 @@ To do deep tokenization from within Python code:
 
 .. code-block:: python
 
-    # The following import is optional but convenient under Python 2.7
-    from __future__ import unicode_literals
     from tokenizer import tokenize, TOK
 
     text = ("Málinu var vísað til stjórnskipunar- og eftirlitsnefndar "
@@ -311,11 +305,6 @@ The ``tokenizer.tokenize()`` function is typically called in a ``for`` loop:
 Alternatively, create a token list from the returned generator::
 
     token_list = list(tokenizer.tokenize(mystring))
-
-In Python 2.7, you can pass either ``unicode`` strings or ``str``
-byte strings to ``tokenizer.tokenize()``. In the latter case, the
-byte string is assumed to be encoded in UTF-8.
-
 
 The ``split_into_sentences()`` function
 ---------------------------------------
@@ -504,14 +493,14 @@ functions:
 The token object
 ----------------
 
-Each token is represented by a ``namedtuple`` with three fields:
-``(kind, txt, val)``.
+Each token is an instance of the class ``Tok`` that has three main properties:
+``kind``, ``txt`` and ``val``.
 
 
-The ``kind`` field
-==================
+The ``kind`` property
+=====================
 
-The ``kind`` field contains one of the following integer constants,
+The ``kind`` property contains one of the following integer constants,
 defined within the ``TOK`` class:
 
 +---------------+---------+---------------------+---------------------------+
@@ -627,14 +616,14 @@ To obtain a descriptive text for a token kind, use
 ``TOK.descr[token.kind]`` (see example above).
 
 
-The ``txt`` field
-==================
+The ``txt`` property
+====================
 
-The ``txt`` field contains the original source text for the token,
+The ``txt`` property contains the original source text for the token,
 with the following exceptions:
 
 * All contiguous whitespace (spaces, tabs, newlines) is coalesced
-  into single spaces (``" "``) within the ``txt`` field. A date
+  into single spaces (``" "``) within the ``txt`` string. A date
   token that is parsed from a source text of ``"29.  \n   janúar"``
   thus has a ``txt`` of ``"29. janúar"``.
 
@@ -655,10 +644,10 @@ with the following exceptions:
   being escaped (``á``).
 
 
-The ``val`` field
-==================
+The ``val`` property
+====================
 
-The ``val`` field contains auxiliary information, corresponding to
+The ``val`` property contains auxiliary information, corresponding to
 the token kind, as follows:
 
 - For ``TOK.PUNCTUATION``, the ``val`` field contains a tuple with
@@ -676,40 +665,52 @@ the token kind, as follows:
   quotes are represented as Icelandic ones (i.e. „these“ or ‚these‘) in
   normalized form, and ellipsis ("...") are represented as the single
   character "…".
+
 - For ``TOK.TIME``, the ``val`` field contains an
   ``(hour, minute, second)`` tuple.
+
 - For ``TOK.DATEABS``, the ``val`` field contains a
   ``(year, month, day)`` tuple (all 1-based).
+
 - For ``TOK.DATEREL``, the ``val`` field contains a
   ``(year, month, day)`` tuple (all 1-based),
   except that a least one of the tuple fields is missing and set to 0.
   Example: *3. júní* becomes ``TOK.DATEREL`` with the fields ``(0, 6, 3)``
   as the year is missing.
+
 - For ``TOK.YEAR``, the ``val`` field contains the year as an integer.
   A negative number indicates that the year is BCE (*fyrir Krist*),
   specified with the suffix *f.Kr.* (e.g. *árið 33 f.Kr.*).
+
 - For ``TOK.NUMBER``, the ``val`` field contains a tuple
   ``(number, None, None)``.
   (The two empty fields are included for compatibility with Greynir.)
+
 - For ``TOK.WORD``, the ``val`` field contains the full expansion
   of an abbreviation, as a list containing a single tuple, or ``None``
   if the word is not abbreviated.
+
 - For ``TOK.PERCENT``, the ``val`` field contains a tuple
   of ``(percentage, None, None)``.
+
 - For ``TOK.ORDINAL``, the ``val`` field contains the ordinal value
   as an integer. The original ordinal may be a decimal number
   or a Roman numeral.
+
 - For ``TOK.TIMESTAMP``, the ``val`` field contains
   a ``(year, month, day, hour, minute, second)`` tuple.
+
 - For ``TOK.AMOUNT``, the ``val`` field contains
   an ``(amount, currency, None, None)`` tuple. The amount is a float, and
   the currency is an ISO currency code, e.g. *USD* for dollars ($ sign),
   *EUR* for euros (€ sign) or *ISK* for Icelandic króna
   (*kr.* abbreviation). (The two empty fields are included for
   compatibility with Greynir.)
+
 - For ``TOK.MEASUREMENT``, the ``val`` field contains a ``(unit, value)``
   tuple, where ``unit`` is a base SI unit (such as ``g``, ``m``,
   ``m²``, ``s``, ``W``, ``Hz``, ``K`` for temperature in Kelvin).
+
 - For ``TOK.TELNO``, the ``val`` field contains a tuple: ``(number, cc)``
   where the first item is the phone number
   in a normalized ``NNN-NNNN`` format, i.e. always including a hyphen,
@@ -733,8 +734,8 @@ An example is *o.s.frv.*, which results in a ``val`` field equal to
 ``[('og svo framvegis', 0, 'ao', 'frasi', 'o.s.frv.', '-')]``.
 
 The tuple format is designed to be compatible with the
-*Database of Modern Icelandic Inflection* (*DMII*),
-*Beygingarlýsing íslensks nútímamáls*.
+*Database of Icelandic Morphology* (*DIM*),
+*Beygingarlýsing íslensks nútímamáls*, i.e. the so-called *Sigrúnarsnið*.
 
 
 Development installation
@@ -804,6 +805,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.0.0: Added tracking of character offsets for tokens within the
+  original source text. Added full type annotations. Dropped Python 2.7 support.
 * Version 2.5.0: Added arguments for all tokenizer options to the
   command-line tool. Type annotations enhanced.
 * Version 2.4.0: Fixed bug where certain well-known word forms (*fá*, *fær*, *mín*, *sá*...)
