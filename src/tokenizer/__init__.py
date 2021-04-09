@@ -39,6 +39,7 @@ from .tokenizer import (
     calculate_indexes, generate_rough_tokens
 )
 from .abbrev import Abbreviations, ConfigError
+from .version import __version__
 
-__author__ = u"Miðeind ehf"
-__version__ = u"3.0.0"  # Also update setup.py
+__author__ = "Miðeind ehf"
+__copyright__ = "(C) 2021 Miðeind ehf."

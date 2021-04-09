@@ -48,13 +48,16 @@ def read(*names: str, **kwargs: Any) -> str:
     except (IOError, OSError):
         return ""
 
+# Load version string from file
+__version__ = "[missing]"
+exec(open(join("src", "tokenizer", "version.py")).read())
 
 setup(
     name="tokenizer",
-    version="3.0.0",  # Also update src/tokenizer/__init__.py
+    version=__version__,
     license="MIT",
     description="A tokenizer for Icelandic text",
-    long_description=u"{0}\n{1}".format(
+    long_description="{0}\n{1}".format(
         re.compile("^.. start-badges.*^.. end-badges", re.M | re.S)
             .sub("", read("README.rst")
         ),
