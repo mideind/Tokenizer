@@ -1536,7 +1536,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     break
                 elif lw > 1 and rtxt.startswith("@"):
                     # Username on Twitter or other social media platforms
-                    s = re.match(r"\@[0-9a-z_]+", rtxt)
+                    s = re.match(r"\@[0-9a-z_.]+", rtxt)
                     if s:
                         g = s.group()
                         username, rt = rt.split(s.end())
