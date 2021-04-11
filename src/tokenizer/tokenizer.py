@@ -2034,7 +2034,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             if next_token.punctuation == ".":
                 if (
                     token.kind == TOK.NUMBER
-                    and not ("." in token.txt or "," in token.txt)
+                    and not "," in token.txt
                 ) or (
                     token.kind == TOK.WORD
                     and RE_ROMAN_NUMERAL.match(token.txt)
