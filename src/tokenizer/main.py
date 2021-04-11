@@ -105,6 +105,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-r",
+    "--original",
+    action="store_true",
+    help="Outputs original text of tokens",
+)
+
+
+parser.add_argument(
     "-g",
     "--keep_composite_glyphs",
     action="store_true",
@@ -205,6 +213,8 @@ def main() -> None:
         to_text = lambda t: (
             cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt
         )
+    elif args.original:
+        to_text = lambda t: t.original
     else:
         to_text = lambda t: t.txt
 
@@ -230,6 +240,9 @@ def main() -> None:
 
     if args.handle_kludgy_ordinals:
         options["handle_kludgy_ordinals"] = args.handle_kludgy_ordinals
+
+    if args.original:
+        options["original"] = args.original
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))

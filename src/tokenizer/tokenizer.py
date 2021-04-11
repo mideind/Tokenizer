@@ -2829,8 +2829,11 @@ def split_into_sentences(
         This function returns a generator of strings, where each string
         is a sentence, and tokens are separated by spaces. """
     to_text: Callable[[Tok], str]
+    og = options.pop("original", False)
     if options.pop("normalize", False):
         to_text = normalized_text
+    elif og:
+        to_text = lambda t: t.original
     else:
         to_text = lambda t: t.txt
     curr_sent: List[str] = []
@@ -2840,14 +2843,20 @@ def split_into_sentences(
             # Note that curr_sent can be an empty list,
             # and in that case we yield an empty string
             if t.kind == TOK.S_END or t.kind == TOK.S_SPLIT:
-                yield " ".join(curr_sent)
+                if og:
+                    yield "".join(curr_sent)
+                else:
+                    yield " ".join(curr_sent)
             curr_sent = []
         else:
             txt = to_text(t)
             if txt:
                 curr_sent.append(txt)
     if curr_sent:
-        yield " ".join(curr_sent)
+        if og:
+            yield "".join(curr_sent)
+        else:
+            yield " ".join(curr_sent)
 
 
 def mark_paragraphs(txt: str) -> str:
@@ -2920,6 +2929,9 @@ RE_SPLIT_STR = (
     + r"])"
 )
 RE_SPLIT = re.compile(RE_SPLIT_STR)
+
+
+
 
 
 def correct_spaces(s: str) -> str:
