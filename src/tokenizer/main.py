@@ -145,6 +145,11 @@ def main() -> None:
             backslashes and double quotes escaped with a backslash """
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
+    def spanquote(l: list) -> str:
+        """ Return the list l as a string within double quotes """
+        stringlist = [str(x) for x in l]
+        return '"' + "-".join(stringlist) + '"'
+
     def gen(f: TextIO) -> Iterator[str]:
         """ Generate the lines of text in the input file """
         for line in f:
@@ -235,14 +240,18 @@ def main() -> None:
             # Output the tokens in CSV format, one line per token
             if t.txt:
                 print(
-                    "{0},{1},{2}".format(
-                        t.kind, quote(t.txt), val(t, quote_word=True) or '""'
+                    "{0},{1},{2},{3},{4}".format(
+                        t.kind, 
+                        quote(t.txt), 
+                        val(t, quote_word=True) or '""',
+                        quote(t.original) or '""',
+                        spanquote(t.origin_spans),
                     ),
                     file=args.outfile,
                 )
             elif t.kind == TOK.S_END:
                 # Indicate end of sentence
-                print('0,"",""', file=args.outfile)
+                print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
             d: Dict[str, str] = dict(k=TOK.descr[t.kind])
@@ -251,6 +260,10 @@ def main() -> None:
             v = val(t)
             if v is not None:
                 d["v"] = v
+            if t.original is not None:
+                d["o"] = t.original
+            if t.origin_spans is not None:
+                d["s"] = t.origin_spans
             print(json_dumps(d), file=args.outfile)
         else:
             # Normal shallow parse, one line per sentence,
