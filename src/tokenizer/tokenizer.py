@@ -829,7 +829,7 @@ def text_from_tokens(tokens: Iterable[Tok]) -> str:
 
 
 def normalized_text_from_tokens(tokens: Iterable[Tok]) -> str:
-    """ Return text from a list of tokens, without normalization """
+    """ Return text from a list of tokens, with normalization """
     return " ".join(filter(None, map(normalized_text, tokens)))
 
 
