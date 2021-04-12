@@ -748,7 +748,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Person(t: Union[Tok, str], m: Optional[PersonNameList]] = None) -> Tok:
+    def Person(t: Union[Tok, str], m: Optional[PersonNameList] = None) -> Tok:
         # The m parameter is intended for a list of PersonName tuples:
         # (name, gender, case)
         if isinstance(t, str):
