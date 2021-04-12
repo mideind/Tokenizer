@@ -77,11 +77,13 @@ class Tok:
         self.txt: str = txt or ""
         # Value of the token (e.g. if it is a date or currency)
         self.val: ValType = val
-        # The full original string of this token
-        # If this is None then we're not tracking origins
+        # The full original source string behind this token.
+        # If this is None then we're not tracking origins.
         self.original: Optional[str] = original
-        # Each index in origin_spans maps from 'txt' (which may have substitutions) to 'original'
-        # This is required to preserve 'original' correctly when splitting
+        # origin_spans contains an integer for each character in 'txt'.
+        # Each such integer index maps the corresponding character
+        # (which may have substitutions) to its index in 'original'.
+        # This is required to preserve 'original' correctly when splitting.
         self.origin_spans: Optional[List[int]] = origin_spans
 
     @property
@@ -89,9 +91,10 @@ class Tok:
         """ Return the punctuation symbol associated with the
             token, if it is in fact a punctuation token """
         if self.kind != TOK.PUNCTUATION:
-            # Hack: we return the Unicode 'unrecognized character'
+            # This is not a punctuation token. In that case,
+            # we return the Unicode 'unrecognized character'
             # code, which will not match any 'x in s' checks
-            # where s is a legitimate string or set
+            # where s is a legitimate string or set.
             return "\ufffd"
         return cast(PunctuationTuple, self.val)[1]
 
@@ -126,8 +129,8 @@ class Tok:
 
     @property
     def has_meanings(self) -> bool:
-        """ Return the meanings of this token if it is a word,
-            otherwise return an empty list """
+        """ Return True if this is a word token and has meanings,
+            i.e. associated BIN_Tuple instances """
         if self.kind != TOK.WORD:
             return False
         return bool(self.val)
@@ -150,9 +153,11 @@ class Tok:
 
     def split(self, pos: int) -> Tuple["Tok", "Tok"]:
         """ Split this token into two at 'pos'.
-            The first token returned will have 'pos' characters and the second one will have the rest.
+            The first token returned will have 'pos'
+            characters and the second one will have the rest.
         """
-        # TODO: What happens if you split a token that has txt=="" and original!=""?
+        # TODO: What happens if you split a token that has
+        # txt=="" and original!=""?
         # TODO: What should we do with val?
 
         l: Tok
@@ -193,13 +198,16 @@ class Tok:
             )
 
     def substitute_longer(self, span: Tuple[int, int], new: str) -> None:
-        """ Substitute a span with a potentially longer string.
-            This tracks origin differently from the regular substitution function.
-            Due to the inobviousness of how to assign origin to the new string we simply
-            make it have an empty origin.
-            This will probably cause some weirdness if this string later gets split or substituted
-            but I don't think that ever happens in the current implementation.
-        """
+        """ Substitute a span with a potentially longer string """
+
+        # This tracks origin differently from the regular
+        # substitution function.
+        # Due to the inobviousness of how to assign origin to
+        # the new string we simply make it have an empty origin.
+        # This will probably cause some weirdness if this string
+        # later gets split or substituted but that should not
+        # happen in the current implementation.
+
         self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
 
         if self.origin_spans is not None and self.original is not None:
@@ -223,14 +231,14 @@ class Tok:
         """ Substitute all occurrences of 'old_str' with 'new_char'.
             The new character may be empty.
         """
-        # NOTE: This implementation is worst-case-quadratic in the length of the token text.
-        #       Fortunately tokens are almost always (?) short so this is an acceptable tradeoff
-        #       for a dead simple implementation.
-        # TODO: Support arbitrary length substitutions? What does that do to origin tracking?
+        # NOTE: This implementation is worst-case-quadratic in the
+        #       length of the token text.
+        #       Fortunately tokens are almost always (?) short so
+        #       this is an acceptable tradeoff for a simple implementation.
+        # TODO: Support arbitrary length substitutions?
+        #       What does that do to origin tracking?
 
-        assert (
-            len(new_char) == 0 or len(new_char) == 1
-        ), f"'new_char' ({new_char}) was too long."
+        assert len(new_char) <= 1, f"'new_char' ({new_char}) was too long."
 
         while True:
             i = self.txt.find(old_str)
@@ -242,9 +250,11 @@ class Tok:
     def concatenate(
         self, other: "Tok", *, separator: str = "", metadata_from_other: bool = False
     ) -> "Tok":
-        """ Return a new token that consists of self with other concatenated to the end.
+        """ Return a new token that consists of self with other
+            concatenated to the end.
             A separator can optionally be supplied.
-            The new token will have metadata (kind and val) from self unless 'metadata_from_other' is True.
+            The new token will have metadata (kind and val)
+            from self unless 'metadata_from_other' is True.
         """
         new_kind = self.kind if not metadata_from_other else other.kind
         new_val = self.val if not metadata_from_other else other.val
@@ -525,7 +535,7 @@ class TOK:
 
     @staticmethod
     def Timestamp(
-        t: Union[str, Tok], y: int, mo: int, d: int, h: int, m: int, s: int
+        t: Union[Tok, str], y: int, mo: int, d: int, h: int, m: int, s: int
     ) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.TIMESTAMP, t, (y, mo, d, h, m, s))
@@ -554,7 +564,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Year(t: Union[str, Tok], n: int) -> Tok:
+    def Year(t: Union[Tok, str], n: int) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.YEAR, t, n)
         t.kind = TOK.YEAR
@@ -562,7 +572,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Telno(t: Union[str, Tok], telno: str, cc: str = "354") -> Tok:
+    def Telno(t: Union[Tok, str], telno: str, cc: str = "354") -> Tok:
         # The t parameter is the original token text,
         # while telno has the standard form 'DDD-DDDD' (with hyphen)
         # cc is the country code
@@ -573,7 +583,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Email(t: Union[str, Tok]) -> Tok:
+    def Email(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.EMAIL, t, None)
         t.kind = TOK.EMAIL
@@ -582,7 +592,7 @@ class TOK:
 
     @staticmethod
     def Number(
-        t: Union[str, Tok],
+        t: Union[Tok, str],
         n: float,
         cases: Optional[List[str]] = None,
         genders: Optional[List[str]] = None,
@@ -596,7 +606,7 @@ class TOK:
         return t
 
     @staticmethod
-    def NumberWithLetter(t: Union[str, Tok], n: int, c: str) -> Tok:
+    def NumberWithLetter(t: Union[Tok, str], n: int, c: str) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.NUMWLETTER, t, (n, c))
         t.kind = TOK.NUMWLETTER
@@ -605,7 +615,7 @@ class TOK:
 
     @staticmethod
     def Currency(
-        t: Union[str, Tok],
+        t: Union[Tok, str],
         iso: str,
         cases: Optional[List[str]] = None,
         genders: Optional[List[str]] = None,
@@ -620,7 +630,7 @@ class TOK:
 
     @staticmethod
     def Amount(
-        t: Union[str, Tok],
+        t: Union[Tok, str],
         iso: str,
         n: float,
         cases: Optional[List[str]] = None,
@@ -636,7 +646,7 @@ class TOK:
 
     @staticmethod
     def Percent(
-        t: Union[str, Tok],
+        t: Union[Tok, str],
         n: float,
         cases: Optional[List[str]] = None,
         genders: Optional[List[str]] = None,
@@ -648,7 +658,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Ordinal(t: Union[str, Tok], n: int) -> Tok:
+    def Ordinal(t: Union[Tok, str], n: int) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.ORDINAL, t, n)
         t.kind = TOK.ORDINAL
@@ -656,7 +666,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Url(t: Union[str, Tok]) -> Tok:
+    def Url(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.URL, t, None)
         t.kind = TOK.URL
@@ -664,7 +674,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Domain(t: Union[str, Tok]) -> Tok:
+    def Domain(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.DOMAIN, t, None)
         t.kind = TOK.DOMAIN
@@ -672,7 +682,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Hashtag(t: Union[str, Tok]) -> Tok:
+    def Hashtag(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.HASHTAG, t, None)
         t.kind = TOK.HASHTAG
@@ -680,7 +690,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Ssn(t: Union[str, Tok]) -> Tok:
+    def Ssn(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.SSN, t, None)
         t.kind = TOK.SSN
@@ -688,7 +698,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Molecule(t: Union[str, Tok]) -> Tok:
+    def Molecule(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.MOLECULE, t, None)
         t.kind = TOK.MOLECULE
@@ -696,7 +706,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Username(t: Union[str, Tok], username: str) -> Tok:
+    def Username(t: Union[Tok, str], username: str) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.USERNAME, t, username)
         t.kind = TOK.USERNAME
@@ -704,7 +714,7 @@ class TOK:
         return t
 
     @staticmethod
-    def SerialNumber(t: Union[str, Tok]) -> Tok:
+    def SerialNumber(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.SERIALNUMBER, t, None)
         t.kind = TOK.SERIALNUMBER
@@ -721,8 +731,8 @@ class TOK:
 
     @staticmethod
     def Word(t: Union[Tok, str], m: Optional[BIN_TupleList] = None) -> Tok:
-        # The m parameter is intended for a list of BIN_Meaning tuples
-        # fetched from the BÍN database
+        # The m parameter is intended for a list of BIN_Tuple instances
+        # fetched from the BÍN database, in 'SHsnid' format
         if isinstance(t, str):
             return Tok(TOK.WORD, t, m)
         t.kind = TOK.WORD
@@ -738,7 +748,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Person(t: Union[str, Tok], m: Optional[List[PersonNameTuple]] = None) -> Tok:
+    def Person(t: Union[Tok, str], m: Optional[PersonNameList]] = None) -> Tok:
         # The m parameter is intended for a list of PersonName tuples:
         # (name, gender, case)
         if isinstance(t, str):
@@ -748,7 +758,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Entity(t: Union[str, Tok]) -> Tok:
+    def Entity(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.ENTITY, t, None)
         t.kind = TOK.ENTITY
@@ -756,7 +766,7 @@ class TOK:
         return t
 
     @staticmethod
-    def Company(t: Union[str, Tok]) -> Tok:
+    def Company(t: Union[Tok, str]) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.COMPANY, t, None)
         t.kind = TOK.COMPANY
