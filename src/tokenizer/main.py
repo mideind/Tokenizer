@@ -105,7 +105,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-r",
+    "-o",
     "--original",
     action="store_true",
     help="Outputs original text of tokens",
@@ -153,10 +153,10 @@ def main() -> None:
             backslashes and double quotes escaped with a backslash """
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    def spanquote(l: list) -> str:
+    def spanquote(l: List[int]) -> str:
         """ Return the list l as a string within double quotes """
         stringlist = [str(x) for x in l]
-        return '"' + "-".join(stringlist) + '"'
+        return '"' + "-".join(str(x) for x in l) + '"'
 
     def gen(f: TextIO) -> Iterator[str]:
         """ Generate the lines of text in the input file """
@@ -257,8 +257,8 @@ def main() -> None:
                         t.kind, 
                         quote(t.txt), 
                         val(t, quote_word=True) or '""',
-                        quote(t.original) or '""',
-                        spanquote(t.origin_spans),
+                        '""' if t.original is None else quote(t.original),
+                        '[]' if t.origin_spans is None else spanquote(t.origin_spans),
                     ),
                     file=args.outfile,
                 )

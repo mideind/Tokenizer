@@ -2833,7 +2833,7 @@ def split_into_sentences(
     if options.pop("normalize", False):
         to_text = normalized_text
     elif og:
-        to_text = lambda t: t.original
+        to_text = lambda t: t.original or t.txt
     else:
         to_text = lambda t: t.txt
     curr_sent: List[str] = []
@@ -2929,9 +2929,6 @@ RE_SPLIT_STR = (
     + r"])"
 )
 RE_SPLIT = re.compile(RE_SPLIT_STR)
-
-
-
 
 
 def correct_spaces(s: str) -> str:
