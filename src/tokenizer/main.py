@@ -35,7 +35,7 @@
 
 """
 
-from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, cast
+from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, Union, cast
 
 import sys
 import argparse
@@ -105,6 +105,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-o",
+    "--original",
+    action="store_true",
+    help="Outputs original text of tokens",
+)
+
+
+parser.add_argument(
     "-g",
     "--keep_composite_glyphs",
     action="store_true",
@@ -144,6 +152,11 @@ def main() -> None:
         """ Return the string s within double quotes, and with any contained
             backslashes and double quotes escaped with a backslash """
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+    def spanquote(l: List[int]) -> str:
+        """ Return the list l as a string within double quotes """
+        stringlist = [str(x) for x in l]
+        return '"' + "-".join(str(x) for x in l) + '"'
 
     def gen(f: TextIO) -> Iterator[str]:
         """ Generate the lines of text in the input file """
@@ -200,6 +213,10 @@ def main() -> None:
         to_text = lambda t: (
             cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt
         )
+    elif args.original:
+        to_text = lambda t: (
+            cast(str, t.original)
+        )
     else:
         to_text = lambda t: t.txt
 
@@ -226,6 +243,9 @@ def main() -> None:
     if args.handle_kludgy_ordinals:
         options["handle_kludgy_ordinals"] = args.handle_kludgy_ordinals
 
+    if args.original:
+        options["original"] = args.original
+
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
     curr_sent: List[str] = []
@@ -235,22 +255,30 @@ def main() -> None:
             # Output the tokens in CSV format, one line per token
             if t.txt:
                 print(
-                    "{0},{1},{2}".format(
-                        t.kind, quote(t.txt), val(t, quote_word=True) or '""'
+                    "{0},{1},{2},{3},{4}".format(
+                        t.kind, 
+                        quote(t.txt), 
+                        val(t, quote_word=True) or '""',
+                        '""' if t.original is None else quote(t.original),
+                        '[]' if t.origin_spans is None else spanquote(t.origin_spans),
                     ),
                     file=args.outfile,
                 )
             elif t.kind == TOK.S_END:
                 # Indicate end of sentence
-                print('0,"",""', file=args.outfile)
+                print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: Dict[str, str] = dict(k=TOK.descr[t.kind])
+            d: Dict[str, Union[str, List[int]]] = dict(k=TOK.descr[t.kind])
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)
             if v is not None:
                 d["v"] = v
+            if t.original is not None:
+                d["o"] = t.original
+            if t.origin_spans is not None:
+                d["s"] = t.origin_spans
             print(json_dumps(d), file=args.outfile)
         else:
             # Normal shallow parse, one line per sentence,

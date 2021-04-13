@@ -839,7 +839,7 @@ def text_from_tokens(tokens: Iterable[Tok]) -> str:
 
 
 def normalized_text_from_tokens(tokens: Iterable[Tok]) -> str:
-    """ Return text from a list of tokens, without normalization """
+    """ Return text from a list of tokens, with normalization """
     return " ".join(filter(None, map(normalized_text, tokens)))
 
 
@@ -1546,7 +1546,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     break
                 elif lw > 1 and rtxt.startswith("@"):
                     # Username on Twitter or other social media platforms
-                    s = re.match(r"\@[0-9a-z_]+", rtxt)
+                    s = re.match(r"\@[0-9a-z_.]+", rtxt)
                     if s:
                         g = s.group()
                         username, rt = rt.split(s.end())
@@ -2044,7 +2044,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             if next_token.punctuation == ".":
                 if (
                     token.kind == TOK.NUMBER
-                    and not ("." in token.txt or "," in token.txt)
+                    and not "," in token.txt
                 ) or (
                     token.kind == TOK.WORD
                     and RE_ROMAN_NUMERAL.match(token.txt)
@@ -2839,8 +2839,11 @@ def split_into_sentences(
         This function returns a generator of strings, where each string
         is a sentence, and tokens are separated by spaces. """
     to_text: Callable[[Tok], str]
+    og = options.pop("original", False)
     if options.pop("normalize", False):
         to_text = normalized_text
+    elif og:
+        to_text = lambda t: t.original or t.txt
     else:
         to_text = lambda t: t.txt
     curr_sent: List[str] = []
@@ -2850,14 +2853,20 @@ def split_into_sentences(
             # Note that curr_sent can be an empty list,
             # and in that case we yield an empty string
             if t.kind == TOK.S_END or t.kind == TOK.S_SPLIT:
-                yield " ".join(curr_sent)
+                if og:
+                    yield "".join(curr_sent)
+                else:
+                    yield " ".join(curr_sent)
             curr_sent = []
         else:
             txt = to_text(t)
             if txt:
                 curr_sent.append(txt)
     if curr_sent:
-        yield " ".join(curr_sent)
+        if og:
+            yield "".join(curr_sent)
+        else:
+            yield " ".join(curr_sent)
 
 
 def mark_paragraphs(txt: str) -> str:
