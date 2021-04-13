@@ -155,7 +155,6 @@ def main() -> None:
 
     def spanquote(l: List[int]) -> str:
         """ Return the list l as a string within double quotes """
-        stringlist = [str(x) for x in l]
         return '"' + "-".join(str(x) for x in l) + '"'
 
     def gen(f: TextIO) -> Iterator[str]:
