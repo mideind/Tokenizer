@@ -1546,12 +1546,15 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     break
                 elif lw > 1 and rtxt.startswith("@"):
                     # Username on Twitter or other social media platforms
-                    s = re.match(r"\@[0-9a-z_.]+", rtxt)
+                    # User names may contain alphabetic characters, digits
+                    # and embedded periods (but not consecutive ones)
+                    s = re.match(r"\@[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*", rtxt)
                     if s:
                         g = s.group()
                         username, rt = rt.split(s.end())
                         yield TOK.Username(username, g[1:])
                     else:
+                        # Return the @-sign and leave the rest
                         punct, rt = rt.split(1)
                         yield TOK.Punctuation(punct)
                 else:
