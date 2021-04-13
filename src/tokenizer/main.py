@@ -214,7 +214,9 @@ def main() -> None:
             cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt
         )
     elif args.original:
-        to_text = lambda t: t.original
+        to_text = lambda t: (
+            cast(str, t.original)
+        )
     else:
         to_text = lambda t: t.txt
 
@@ -276,7 +278,7 @@ def main() -> None:
             if t.original is not None:
                 d["o"] = t.original
             if t.origin_spans is not None:
-                d["s"] = t.origin_spans
+                d["s"] = cast(str, t.origin_spans)
             print(json_dumps(d), file=args.outfile)
         else:
             # Normal shallow parse, one line per sentence,
@@ -288,6 +290,7 @@ def main() -> None:
                     curr_sent = []
             else:
                 txt = to_text(t)
+                print(type(txt))
                 if txt:
                     curr_sent.append(txt)
 
