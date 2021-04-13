@@ -35,7 +35,7 @@
 
 """
 
-from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, cast
+from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, Union, cast
 
 import sys
 import argparse
@@ -269,7 +269,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: Dict[str, str] = dict(k=TOK.descr[t.kind])
+            d: Dict[str, Union[str, List[int]]] = dict(k=TOK.descr[t.kind])
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)
@@ -278,7 +278,7 @@ def main() -> None:
             if t.original is not None:
                 d["o"] = t.original
             if t.origin_spans is not None:
-                d["s"] = cast(str, t.origin_spans)
+                d["s"] = t.origin_spans
             print(json_dumps(d), file=args.outfile)
         else:
             # Normal shallow parse, one line per sentence,
@@ -290,7 +290,6 @@ def main() -> None:
                     curr_sent = []
             else:
                 txt = to_text(t)
-                print(type(txt))
                 if txt:
                     curr_sent.append(txt)
 
