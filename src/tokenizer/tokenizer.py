@@ -1286,7 +1286,7 @@ def generate_rough_tokens(
             # Only split on newline
             sentence_split_pattern = r"(\n)"
         else:
-            sentence_split_pattern = r"(\n\s*\n|^\s*$)"
+            sentence_split_pattern = r"(\n\s*\n|^\s+$)"
 
         splits = re.split(sentence_split_pattern, big_text)
         # We know that splits will contain alternatively useful text and the splitting

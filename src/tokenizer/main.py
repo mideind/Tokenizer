@@ -252,6 +252,7 @@ def main() -> None:
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
     curr_sent: List[str] = []
+    sep = "" if args.original else " "
 
     for t in tokenize(gen(args.infile), **options):
         if args.csv:
@@ -289,7 +290,7 @@ def main() -> None:
             if t.kind in TOK.END:
                 # End of sentence/paragraph
                 if curr_sent:
-                    print(" ".join(curr_sent), file=args.outfile)
+                    print(sep.join(curr_sent), file=args.outfile)
                     curr_sent = []
             else:
                 txt = to_text(t)
@@ -297,7 +298,7 @@ def main() -> None:
                     curr_sent.append(txt)
 
     if curr_sent:
-        print(" ".join(curr_sent), file=args.outfile)
+        print(sep.join(curr_sent), file=args.outfile)
 
 
 if __name__ == "__main__":
