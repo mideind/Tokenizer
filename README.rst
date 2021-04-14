@@ -117,6 +117,10 @@ Other options can be specified on the command line:
 | |                                 | i.e. every newline is a sentence boundary.        |
 | | ``--one_sent_per_line``         |                                                   |
 +-----------------------------------+---------------------------------------------------+
+| | ``-o``                          | Output original token text, i.e. bypass shallow   |
+| |                                 | tokenization. This effectively runs the tokenizer |
+| | ``--original``                  | as a sentence splitter only.                      |
++-----------------------------------+---------------------------------------------------+
 | | ``-m``                          | Degree signal in tokens denoting temperature      |
 | | ``--convert_measurements``      | normalized (200° C -> 200 °C)                     |
 +-----------------------------------+---------------------------------------------------+
@@ -805,6 +809,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.1.0: Added `-o` switch to `tokenize` command to return original 
+  token text, enabling the tokenizer to run as a sentence splitter only.
 * Version 3.0.0: Added tracking of character offsets for tokens within the
   original source text. Added full type annotations. Dropped Python 2.7 support.
 * Version 2.5.0: Added arguments for all tokenizer options to the

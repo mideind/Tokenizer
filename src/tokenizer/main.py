@@ -60,6 +60,7 @@ parser.add_argument(
     default=sys.stdin,
     help="UTF-8 text file to tokenize",
 )
+
 parser.add_argument(
     "outfile",
     nargs="?",
@@ -69,6 +70,7 @@ parser.add_argument(
 )
 
 group = parser.add_mutually_exclusive_group()
+
 group.add_argument(
     "--csv", help="Output one token per line in CSV format", action="store_true"
 )
@@ -94,7 +96,10 @@ parser.add_argument(
     "-p",
     "--coalesce_percent",
     action="store_true",
-    help="Numbers combined into one token with percentage word forms (prósent/prósentustig/hundraðshlutar)",
+    help=(
+        "Numbers combined into one token with percentage word forms "
+        "(prósent/prósentustig/hundraðshlutar)"
+    ),
 )
 
 parser.add_argument(
@@ -105,12 +110,8 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-o",
-    "--original",
-    action="store_true",
-    help="Outputs original text of tokens",
+    "-o", "--original", action="store_true", help="Outputs original text of tokens",
 )
-
 
 parser.add_argument(
     "-g",
@@ -130,7 +131,10 @@ parser.add_argument(
     "-c",
     "--convert_numbers",
     action="store_true",
-    help="English-style decimal points and thousands separators in numbers changed to Icelandic style",
+    help=(
+        "English-style decimal points and thousands separators "
+        "in numbers changed to Icelandic style"
+    ),
 )
 
 parser.add_argument(
@@ -138,7 +142,12 @@ parser.add_argument(
     "--handle_kludgy_ordinals",
     type=int,
     default=0,
-    help="Kludgy ordinal handling defined. \n\t0: Returns the original word form. \n\t1: Ordinals returned as pure words. \n\t2: Ordinals returned as numbers.",
+    help=(
+        "Kludgy ordinal handling defined.\n"
+        "\t0: Returns the original word form.\n"
+        "\t1: Ordinals returned as pure words.\n"
+        "\t2: Ordinals returned as numbers."
+    ),
 )
 
 
@@ -209,13 +218,9 @@ def main() -> None:
 
     to_text: Callable[[Tok], str]
     if args.normalize:
-        to_text = lambda t: (
-            cast(Tuple[int, str], t.val)[1] if t.kind == TOK.PUNCTUATION else t.txt
-        )
+        to_text = lambda t: t.punctuation if t.kind == TOK.PUNCTUATION else t.txt
     elif args.original:
-        to_text = lambda t: (
-            cast(str, t.original)
-        )
+        to_text = lambda t: t.original or ""
     else:
         to_text = lambda t: t.txt
 
@@ -226,9 +231,8 @@ def main() -> None:
         options["coalesce_percent"] = True
 
     if args.keep_composite_glyphs:
-        options[
-            "replace_composite_glyphs"
-        ] = False  # True is the default in tokenizer.py
+        # True is the default in tokenizer.py
+        options["replace_composite_glyphs"] = False
 
     if args.replace_html_escapes:
         options["replace_html_escapes"] = True
@@ -255,11 +259,11 @@ def main() -> None:
             if t.txt:
                 print(
                     "{0},{1},{2},{3},{4}".format(
-                        t.kind, 
-                        quote(t.txt), 
+                        t.kind,
+                        quote(t.txt),
                         val(t, quote_word=True) or '""',
                         '""' if t.original is None else quote(t.original),
-                        '[]' if t.origin_spans is None else spanquote(t.origin_spans),
+                        "[]" if t.origin_spans is None else spanquote(t.origin_spans),
                     ),
                     file=args.outfile,
                 )
