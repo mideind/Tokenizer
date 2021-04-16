@@ -304,16 +304,16 @@ class Tok:
             self.kind == other.kind and self.txt == other.txt and self.val == other.val
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, o: Any) -> bool:
         """ Full equality between two Tok instances """
-        if not isinstance(other, Tok):
+        if not isinstance(o, Tok):
             return False
         return (
-            self.kind == other.kind
-            and self.txt == other.txt
-            and self.val == other.val
-            and self.original == other.original
-            and self.origin_spans == other.origin_spans
+            self.kind == o.kind
+            and self.txt == o.txt
+            and self.val == o.val
+            and self.original == o.original
+            and self.origin_spans == o.origin_spans
         )
 
     def __repr__(self) -> str:
