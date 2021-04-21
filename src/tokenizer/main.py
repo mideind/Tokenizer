@@ -287,16 +287,9 @@ def main() -> None:
         else:
             # Normal shallow parse, one line per sentence,
             # tokens separated by spaces
-            if t.kind in TOK.END:
-                # End of sentence/paragraph
-                if curr_sent:
-                    print(sep.join(curr_sent), file=args.outfile)
-                    curr_sent = []
-            else:
-                txt = to_text(t)
-                if txt:
-                    curr_sent.append(txt)
-
+            txt = to_text(t)
+            if txt:
+                curr_sent.append(txt)
     if curr_sent:
         print(sep.join(curr_sent), file=args.outfile)
 
