@@ -42,12 +42,16 @@ from typing import (
     Any,
     List,
     Mapping,
+    FrozenSet,
+    Callable,
     Optional,
     Iterator,
     Iterable,
     Tuple,
     Union,
     Match,
+    TypeVar,
+    Type,
     cast,
 )
 
@@ -57,6 +61,9 @@ import unicodedata  # type: ignore
 
 from .definitions import *
 from .abbrev import Abbreviations
+
+
+_T = TypeVar("_T", bound="Tok")
 
 
 class Tok:
@@ -85,6 +92,17 @@ class Tok:
         # (which may have substitutions) to its index in 'original'.
         # This is required to preserve 'original' correctly when splitting.
         self.origin_spans: Optional[List[int]] = origin_spans
+
+    @classmethod
+    def from_token(cls: Type[_T], t: "Tok") -> _T:
+        """ Create a new Tok instance by copying from a previously existing one """
+        return cls(
+            t.kind,
+            t.txt,
+            t.val,
+            t.original,
+            None if t.origin_spans is None else t.origin_spans[:],
+        )
 
     @property
     def punctuation(self) -> str:
@@ -2045,10 +2063,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
             if next_token.punctuation == ".":
-                if (
-                    token.kind == TOK.NUMBER
-                    and not "," in token.txt
-                ) or (
+                if (token.kind == TOK.NUMBER and not "," in token.txt) or (
                     token.kind == TOK.WORD
                     and RE_ROMAN_NUMERAL.match(token.txt)
                     # Don't interpret a known abbreviation as a Roman numeral,
