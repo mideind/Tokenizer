@@ -7,4 +7,5 @@ rm -rf build/*
 python setup.py bdist_wheel --universal
 python setup.py sdist
 twine upload dist/tokenizer-$1*
+rm -rf build/*
 
