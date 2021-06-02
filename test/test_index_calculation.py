@@ -426,34 +426,34 @@ def test_iterator_cases() -> None:
 
 
 def test_paragraph_markers() -> None:
-    s = " [[ Stutt setning. ]] [[ ]] [[ Önnur setning. ]]"
+    s = "[[Stutt setning.]][[]][[Önnur setning.]]"
     #    012345678901234567890123456789012345678901234567
-    #    ^  ^     ^       ^^  ^  ^  ^  ^     ^       ^^
+    #    ^^^    ^       ^^ ^ ^ ^ ^    ^       ^^
     #                                   x
     toks = tokenizer.parse_tokens(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
-    assert char_indexes == [0, 3, 9, 17, 18, 21, 24, 27, 30, 36, 44, 45]
-    assert byte_indexes == [0, 3, 9, 17, 18, 21, 24, 27, 30, 37, 45, 46]
+    assert char_indexes == [0, 2, 7, 15, 16, 18, 20, 22, 24, 29, 37, 38]
+    assert byte_indexes == [0, 2, 7, 15, 16, 18, 20, 22, 24, 30, 38, 39]
     toks = tokenizer.parse_tokens(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
-    assert char_indexes == [0, 3, 9, 17, 18, 21, 24, 27, 30, 36, 44, 45, 48]
-    assert byte_indexes == [0, 3, 9, 17, 18, 21, 24, 27, 30, 37, 45, 46, 49]
+    assert char_indexes == [0, 2, 7, 15, 16, 18, 20, 22, 24, 29, 37, 38, 40]
+    assert byte_indexes == [0, 2, 7, 15, 16, 18, 20, 22, 24, 30, 38, 39, 41]
 
     # The tokenize functions does stuff to paragraph markers. Test that the
     # indexes are properly calculated after that.
     # Note that the text of the dropped empty paragraph markers disappears.
-    s = " [[ Stutt setning. ]] [[ ]] [[ Önnur setning. ]]"
+    s = "[[Stutt setning.]][[]][[Önnur setning.]]"
     #    012345678901234567890123456789012345678901234567
-    #    ^  ^     ^       ^^           ^     ^       ^^
+    #    ^ ^    ^       ^^ ^     ^    ^       ^^
     #                                   x
     toks = tokenizer.tokenize(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
-    assert char_indexes == [0, 3, 9, 17, 18, 21, 30, 36, 44, 45]
-    assert byte_indexes == [0, 3, 9, 17, 18, 21, 30, 37, 45, 46]
+    assert char_indexes == [0, 2, 7, 15, 16, 18, 24, 29, 37, 38]
+    assert byte_indexes == [0, 2, 7, 15, 16, 18, 24, 30, 38, 39]
     toks = tokenizer.tokenize(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
-    assert char_indexes == [0, 3, 9, 17, 18, 21, 30, 36, 44, 45, 48]
-    assert byte_indexes == [0, 3, 9, 17, 18, 21, 30, 37, 45, 46, 49]
+    assert char_indexes == [0, 2, 7, 15, 16, 18, 24, 29, 37, 38, 40]
+    assert byte_indexes == [0, 2, 7, 15, 16, 18, 24, 30, 38, 39, 41]
 
 
 def test_composite_phrases() -> None:

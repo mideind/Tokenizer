@@ -809,6 +809,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.1.2: Changed paragraph markers to `[[` and `]]` (removing spaces)
 * Version 3.1.1: Minor fixes; added Tok.from_token()
 * Version 3.1.0: Added `-o` switch to `tokenize` command to return original 
   token text, enabling the tokenizer to run as a sentence splitter only.

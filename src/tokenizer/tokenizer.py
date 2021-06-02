@@ -1539,7 +1539,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     # Probably an idiot trying to type opening double quotes with commas
                     punct, rt = rt.split(2)
                     yield TOK.Punctuation(punct, normalized="„")
-                elif lw == 2 and (rtxt == "[[" or rtxt == "]]"):
+                elif lw >= 2 and (rtxt.startswith("[[") or rtxt.startswith("]]")):
                     # Begin or end paragraph marker
                     marker, rt = rt.split(2)
                     if marker.txt == "[[":
@@ -2890,8 +2890,8 @@ def split_into_sentences(
 def mark_paragraphs(txt: str) -> str:
     """ Insert paragraph markers into plaintext, by newlines """
     if not txt:
-        return "[[ ]]"
-    return "[[ " + " ]] [[ ".join(txt.split("\n")) + " ]]"
+        return "[[]]"
+    return "[[" + "]][[".join(t for t in txt.split("\n") if t) + "]]"
 
 
 def paragraphs(tokens: Iterable[Tok]) -> Iterator[List[Tuple[int, List[Tok]]]]:
@@ -3080,7 +3080,7 @@ def calculate_indexes(
             if t.txt:
                 # Origin tracking failed for this token.
                 # TODO: Can we do something better here? Or guarantee that it doesn't happen?
-                raise Exception(
+                raise ValueError(
                     f"Origin tracking failed at {t.txt} near index {char_indexes[-1]}"
                 )
             else:
