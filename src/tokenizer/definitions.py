@@ -647,9 +647,9 @@ def roman_to_int(s: str) -> int:
 # Recognize written numbers
 NUMBERS = {
     "núll": 0,
-    "hálf": 0.5,
-    "hálfur": 0.5,
-    "hálfri": 0.5,
+    # "hálf": 0.5,
+    # "hálfur": 0.5,
+    # "hálfri": 0.5,
     "helmingur": 0.5,
     "helmingi": 0.5,
     "þriðjungur": 1.0 / 3,
