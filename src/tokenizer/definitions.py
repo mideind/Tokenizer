@@ -800,12 +800,12 @@ AMOUNT_ABBREV = {
     "mö.kr": 1e9,
     "mlja.kr.": 1e9,
     "mlja.kr": 1e9,
-    "mrð.kr.": 1e9,
-    "mrð.kr": 1e9,
-    "billj.kr.": 1e12,
-    "billj.kr": 1e12,
-    "trillj.kr.": 1e18,
-    "trillj.kr": 1e18,
+    # "mrð.kr.": 1e9,
+    # "mrð.kr": 1e9,
+    # "billj.kr.": 1e12,
+    # "billj.kr": 1e12,
+    # "trillj.kr.": 1e18,
+    # "trillj.kr": 1e18,
 }
 
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
