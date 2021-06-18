@@ -644,18 +644,32 @@ def roman_to_int(s: str) -> int:
     return result
 
 
-# Recognize words that multiply numbers
-MULTIPLIERS = {
-    # "núll": 0,
-    # "hálfur": 0.5,
-    # "helmingur": 0.5,
-    # "þriðjungur": 1.0 / 3,
-    # "fjórðungur": 1.0 / 4,
-    # "fimmtungur": 1.0 / 5,
+# Recognize written numbers
+NUMBERS = {
+    "núll": 0,
+    "hálf": 0.5,
+    "hálfur": 0.5,
+    "hálfri": 0.5,
+    "helmingur": 0.5,
+    "helmingi": 0.5,
+    "þriðjungur": 1.0 / 3,
+    "þriðjungi": 1.0 / 3,
+    "fjórðungur": 1.0 / 4,
+    "fjórðungi": 1.0 / 4,
+    "fimmtungur": 1.0 / 5,
+    "fimmtungi": 1.0 / 5,
     "einn": 1,
     "tveir": 2,
     "þrír": 3,
     "fjórir": 4,
+    "ein": 1,
+    "tvær": 2,
+    "þrjár": 3,
+    "fjórar": 4,
+    "eitt": 1,
+    "tvö": 2,
+    "þrjú": 3,
+    "fjögur": 4,
     "fimm": 5,
     "sex": 6,
     "sjö": 7,
@@ -684,16 +698,63 @@ MULTIPLIERS = {
     # "tugur": 10,
     # "tylft": 12,
     "hundrað": 100,
-    "þúsund": 1000,  # !!! Bæði hk og kvk!
+    "hundruð": 100,
     "þús.": 1000,
-    "milljón": 1e6,
+    "þúsund": 1000,  # !!! Bæði hk og kvk!
+    "þúsunda": 1000,
+    "þúsundir": 1000,
     "milla": 1e6,
     "millj.": 1e6,
+    "milljón": 1e6,
+    "milljóna": 1e6,
+    "milljónir": 1e6,
     "mljó.": 1e6,
-    "milljarður": 1e9,
-    "miljarður": 1e9,
     "ma.": 1e9,
+    "miljarð": 1e9,
+    "miljarða": 1e9,
+    "miljarðar": 1e9,
+    "miljarður": 1e9,
+    "milljarð": 1e9,
+    "milljarða": 1e9,
+    "milljarðar": 1e9,
+    "milljarður": 1e9,
     "mrð.": 1e9,
+    "billj.": 1e12,
+    "billjón": 1e12,
+    "billjóna": 1e12,
+    "billjónir": 1e12,
+    "bljó.": 1e12,
+    "billjarð": 1e15,
+    "billjarða": 1e15,
+    "billjarðar": 1e15,
+    "billjarður": 1e15,
+    "trillj.": 1e18,
+    "trilljón": 1e18,
+    "trilljóna": 1e18,
+    "trilljónir": 1e18,
+    "trilljarð": 1e21,
+    "trilljarða": 1e21,
+    "trilljarðar": 1e21,
+    "trilljarður": 1e21,
+    "kvaðrilljón": int(1e21) * int(1e3),  # 10^24
+    "kvaðrilljóna": int(1e21) * int(1e3),  # 10^24
+    "kvaðrilljónir": int(1e21) * int(1e3),  # 10^24
+    "kvaðrilljarð": int(1e21) * int(1e6),  # 10^27
+    "kvaðrilljarða": int(1e21) * int(1e6),  # 10^27
+    "kvaðrilljarðar": int(1e21) * int(1e6),  # 10^27
+    "kvaðrilljarður": int(1e21) * int(1e6),  # 10^27
+    "kvintilljón": int(1e21) * int(1e9),  # 10^30
+    "kvintilljóna": int(1e21) * int(1e9),  # 10^30
+    "kvintilljónir": int(1e21) * int(1e9),  # 10^30
+    "sextilljón": int(1e21) * int(1e15),  # 10^36
+    "sextilljóna": int(1e21) * int(1e15),  # 10^36
+    "sextilljónir": int(1e21) * int(1e15),  # 10^36
+    "septilljón": int(1e21) * int(1e21),  # 10^42
+    "septilljóna": int(1e21) * int(1e21),  # 10^42
+    "septilljónir": int(1e21) * int(1e21),  # 10^42
+    "oktilljón": int(1e21) * int(1e21) * int(1e6),  # 10^48
+    "oktilljóna": int(1e21) * int(1e21) * int(1e6),  # 10^48
+    "oktilljónir": int(1e21) * int(1e21) * int(1e6),  # 10^48
 }
 
 # Recognize words for percentages
@@ -739,6 +800,12 @@ AMOUNT_ABBREV = {
     "mö.kr": 1e9,
     "mlja.kr.": 1e9,
     "mlja.kr": 1e9,
+    "mrð.kr.": 1e9,
+    "mrð.kr": 1e9,
+    "billj.kr.": 1e12,
+    "billj.kr": 1e12,
+    "trillj.kr.": 1e18,
+    "trillj.kr": 1e18,
 }
 
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
