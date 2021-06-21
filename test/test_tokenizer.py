@@ -869,6 +869,26 @@ def test_sentences() -> None:
         "B N N       W     W      W N         W              W     W  P E",
     )
 
+    test_sentence(
+        "Einn, tveir, þrír, fjórir, fimm Dimmalimm.",
+        "B N P N    P N   P N     P N    W        P E",
+    )
+
+    test_sentence(
+        "Einn milljarður tvö hundruð þrjátíu og fjögur þúsund fimm hundruð sextíu og sjö.",
+        "B N  N          N   N       N       W  N      N      N    N       N      W  N  P E",
+    )
+
+    test_sentence(
+        "Níu hundruð áttatíu og sjö milljónir sex hundruð fimmtíu og fjögur þúsund þrjú hundruð tuttugu og eitt.",
+        "B N N       N       W  N   N         N   N       N       W  N      N      N    N       N       W  N P E",
+    )
+
+    test_sentence(
+        "Þrjár septilljónir og einn kvaðrilljarður billjarða.",
+        "B N   N            W  N    N              N        P E",
+    )
+
 
 def test_unicode() -> None:
     """ Test composite Unicode characters, where a glyph has two code points """
@@ -1711,7 +1731,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.NUMBER, txt="Sjö", val=(7, None, None)),
         Tok(kind=TOK.NUMBER, txt="millj.", val=(1e6, None, None)),
-        Tok(kind=TOK.WORD, txt="krónur", val=None), # Should this be amount?
+        Tok(kind=TOK.WORD, txt="krónur", val=None),  # Should this be amount?
         Tok(kind=TOK.WORD, txt="fóru", val=None),
         Tok(kind=TOK.WORD, txt="í", val=None),
         Tok(kind=TOK.WORD, txt="lagfæringarnar", val=None),
@@ -1723,10 +1743,10 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Aðgerðin", val=None), # Should this be amount?
+        Tok(kind=TOK.WORD, txt="Aðgerðin", val=None),
         Tok(kind=TOK.WORD, txt="kostaði", val=None),
         Tok(kind=TOK.NUMBER, txt="níutíu", val=(90, None, None)),
-        Tok(kind=TOK.WORD, txt="þús.kr.", val=[BIN_Tuple("þúsundir króna", 0, "kvk", "skst", "þús.kr.", "-")],),
+        Tok(kind=TOK.WORD, txt="þús.kr.", val=[BIN_Tuple("þúsundir króna", 0, "kvk", "skst", "þús.kr.", "-")]),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
@@ -1734,11 +1754,76 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Aðgerðin", val=None), # Should this be amount?
+        Tok(kind=TOK.WORD, txt="Aðgerðin", val=None),
         Tok(kind=TOK.WORD, txt="kostaði", val=None),
         Tok(kind=TOK.AMOUNT, txt="14 þús.kr.", val=(14e3, "ISK", None, None)),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
+
+    tokens = list(t.tokenize("Átta menn áttu að fara að hátta klukkan átta."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.NUMBER, txt="Átta", val=(8, None, None)),
+        Tok(kind=TOK.WORD, txt="menn", val=None),
+        Tok(kind=TOK.WORD, txt="áttu", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="fara", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="hátta", val=None),
+        Tok(kind=TOK.TIME, txt="klukkan átta", val=(8, 0, 0)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Níu þúsund kvaðrilljarðar billjarða tuttugu og ein milljón og eitt."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.NUMBER, txt="Níu", val=(9, None, None)),
+        Tok(kind=TOK.NUMBER, txt="þúsund", val=(1000, None, None)),
+        Tok(kind=TOK.NUMBER, txt="kvaðrilljarðar", val=(int(1e21) * int(1e6), None, None)),
+        Tok(kind=TOK.NUMBER, txt="billjarða", val=(1e15, None, None)),
+        Tok(kind=TOK.NUMBER, txt="tuttugu", val=(20, None, None)),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.NUMBER, txt="ein", val=(1, None, None)),
+        Tok(kind=TOK.NUMBER, txt="milljón", val=(1e6, None, None)),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.NUMBER, txt="eitt", val=(1, None, None)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Oktilljón septilljónir og ein kvintilljón."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.NUMBER, txt="Oktilljón", val=(int(1e21) * int(1e21) * int(1e6), None, None)),
+        Tok(kind=TOK.NUMBER, txt="septilljónir", val=(int(1e21) * int(1e21), None, None)),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.NUMBER, txt="ein", val=(1, None, None)),
+        Tok(kind=TOK.NUMBER, txt="kvintilljón", val=(int(1e21) * int(1e9), None, None)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Um 14,5 milljarðar króna hafa verið greiddir í tekjufalls- og viðspyrnustyrki."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Um", val=None),
+        Tok(kind=TOK.NUMBER, txt="14,5", val=(14.5, None, None)),
+        Tok(kind=TOK.NUMBER, txt="milljarðar", val=(1e9, None, None)),
+        Tok(kind=TOK.WORD, txt="króna", val=None),
+        Tok(kind=TOK.WORD, txt="hafa", val=None),
+        Tok(kind=TOK.WORD, txt="verið", val=None),
+        Tok(kind=TOK.WORD, txt="greiddir", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="tekjufalls- og viðspyrnustyrki", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
 
 def test_overlap() -> None:
     # Make sure that there is no overlap between the punctuation sets
