@@ -909,16 +909,6 @@ def test_sentences() -> None:
     )
 
     test_sentence(
-        "Ég bókaði einnar nætur ferð til Volgograd.",
-        "B W W     N      W     W    W   W        P E",
-    )
-
-    test_sentence(
-        "Tveir af tveimur eiga tveggja sæta bíl.",
-        "B N   W  N       W    N       W    W  P E",
-    )
-
-    test_sentence(
         "Tveir af tveimur eiga tveggja sæta bíl.",
         "B N   W  N       W    N       W    W  P E",
     )
