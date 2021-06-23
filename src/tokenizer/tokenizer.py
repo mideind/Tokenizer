@@ -2686,8 +2686,8 @@ def parse_phrases_2(
                 )
                 next_token = next(token_stream)
 
-            # Check for written number
-            elif token.kind == TOK.WORD:
+            # Check for written number (skip 'eitt sinn', 'einu sinni')
+            elif token.kind == TOK.WORD and next_token.txt not in ("sinn", "sinni"):
                 tok_number = (
                     match_stem_list(token, NUMBERS)
                     # Do not accept 'áttu' (stem='átta', no kvk) as a number

@@ -272,7 +272,10 @@ def test_single_tokens() -> None:
         ("milljón", [Tok(TOK.NUMBER, "milljón", (1e6, None, None))]),
         ("milljarður", [Tok(TOK.NUMBER, "milljarður", (1e9, None, None))]),
         ("billjón", [Tok(TOK.NUMBER, "billjón", (1e12, None, None))]),
-        ("kvintilljón", [Tok(TOK.NUMBER, "kvintilljón", (int(1e21) * int(1e9), None, None))]),
+        (
+            "kvintilljón",
+            [Tok(TOK.NUMBER, "kvintilljón", (int(1e21) * int(1e9), None, None))],
+        ),
         (
             "t.d.",
             [Tok(TOK.WORD, "t.d.", [BIN_Tuple("til dæmis", 0, "ao", "frasi", "t.d.", "-")])],
@@ -479,7 +482,8 @@ def test_single_tokens() -> None:
         ("1sti", [Tok(TOK.WORD, "fyrsti", None)]),
         ("4ðu", [Tok(TOK.WORD, "fjórðu", None)]),
         ("2svar", [Tok(TOK.WORD, "tvisvar", None)]),
-        ("4ra", [Tok(TOK.WORD, "fjögurra", None)]),
+        ("4ra", [Tok(TOK.NUMBER, "fjögurra", (4, None, None))]),
+        ("2ja", [Tok(TOK.NUMBER, "tveggja", (2, None, None))]),
     ]
 
     TEST_CASES_KLUDGY_TRANSLATE = [
@@ -757,7 +761,7 @@ def test_sentences() -> None:
 
     test_sentence(
         "Byrjum á 2½ dl af rjóma því ¼-½ matskeið er ekki nóg. Helmingur er ½. Svarið er 42, ekki 41⅞.",
-        "B    W W ME    W  W     W  N P N W       W  W    W P E B N       W N P E B W W  N P W    N P E",
+        "B    W W ME    W  W     W  N P N W       W  W    W P E B W       W N P E B W W  N P W    N P E",
     )
 
     test_sentence(
@@ -887,6 +891,68 @@ def test_sentences() -> None:
     test_sentence(
         "Þrjár septilljónir og einn kvaðrilljarður billjarða.",
         "B N   N            W  N    N              N        P E",
+    )
+
+    test_sentence(
+        "Allir komast fyrir í fjögurra sæta bíl.",
+        "B W   W      W     W N        W    W P E",
+    )
+
+    test_sentence(
+        "Einn fannst í skóginum, ein í hlíðinni og eitt á túninu.",
+        "B N  W      W W       P N   W W        W  N    W W     P E",
+    )
+
+    test_sentence(
+        "Ég bókaði einnar nætur ferð til Volgograd.",
+        "B W W     N      W     W    W   W        P E",
+    )
+
+    test_sentence(
+        "Ég bókaði einnar nætur ferð til Volgograd.",
+        "B W W     N      W     W    W   W        P E",
+    )
+
+    test_sentence(
+        "Tveir af tveimur eiga tveggja sæta bíl.",
+        "B N   W  N       W    N       W    W  P E",
+    )
+
+    test_sentence(
+        "Tveir af tveimur eiga tveggja sæta bíl.",
+        "B N   W  N       W    N       W    W  P E",
+    )
+
+    test_sentence(
+        "Bóndinn á tvo hunda, tvær kindur og tvö lömb.",
+        "B W     W N   W    P N    W      W  N   W   P E",
+    )
+
+    test_sentence(
+        "Þrír þeirra kynntust þremur þriggja ára hestum.",
+        "B N  W      W        N      N       W   W     P E",
+    )
+
+    test_sentence(
+        "Betri eru þrjú ber í hendi en fjögur í skógi.",
+        "B W   W   N    W   W W     W  N      W W    P E",
+    )
+
+    test_sentence(
+        "Þrjá karla og fjórar konur vantaði.",
+        "B N  W     W  N      W     W      P E",
+    )
+
+    test_sentence(
+        "Þrjár teskeiðar af salti í fjögra lítra skál.",
+        "B N   W         W  W     W N      W     W   P E",
+    )
+
+    test_sentence(
+        "Þarna eru fjórir menn og um fjóra þeirra gilti að "
+        "þeir fengu fjögurra ára dóm fyrir fjórum árum.",
+        "B W   W   N      W    W  W  N     W      W     W "
+        "W    W     N        W   W   W     N      W   P E",
     )
 
 
@@ -1746,7 +1812,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Aðgerðin", val=None),
         Tok(kind=TOK.WORD, txt="kostaði", val=None),
         Tok(kind=TOK.NUMBER, txt="níutíu", val=(90, None, None)),
-        Tok(kind=TOK.WORD, txt="þús.kr.", val=[BIN_Tuple("þúsundir króna", 0, "kvk", "skst", "þús.kr.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="þús.kr.",
+            val=[BIN_Tuple("þúsundir króna", 0, "kvk", "skst", "þús.kr.", "-")],
+        ),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
@@ -1776,13 +1846,21 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
-    tokens = list(t.tokenize("Níu þúsund kvaðrilljarðar billjarða tuttugu og ein milljón og eitt."))
+    tokens = list(
+        t.tokenize(
+            "Níu þúsund kvaðrilljarðar billjarða tuttugu og ein milljón og eitt."
+        )
+    )
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.NUMBER, txt="Níu", val=(9, None, None)),
         Tok(kind=TOK.NUMBER, txt="þúsund", val=(1000, None, None)),
-        Tok(kind=TOK.NUMBER, txt="kvaðrilljarðar", val=(int(1e21) * int(1e6), None, None)),
+        Tok(
+            kind=TOK.NUMBER,
+            txt="kvaðrilljarðar",
+            val=(int(1e21) * int(1e6), None, None),
+        ),
         Tok(kind=TOK.NUMBER, txt="billjarða", val=(1e15, None, None)),
         Tok(kind=TOK.NUMBER, txt="tuttugu", val=(20, None, None)),
         Tok(kind=TOK.WORD, txt="og", val=None),
@@ -1798,8 +1876,14 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.NUMBER, txt="Oktilljón", val=(int(1e21) * int(1e21) * int(1e6), None, None)),
-        Tok(kind=TOK.NUMBER, txt="septilljónir", val=(int(1e21) * int(1e21), None, None)),
+        Tok(
+            kind=TOK.NUMBER,
+            txt="Oktilljón",
+            val=(int(1e21) * int(1e21) * int(1e6), None, None),
+        ),
+        Tok(
+            kind=TOK.NUMBER, txt="septilljónir", val=(int(1e21) * int(1e21), None, None)
+        ),
         Tok(kind=TOK.WORD, txt="og", val=None),
         Tok(kind=TOK.NUMBER, txt="ein", val=(1, None, None)),
         Tok(kind=TOK.NUMBER, txt="kvintilljón", val=(int(1e21) * int(1e9), None, None)),
@@ -1807,7 +1891,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
-    tokens = list(t.tokenize("Um 14,5 milljarðar króna hafa verið greiddir í tekjufalls- og viðspyrnustyrki."))
+    tokens = list(
+        t.tokenize(
+            "Um 14,5 milljarðar króna hafa verið greiddir í tekjufalls- og viðspyrnustyrki."
+        )
+    )
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1839,11 +1927,15 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
-    tokens = list(t.tokenize("Eins manns einnar nætur gaman? Ekki er öll vitleysan eins."))
+    tokens = list(
+        t.tokenize("Eins manns einnar nætur gaman? Ekki er öll vitleysan eins.")
+    )
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Eins", val=None), # TODO: Interpreting this as a number might have adverse effects
+        Tok(
+            kind=TOK.WORD, txt="Eins", val=None
+        ),  # TODO: Interpreting this as a number might have adverse effects
         Tok(kind=TOK.WORD, txt="manns", val=None),
         Tok(kind=TOK.NUMBER, txt="einnar", val=(1, None, None)),
         Tok(kind=TOK.WORD, txt="nætur", val=None),
@@ -1878,17 +1970,21 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
-    tokens = list(t.tokenize("Ég keypti tvo úlfalda af manni einum."))
+    tokens = list(t.tokenize("Einu sinni keypti ég tvo úlfalda af manni einum."))
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="Einu", val=None),
+        Tok(kind=TOK.WORD, txt="sinni", val=None),
         Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.WORD, txt="ég", val=None),
         Tok(kind=TOK.NUMBER, txt="tvo", val=(2, None, None)),
         Tok(kind=TOK.WORD, txt="úlfalda", val=None),
         Tok(kind=TOK.WORD, txt="af", val=None),
         Tok(kind=TOK.WORD, txt="manni", val=None),
-        Tok(kind=TOK.WORD, txt="einum", val=None), # TODO: Isn't einum a indefinite pronoun here? Should it be interpreted as a number?
+        Tok(
+            kind=TOK.WORD, txt="einum", val=None
+        ),  # TODO: Isn't einum a indefinite pronoun here? Should it be interpreted as a number?
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
@@ -1927,7 +2023,9 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
-    tokens = list(t.tokenize("Þær voru ekki einar um það að hafa lesið Þúsund og eina nótt."))
+    tokens = list(
+        t.tokenize("Þær voru ekki einar um það að hafa lesið Þúsund og eina nótt.")
+    )
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1949,6 +2047,25 @@ def test_abbrev() -> None:
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
+
+    tokens = list(t.tokenize("Eitt sinn, fyrir langa löngu, í fjarlægri vetrarbraut."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Eitt", val=None),
+        Tok(kind=TOK.WORD, txt="sinn", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
+        Tok(kind=TOK.WORD, txt="fyrir", val=None),
+        Tok(kind=TOK.WORD, txt="langa", val=None),
+        Tok(kind=TOK.WORD, txt="löngu", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="fjarlægri", val=None),
+        Tok(kind=TOK.WORD, txt="vetrarbraut", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
 
 def test_overlap() -> None:
     # Make sure that there is no overlap between the punctuation sets
