@@ -658,18 +658,27 @@ NUMBERS = {
     "fjórðungi": 1.0 / 4,
     "fimmtungur": 1.0 / 5,
     "fimmtungi": 1.0 / 5,
+
     "einn": 1,
-    "tveir": 2,
-    "þrír": 3,
-    "fjórir": 4,
     "ein": 1,
-    "tvær": 2,
-    "þrjár": 3,
-    "fjórar": 4,
     "eitt": 1,
+    "einnar": 1,
+
+    "tveir": 2,
+    "tvær": 2,
     "tvö": 2,
+    "tvo": 2,
+
+    "þrír": 3,
+    "þrjár": 3,
     "þrjú": 3,
+    "þriggja": 3,
+
+    "fjórir": 4,
+    "fjórar": 4,
     "fjögur": 4,
+    "fjórum": 4,
+
     "fimm": 5,
     "sex": 6,
     "sjö": 7,

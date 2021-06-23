@@ -1824,6 +1824,131 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
+    tokens = list(t.tokenize("Ekki einn einasti maður var hlynntur breytingunum."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ekki", val=None),
+        Tok(kind=TOK.NUMBER, txt="einn", val=(1, None, None)),
+        Tok(kind=TOK.WORD, txt="einasti", val=None),
+        Tok(kind=TOK.WORD, txt="maður", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        Tok(kind=TOK.WORD, txt="hlynntur", val=None),
+        Tok(kind=TOK.WORD, txt="breytingunum", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Eins manns einnar nætur gaman? Ekki er öll vitleysan eins."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Eins", val=None), # TODO: Interpreting this as a number might have adverse effects
+        Tok(kind=TOK.WORD, txt="manns", val=None),
+        Tok(kind=TOK.NUMBER, txt="einnar", val=(1, None, None)),
+        Tok(kind=TOK.WORD, txt="nætur", val=None),
+        Tok(kind=TOK.WORD, txt="gaman", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt="?", val=(3, "?")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ekki", val=None),
+        Tok(kind=TOK.WORD, txt="er", val=None),
+        Tok(kind=TOK.WORD, txt="öll", val=None),
+        Tok(kind=TOK.WORD, txt="vitleysan", val=None),
+        Tok(kind=TOK.WORD, txt="eins", val=None),  # Not a number
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Barnið var eins árs en gekk eitt í skólann."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Barnið", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        # Tok(kind=TOK.NUMBER, txt="eins", val=(1, None, None)),
+        Tok(kind=TOK.WORD, txt="eins", val=None),  # TODO
+        Tok(kind=TOK.WORD, txt="árs", val=None),
+        Tok(kind=TOK.WORD, txt="en", val=None),
+        Tok(kind=TOK.WORD, txt="gekk", val=None),
+        Tok(kind=TOK.NUMBER, txt="eitt", val=(1, None, None)),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="skólann", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Ég keypti tvo úlfalda af manni einum."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ég", val=None),
+        Tok(kind=TOK.WORD, txt="keypti", val=None),
+        Tok(kind=TOK.NUMBER, txt="tvo", val=(2, None, None)),
+        Tok(kind=TOK.WORD, txt="úlfalda", val=None),
+        Tok(kind=TOK.WORD, txt="af", val=None),
+        Tok(kind=TOK.WORD, txt="manni", val=None),
+        Tok(kind=TOK.WORD, txt="einum", val=None), # TODO: Isn't einum a indefinite pronoun here? Should it be interpreted as a number?
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Það eina sem vantaði í lautarferðina var góða skapið."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Það", val=None),
+        # Tok(kind=TOK.NUMBER, txt="eina", val=(1, None, None)),  # TODO: Is this an adjective in this case?
+        Tok(kind=TOK.WORD, txt="eina", val=None),
+        Tok(kind=TOK.WORD, txt="sem", val=None),
+        Tok(kind=TOK.WORD, txt="vantaði", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="lautarferðina", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        Tok(kind=TOK.WORD, txt="góða", val=None),
+        Tok(kind=TOK.WORD, txt="skapið", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Þriggja daga ferð ílengdist þegar þrjú börn veiktust."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.NUMBER, txt="Þriggja", val=(3, None, None)),
+        Tok(kind=TOK.WORD, txt="daga", val=None),
+        Tok(kind=TOK.WORD, txt="ferð", val=None),
+        Tok(kind=TOK.WORD, txt="ílengdist", val=None),
+        Tok(kind=TOK.WORD, txt="þegar", val=None),
+        Tok(kind=TOK.NUMBER, txt="þrjú", val=(3, None, None)),
+        Tok(kind=TOK.WORD, txt="börn", val=None),
+        Tok(kind=TOK.WORD, txt="veiktust", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Þær voru ekki einar um það að hafa lesið Þúsund og eina nótt."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Þær", val=None),
+        Tok(kind=TOK.WORD, txt="voru", val=None),
+        Tok(kind=TOK.WORD, txt="ekki", val=None),
+        # Tok(kind=TOK.NUMBER, txt="einar", val=(1, None, None)), # TODO: Double check this (can also be verb/name/adjective)
+        Tok(kind=TOK.WORD, txt="einar", val=None),
+        Tok(kind=TOK.WORD, txt="um", val=None),
+        Tok(kind=TOK.WORD, txt="það", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="hafa", val=None),
+        Tok(kind=TOK.WORD, txt="lesið", val=None),
+        Tok(kind=TOK.NUMBER, txt="Þúsund", val=(1000, None, None)),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        # Tok(kind=TOK.NUMBER, txt="eina", val=(1, None, None)),
+        Tok(kind=TOK.WORD, txt="eina", val=None),
+        Tok(kind=TOK.WORD, txt="nótt", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
 
 def test_overlap() -> None:
     # Make sure that there is no overlap between the punctuation sets
