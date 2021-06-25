@@ -660,6 +660,7 @@ NUMBERS = {
     # "fimmtungi": 1.0 / 5,
 
     "einn": 1,
+    # "einum": 1,
     # "eins": 1,  # Also an adjective
     "ein": 1,
     # "eina": 1,
@@ -725,58 +726,58 @@ NUMBERS = {
     "þúsund": 1000,  # !!! Bæði hk og kvk!
     "þúsunda": 1000,
     "þúsundir": 1000,
-    "milla": 1e6,
-    "millj.": 1e6,
-    "milljón": 1e6,
-    "milljóna": 1e6,
-    "milljónir": 1e6,
-    "mljó.": 1e6,
-    "ma.": 1e9,
-    "miljarð": 1e9,
-    "miljarða": 1e9,
-    "miljarðar": 1e9,
-    "miljarður": 1e9,
-    "milljarð": 1e9,
-    "milljarða": 1e9,
-    "milljarðar": 1e9,
-    "milljarður": 1e9,
-    "mrð.": 1e9,
-    "billj.": 1e12,
-    "billjón": 1e12,
-    "billjóna": 1e12,
-    "billjónir": 1e12,
-    "bljó.": 1e12,
-    "billjarð": 1e15,
-    "billjarða": 1e15,
-    "billjarðar": 1e15,
-    "billjarður": 1e15,
-    "trillj.": 1e18,
-    "trilljón": 1e18,
-    "trilljóna": 1e18,
-    "trilljónir": 1e18,
-    "trilljarð": 1e21,
-    "trilljarða": 1e21,
-    "trilljarðar": 1e21,
-    "trilljarður": 1e21,
-    "kvaðrilljón": int(1e21) * int(1e3),  # 10^24
-    "kvaðrilljóna": int(1e21) * int(1e3),  # 10^24
-    "kvaðrilljónir": int(1e21) * int(1e3),  # 10^24
-    "kvaðrilljarð": int(1e21) * int(1e6),  # 10^27
-    "kvaðrilljarða": int(1e21) * int(1e6),  # 10^27
-    "kvaðrilljarðar": int(1e21) * int(1e6),  # 10^27
-    "kvaðrilljarður": int(1e21) * int(1e6),  # 10^27
-    "kvintilljón": int(1e21) * int(1e9),  # 10^30
-    "kvintilljóna": int(1e21) * int(1e9),  # 10^30
-    "kvintilljónir": int(1e21) * int(1e9),  # 10^30
-    "sextilljón": int(1e21) * int(1e15),  # 10^36
-    "sextilljóna": int(1e21) * int(1e15),  # 10^36
-    "sextilljónir": int(1e21) * int(1e15),  # 10^36
-    "septilljón": int(1e21) * int(1e21),  # 10^42
-    "septilljóna": int(1e21) * int(1e21),  # 10^42
-    "septilljónir": int(1e21) * int(1e21),  # 10^42
-    "oktilljón": int(1e21) * int(1e21) * int(1e6),  # 10^48
-    "oktilljóna": int(1e21) * int(1e21) * int(1e6),  # 10^48
-    "oktilljónir": int(1e21) * int(1e21) * int(1e6),  # 10^48
+    "milla": 10 ** 6,
+    "millj.": 10 ** 6,
+    "milljón": 10 ** 6,
+    "milljóna": 10 ** 6,
+    "milljónir": 10 ** 6,
+    "mljó.": 10 ** 6,
+    "ma.": 10 ** 9,
+    "miljarð": 10 ** 9,
+    "miljarða": 10 ** 9,
+    "miljarðar": 10 ** 9,
+    "miljarður": 10 ** 9,
+    "milljarð": 10 ** 9,
+    "milljarða": 10 ** 9,
+    "milljarðar": 10 ** 9,
+    "milljarður": 10 ** 9,
+    "mrð.": 10 ** 9,
+    "billj.": 10 ** 12,
+    "billjón": 10 ** 12,
+    "billjóna": 10 ** 12,
+    "billjónir": 10 ** 12,
+    "bljó.": 10 ** 12,
+    "billjarð": 10 ** 15,
+    "billjarða": 10 ** 15,
+    "billjarðar": 10 ** 15,
+    "billjarður": 10 ** 15,
+    "trillj.": 10 ** 18,
+    "trilljón": 10 ** 18,
+    "trilljóna": 10 ** 18,
+    "trilljónir": 10 ** 18,
+    "trilljarð": 10 ** 21,
+    "trilljarða": 10 ** 21,
+    "trilljarðar": 10 ** 21,
+    "trilljarður": 10 ** 21,
+    "kvaðrilljón": 10 ** 24,
+    "kvaðrilljóna": 10 ** 24,
+    "kvaðrilljónir": 10 ** 24,
+    "kvaðrilljarð": 10 ** 27,
+    "kvaðrilljarða": 10 ** 27,
+    "kvaðrilljarðar": 10 ** 27,
+    "kvaðrilljarður": 10 ** 27,
+    "kvintilljón": 10 ** 30,
+    "kvintilljóna": 10 ** 30,
+    "kvintilljónir": 10 ** 30,
+    "sextilljón": 10 ** 36,
+    "sextilljóna": 10 ** 36,
+    "sextilljónir": 10 ** 36,
+    "septilljón": 10 ** 42,
+    "septilljóna": 10 ** 42,
+    "septilljónir": 10 ** 42,
+    "oktilljón": 10 ** 48,
+    "oktilljóna": 10 ** 48,
+    "oktilljónir": 10 ** 48,
 }
 
 # Recognize words for percentages
