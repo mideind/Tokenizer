@@ -1844,12 +1844,28 @@ def test_split_sentences() -> None:
     sents = list(g)
     assert len(sents) == 0
 
-    g = t.split_into_sentences("Athugum [hvort [setninging sé rétt skilin]].")
+    g = t.split_into_sentences("Athugum [hvort [setningin sé rétt skilin]].")
     sents = list(g)
     assert len(sents) == 1
     assert sents == [
-        "Athugum [ hvort [ setninging sé rétt skilin ] ] ."
+        "Athugum [ hvort [ setningin sé rétt skilin ] ] ."
     ]
+
+    g = t.split_into_sentences("Þessi [ætti [líka að]] vera rétt skilin.")
+    sents = list(g)
+    assert len(sents) == 1
+    assert sents == [
+        "Þessi [ ætti [ líka að ] ] vera rétt skilin ."
+    ]
+
+    # g = t.split_into_sentences("Þessi á [[líka að]] vera rétt skilin.")
+    # sents = list(g)
+    # assert len(sents) == 3
+    # assert sents == [
+    #     "Þessi á",
+    #     "[[ líka að ]]",
+    #     "vera rétt skilin ."
+    # ]
     # Test onesentperline
 
 
