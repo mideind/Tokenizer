@@ -453,6 +453,7 @@ class TOK:
     X_END = 12001
 
     END = frozenset((P_END, S_END, X_END, S_SPLIT))
+    BEGIN = frozenset((P_BEGIN, S_BEGIN))
     TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE, COMPANY))
     TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE, COMPANY))
 
@@ -1545,10 +1546,10 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 ):
                     # Begin or end paragraph marker
                     marker, rt = rt.split(2)
-                    if marker.txt == "[[":
+                    if marker.txt == "[[" and not inside_paragraph_marker:
                         yield TOK.Begin_Paragraph(marker)
                         inside_paragraph_marker = True
-                    elif inside_paragraph_marker:
+                    elif marker.txt == "]]" and inside_paragraph_marker:
                         yield TOK.End_Paragraph(marker)
                         inside_paragraph_marker = False
                 elif rtxt[0] in HYPHENS:
@@ -2881,7 +2882,7 @@ def split_into_sentences(
                 else:
                     yield " ".join(curr_sent)
             curr_sent = []
-        else:
+        elif t.kind not in TOK.BEGIN:
             txt = to_text(t)
             if txt:
                 curr_sent.append(txt)
