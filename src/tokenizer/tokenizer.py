@@ -770,7 +770,7 @@ class TOK:
         # The m parameter is intended for a list of PersonName tuples:
         # (name, gender, case)
         if isinstance(t, str):
-            return Tok(TOK.PERSON, t, m)
+            return Tok(TOK.PERSON, t, m, origin_spans=len(t))
         t.kind = TOK.PERSON
         t.val = m
         return t
