@@ -1,0 +1,12 @@
+7c7
+< Dregið verður úr starfsemi göngudeilda A 3 og B3 til að styrkja Covid-göngudeild spítalans .
+---
+> Dregið verður úr starfsemi göngudeilda A3 og B3 til að styrkja Covid-göngudeild spítalans .
+29c29
+< Tilkynnt var um 40 ný andlát vegna COVID - 19 , en þungamiðja faraldursins hjá Bretum er í Englandi .
+---
+> Tilkynnt var um 40 ný andlát vegna COVID-19 , en þungamiðja faraldursins hjá Bretum er í Englandi .
+31c31
+< Fjárhagsstaða Rauða Krossins hefur verið erfið vegna COVID - 19 og er gríðarlegt álag á starfsmönnum og sjálfboðaliðum Rauða krossins .
+---
+> Fjárhagsstaða Rauða Krossins hefur verið erfið vegna COVID-19 og er gríðarlegt álag á starfsmönnum og sjálfboðaliðum Rauða krossins .
