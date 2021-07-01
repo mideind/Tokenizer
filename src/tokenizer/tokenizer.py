@@ -1546,10 +1546,10 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 ):
                     # Begin or end paragraph marker
                     marker, rt = rt.split(2)
-                    if marker.txt == "[[" and not inside_paragraph_marker:
+                    if marker.txt == "[[":
                         yield TOK.Begin_Paragraph(marker)
                         inside_paragraph_marker = True
-                    elif marker.txt == "]]" and inside_paragraph_marker:
+                    elif marker.txt == "]]":
                         yield TOK.End_Paragraph(marker)
                         inside_paragraph_marker = False
                 elif rtxt[0] in HYPHENS:
