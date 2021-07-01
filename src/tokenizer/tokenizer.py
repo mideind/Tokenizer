@@ -453,6 +453,7 @@ class TOK:
     X_END = 12001
 
     END = frozenset((P_END, S_END, X_END, S_SPLIT))
+    BEGIN = frozenset((P_BEGIN, S_BEGIN))
     TEXT = frozenset((WORD, PERSON, ENTITY, MOLECULE, COMPANY))
     TEXT_EXCL_PERSON = frozenset((WORD, ENTITY, MOLECULE, COMPANY))
 
@@ -1406,7 +1407,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
     #    exhausted. At that point, we obtain the next token and start from 2).
 
     rt: Tok
-
+    inside_paragraph_marker: bool = False
     for rt in generate_rough_tokens(
         txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
     ):
@@ -1539,13 +1540,18 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     # Probably an idiot trying to type opening double quotes with commas
                     punct, rt = rt.split(2)
                     yield TOK.Punctuation(punct, normalized="„")
-                elif lw >= 2 and (rtxt.startswith("[[") or rtxt.startswith("]]")):
+                elif lw >= 2 and (
+                    (rtxt.startswith("[[") and not inside_paragraph_marker)
+                    or (rtxt.startswith("]]") and inside_paragraph_marker)
+                ):
                     # Begin or end paragraph marker
                     marker, rt = rt.split(2)
                     if marker.txt == "[[":
                         yield TOK.Begin_Paragraph(marker)
-                    else:
+                        inside_paragraph_marker = True
+                    elif marker.txt == "]]":
                         yield TOK.End_Paragraph(marker)
+                        inside_paragraph_marker = False
                 elif rtxt[0] in HYPHENS:
                     # Normalize all hyphens the same way
                     punct, rt = rt.split(1)
@@ -2876,7 +2882,7 @@ def split_into_sentences(
                 else:
                     yield " ".join(curr_sent)
             curr_sent = []
-        else:
+        elif t.kind not in TOK.BEGIN:
             txt = to_text(t)
             if txt:
                 curr_sent.append(txt)
