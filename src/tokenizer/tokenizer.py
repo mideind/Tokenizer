@@ -1934,7 +1934,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     # geta merkt það sem villu. Ætti líklega að setja í sérlista,
                     # WRONG_MONTHS, og sérif-lykkju og setja inn villu í tókann.
                     finish = could_be_end_of_sentence(
-                        follow_token, test_set, abbrev in NUMBERS
+                        follow_token, test_set, abbrev in NUMBER_ABBREV
                     )
                     if finish:
                         # Potentially at the end of a sentence
@@ -2685,20 +2685,6 @@ def parse_phrases_2(
                     next_token.number,
                 )
                 next_token = next(token_stream)
-
-            # Check for written number (skip 'eitt sinn', 'einu sinni')
-            elif token.kind == TOK.WORD and next_token.txt not in ("sinn", "sinni"):
-                tok_number = (
-                    match_stem_list(token, NUMBERS)
-                    # Do not accept 'áttu' (stem='átta', no kvk) as a number
-                    if token.txt.lower() != "áttu"
-                    else None
-                )
-
-                # Convert written number to Number token
-                if tok_number is not None:
-                    # Don't advance token_stream iterator
-                    token = TOK.Number(token, tok_number)
 
             # Check for [number] [ISK_AMOUNT|CURRENCY|PERCENTAGE]
             elif token.kind == TOK.NUMBER and next_token.kind == TOK.WORD:
