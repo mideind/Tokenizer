@@ -767,11 +767,11 @@ class TOK:
         return t
 
     @staticmethod
-    def Person(t: Union[Tok, str], m: Optional[PersonNameList] = None, e=None) -> Tok:
+    def Person(t: Union[Tok, str], m: Optional[PersonNameList] = None) -> Tok:
         # The m parameter is intended for a list of PersonName tuples:
         # (name, gender, case)
         if isinstance(t, str):
-            return Tok(TOK.PERSON, t, m, origin_spans=len(t.txt)+len(e))
+            return Tok(TOK.PERSON, t, m)
         t.kind = TOK.PERSON
         t.val = m
         return t
