@@ -1413,7 +1413,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
         # rt: raw token
 
         # Handle each sequence w of non-whitespace characters
-
         if rt.kind == TOK.S_SPLIT:
             # Sentence split markers require no further processing. Yield them immediately.
             yield rt
@@ -1463,9 +1462,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     yield TOK.Punctuation(first_punct, normalized="„")
                     yield TOK.Word(word)
                     yield TOK.Punctuation(last_punct, normalized="“")
-                    # yield TOK.Punctuation(w[0], normalized="„")
-                    # yield TOK.Word(w[1:-1])
-                    # yield TOK.Punctuation(w[-1], normalized="“")
                     continue
             elif rtxt[0] in SQUOTES and rtxt[-1] in SQUOTES:
                 # Convert to matching Icelandic quotes
@@ -1476,9 +1472,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     yield TOK.Punctuation(first_punct, normalized="‚")
                     yield TOK.Word(word)
                     yield TOK.Punctuation(last_punct, normalized="‘")
-                    # yield TOK.Punctuation(w[0], normalized="‚")
-                    # yield TOK.Word(w[1:-1])
-                    # yield TOK.Punctuation(w[-1], normalized="‘")
                     continue
 
         # Special case for leading quotes, which are interpreted
@@ -1783,9 +1776,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     yield TOK.Word(word1)
                     yield TOK.Punctuation(punct)
                     yield TOK.Word(word2)
-                    # yield TOK.Word(a[0])
-                    # yield TOK.Punctuation(".")
-                    # yield TOK.Word(a[1])
+
                 else:
                     if ww.endswith("-og") or ww.endswith("-eða"):
                         # Handle missing space before 'og'/'eða',
@@ -1799,9 +1790,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                         yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
                         yield TOK.Word(word2)
 
-                        # yield TOK.Word(a[0])
-                        # yield TOK.Punctuation("-", normalized=COMPOSITE_HYPHEN)
-                        # yield TOK.Word(a[1])
                     else:
                         word, rt = rt.split(i)
                         yield TOK.Word(word)
