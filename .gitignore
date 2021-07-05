@@ -59,6 +59,7 @@ coverage.xml
 *.cover
 .hypothesis/
 tokout.txt
+test/toktest_edgecases_out.txt
 
 # Translations
 *.mo
