@@ -1924,6 +1924,88 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
+    tokens = list(t.tokenize("Aðgerðin þann 5.     mars kostaði 14     þús.kr."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(
+            kind=TOK.WORD,
+            txt="Aðgerðin",
+            val=None,
+            original="Aðgerðin",
+            origin_spans=[0, 1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="þann",
+            val=None,
+            original=" þann",
+            origin_spans=[1, 2, 3, 4],
+        ),
+        Tok(
+            kind=TOK.DATEREL,
+            txt="5. mars",
+            val=(0, 3, 5),
+            original=" 5.     mars",
+            origin_spans=[1, 2, 3, 8, 9, 10, 11],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="kostaði",
+            val=None,
+            original=" kostaði",
+            origin_spans=[1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.AMOUNT,
+            txt="14 þús.kr.",
+            val=(14000.0, "ISK", None, None),
+            original=" 14     þús.kr.",
+            origin_spans=[1, 2, 3, 8, 9, 10, 11, 12, 13, 14],
+        ),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Aðgerðin þann 5.mars kostaði 14þús.kr."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(
+            kind=TOK.WORD,
+            txt="Aðgerðin",
+            val=None,
+            original="Aðgerðin",
+            origin_spans=[0, 1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="þann",
+            val=None,
+            original=" þann",
+            origin_spans=[1, 2, 3, 4],
+        ),
+        Tok(
+            kind=TOK.DATEREL,
+            txt="5. mars",
+            val=(0, 3, 5),
+            original=" 5.mars",
+            origin_spans=[1, 2, 3, 3, 4, 5, 6],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="kostaði",
+            val=None,
+            original=" kostaði",
+            origin_spans=[1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.AMOUNT,
+            txt="14 þús.kr.",
+            val=(14000.0, "ISK", None, None),
+            original=" 14þús.kr.",
+            origin_spans=[1, 2, 3, 3, 4, 5, 6, 7, 8, 9],
+        ),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
     tokens = list(t.tokenize("Átta menn áttu að fara að hátta klukkan átta."))
     tokens = strip_originals(tokens)
     assert tokens == [
