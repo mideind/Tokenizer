@@ -669,7 +669,7 @@ class TOK:
         n: float,
         cases: Optional[List[str]] = None,
         genders: Optional[List[str]] = None,
-    ):
+    ) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.PERCENT, t, (n, cases, genders))
         t.kind = TOK.PERCENT
