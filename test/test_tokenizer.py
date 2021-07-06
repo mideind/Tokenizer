@@ -39,19 +39,15 @@ from tokenizer.definitions import BIN_Tuple, ValType
 TOK = t.TOK
 Tok = t.Tok
 
-TestCase = Union[
-    Tuple[str, int],
-    Tuple[str, int, ValType],
-    Tuple[str, List[Tok]]
-]
+TestCase = Union[Tuple[str, int], Tuple[str, int, ValType], Tuple[str, List[Tok]]]
 
 
 def strip_originals(tokens: List[Tok]) -> List[Tok]:
-    """ Remove origin tracking info from a list of tokens.
-        This is useful for simplifying tests where we don't care about tracking
-        origins.
-        XXX: This could be removed if we get a feature to disable origin
-        tracking during tokenization.
+    """Remove origin tracking info from a list of tokens.
+    This is useful for simplifying tests where we don't care about tracking
+    origins.
+    XXX: This could be removed if we get a feature to disable origin
+    tracking during tokenization.
     """
 
     for t in tokens:
@@ -141,7 +137,10 @@ def test_single_tokens() -> None:
         ),
         (
             "sautjánda júní",
-            [Tok(TOK.WORD, "sautjánda", None), Tok(TOK.DATEREL, "júní", (0, 6, 0)),],
+            [
+                Tok(TOK.WORD, "sautjánda", None),
+                Tok(TOK.DATEREL, "júní", (0, 6, 0)),
+            ],
         ),
         (
             "sautjánda júní 1811",
@@ -239,35 +238,8 @@ def test_single_tokens() -> None:
         ("full-ítarlegur", TOK.WORD),
         ("hálf-óviðbúinn", TOK.WORD),
         ("750 þús.kr.", [Tok(TOK.AMOUNT, "750 þús.kr.", (750e3, "ISK", None, None))]),
-        ("750 þús. kr.", [Tok(TOK.AMOUNT, "750 þús. kr.", (750e3, "ISK", None, None))]),
-        (
-            "750 þús. ISK.",
-            [
-                Tok(TOK.AMOUNT, "750 þús. ISK", (750e3, "ISK", None, None)),
-                Tok(TOK.PUNCTUATION, ".", None),
-            ],
-        ),
-        (
-            "2,7 mrð. USD.",
-            [
-                Tok(TOK.AMOUNT, "2,7 mrð. USD", (2.7e9, "USD", None, None)),
-                Tok(TOK.PUNCTUATION, ".", None),
-            ],
-        ),
-        (
-            "milljón USD.",
-            [
-                Tok(TOK.AMOUNT, "milljón USD", (1e6, "USD", None, None)),
-                Tok(TOK.PUNCTUATION, ".", None),
-            ],
-        ),
-        (
-            "hundrað þúsund USD.",
-            [
-                Tok(TOK.AMOUNT, "hundrað þúsund USD", (1e5, "USD", None, None)),
-                Tok(TOK.PUNCTUATION, ".", None),
-            ],
-        ),
+        ("750 þús.kr", [Tok(TOK.AMOUNT, "750 þús.kr", (750e3, "ISK", None, None))]),
+        ("10 m.kr", [Tok(TOK.AMOUNT, "10 m.kr", (1e7, "ISK", None, None))]),
         (
             "m.kr.",
             [
@@ -292,9 +264,26 @@ def test_single_tokens() -> None:
             "30,7 mö.kr.",
             [Tok(TOK.AMOUNT, "30,7 mö.kr.", (30.7e9, "ISK", None, None))],
         ),
+        ("sjötíu", [Tok(TOK.WORD, "sjötíu", None)]),
+        ("hundrað", [Tok(TOK.WORD, "hundrað", None)]),
+        ("hundruð", [Tok(TOK.WORD, "hundruð", None)]),
+        ("þúsund", [Tok(TOK.WORD, "þúsund", None)]),
+        ("milljón", [Tok(TOK.WORD, "milljón", None)]),
+        ("milljarður", [Tok(TOK.WORD, "milljarður", None)]),
+        ("billjón", [Tok(TOK.WORD, "billjón", None)]),
+        (
+            "kvintilljón",
+            [Tok(TOK.WORD, "kvintilljón", None)],
+        ),
         (
             "t.d.",
-            [Tok(TOK.WORD, "t.d.", [BIN_Tuple("til dæmis", 0, "ao", "frasi", "t.d.", "-")])],
+            [
+                Tok(
+                    TOK.WORD,
+                    "t.d.",
+                    [BIN_Tuple("til dæmis", 0, "ao", "frasi", "t.d.", "-")],
+                )
+            ],
         ),
         ("hr.", TOK.WORD, [BIN_Tuple("herra", 0, "kk", "skst", "hr.", "-")]),
         (
@@ -314,11 +303,23 @@ def test_single_tokens() -> None:
         ("Hr.", TOK.WORD, [BIN_Tuple("herra", 0, "kk", "skst", "hr.", "-")]),
         (
             "nk.",
-            [Tok(TOK.WORD, "nk.", [BIN_Tuple("næstkomandi", 0, "lo", "skst", "nk.", "-")]),],
+            [
+                Tok(
+                    TOK.WORD,
+                    "nk.",
+                    [BIN_Tuple("næstkomandi", 0, "lo", "skst", "nk.", "-")],
+                ),
+            ],
         ),
         (
             "sl.",
-            [Tok(TOK.WORD, "sl.", [BIN_Tuple("síðastliðinn", 0, "lo", "skst", "sl.", "-")]),],
+            [
+                Tok(
+                    TOK.WORD,
+                    "sl.",
+                    [BIN_Tuple("síðastliðinn", 0, "lo", "skst", "sl.", "-")],
+                ),
+            ],
         ),
         (
             "o.s.frv.",
@@ -499,6 +500,7 @@ def test_single_tokens() -> None:
         ("4ðu", [Tok(TOK.WORD, "fjórðu", None)]),
         ("2svar", [Tok(TOK.WORD, "tvisvar", None)]),
         ("4ra", [Tok(TOK.WORD, "fjögurra", None)]),
+        ("2ja", [Tok(TOK.WORD, "tveggja", None)]),
     ]
 
     TEST_CASES_KLUDGY_TRANSLATE = [
@@ -602,7 +604,9 @@ def test_single_tokens() -> None:
         TEST_CASES_KLUDGY_TRANSLATE, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE
     )
     run_test(TEST_CASES_CONVERT_NUMBERS, convert_numbers=True)
-    run_test(cast(Iterable[TestCase], TEST_CASES_COALESCE_PERCENT), coalesce_percent=True)
+    run_test(
+        cast(Iterable[TestCase], TEST_CASES_COALESCE_PERCENT), coalesce_percent=True
+    )
     run_test(TEST_CASES_CONVERT_MEASUREMENTS, convert_measurements=True)
 
 
@@ -756,7 +760,7 @@ def test_sentences() -> None:
 
     test_sentence(
         "Þessir 10Milljón vírar með 20A straum kostuðu 3000ISK og voru geymdir á Hagamel á 2hæð.",
-        "B W    N         W     W   ME  W      W       A       W  W    W       W W       W N W P E",
+        "B W    N W       W     W   ME  W      W       A       W  W    W       W W       W N W P E",
     )
 
     test_sentence(
@@ -875,12 +879,95 @@ def test_sentences() -> None:
     )
 
     test_sentence(
-        "Klukkan hálf sjö fór Friðgeir út.", "B T              W   W        W P E",
+        "Klukkan hálf sjö fór Friðgeir út.",
+        "B T              W   W        W P E",
+    )
+
+    test_sentence(
+        "Gummi keypti sjö hundruð áttatíu og sjö kindur.",
+        "B W   W      W   W       W       W  W   W     P E",
+    )
+
+    test_sentence(
+        "Sex milljón manns horfðu á trilljarð Bandaríkjadala fuðra upp.",
+        "B W W       W     W      W W         W              W     W  P E",
+    )
+
+    test_sentence(
+        "Einn, tveir, þrír, fjórir, fimm Dimmalimm.",
+        "B W P W    P W   P W     P W    W        P E",
+    )
+
+    test_sentence(
+        "Einn milljarður tvö hundruð þrjátíu og fjögur þúsund fimm hundruð sextíu og sjö.",
+        "B W  W          W   W       W       W  W      W      W    W       W      W  W  P E",
+    )
+
+    test_sentence(
+        "Níu hundruð áttatíu og sjö milljónir sex hundruð fimmtíu og fjögur þúsund þrjú hundruð tuttugu og eitt.",
+        "B W W       W       W  W   W         W   W       W       W  W      W      W    W       W       W  W P E",
+    )
+
+    test_sentence(
+        "Þrjár septilljónir og einn kvaðrilljarður billjarða.",
+        "B W   W            W  W    W              W        P E",
+    )
+
+    test_sentence(
+        "Allir komast fyrir í fjögurra sæta bíl.",
+        "B W   W      W     W W        W    W P E",
+    )
+
+    test_sentence(
+        "Einn fannst í skóginum, ein í hlíðinni og eitt á túninu.",
+        "B W  W      W W       P W   W W        W  W    W W     P E",
+    )
+
+    test_sentence(
+        "Ég bókaði einnar nætur ferð til Volgograd.",
+        "B W W     W      W     W    W   W        P E",
+    )
+
+    test_sentence(
+        "Tveir af tveimur eiga tveggja sæta bíl.",
+        "B W   W  W       W    W       W    W  P E",
+    )
+
+    test_sentence(
+        "Bóndinn á tvo hunda, tvær kindur og tvö lömb.",
+        "B W     W W   W    P W    W      W  W   W   P E",
+    )
+
+    test_sentence(
+        "Þrír þeirra kynntust þremur þriggja ára hestum.",
+        "B W  W      W        W      W       W   W     P E",
+    )
+
+    test_sentence(
+        "Betri eru þrjú ber í hendi en fjögur í skógi.",
+        "B W   W   W    W   W W     W  W      W W    P E",
+    )
+
+    test_sentence(
+        "Þrjá karla og fjórar konur vantaði.",
+        "B W  W     W  W      W     W      P E",
+    )
+
+    test_sentence(
+        "Þrjár teskeiðar af salti í fjögra lítra skál.",
+        "B W   W         W  W     W W      W     W   P E",
+    )
+
+    test_sentence(
+        "Þarna eru fjórir menn og um fjóra þeirra gilti að "
+        "þeir fengu fjögurra ára dóm fyrir fjórum árum.",
+        "B W   W   W      W    W  W  W     W      W     W "
+        "W    W     W        W   W   W     W      W   P E",
     )
 
 
 def test_unicode() -> None:
-    """ Test composite Unicode characters, where a glyph has two code points """
+    """Test composite Unicode characters, where a glyph has two code points"""
     # Mask away Python 2/3 difference
     # pylint: disable=undefined-variable
     ACUTE = chr(769)
@@ -939,8 +1026,14 @@ def test_correction() -> None:
             """Hann "gaf" mér 10,780.65 dollara.""",
             """Hann „gaf“ mér 10,780.65 dollara.""",
         ),
-        ("""Hann "gaf" mér €10,780.65.""", """Hann „gaf“ mér €10,780.65.""",),
-        ("""Hann "gaf" mér €10.780,65.""", """Hann „gaf“ mér €10.780,65.""",),
+        (
+            """Hann "gaf" mér €10,780.65.""",
+            """Hann „gaf“ mér €10,780.65.""",
+        ),
+        (
+            """Hann "gaf" mér €10.780,65.""",
+            """Hann „gaf“ mér €10.780,65.""",
+        ),
     ]
     SENT_KLUDGY_ORDINALS_MODIFY = [
         (
@@ -984,7 +1077,10 @@ def test_correction() -> None:
             """Hann „gaf“ mér 10.780,65 dollara.""",
         ),
         ("""Hann "gaf" mér €10,780.65.""", """Hann „gaf“ mér €10.780,65."""),
-        ("""Hann "gaf" mér €10.780,65.""", """Hann „gaf“ mér €10.780,65.""",),
+        (
+            """Hann "gaf" mér €10.780,65.""",
+            """Hann „gaf“ mér €10.780,65.""",
+        ),
     ]
     for sent, correct in SENT:
         s = t.tokenize(sent)
@@ -1048,7 +1144,11 @@ def test_abbrev() -> None:
         Tok(
             kind=TOK.WORD,
             txt="IBM",
-            val=[BIN_Tuple("International Business Machines", 0, "hk", "skst", "IBM", "-")],
+            val=[
+                BIN_Tuple(
+                    "International Business Machines", 0, "hk", "skst", "IBM", "-"
+                )
+            ],
         ),
         Tok(
             kind=TOK.WORD,
@@ -1172,7 +1272,11 @@ def test_abbrev() -> None:
                 BIN_Tuple("háttvirtur", 0, "lo", "skst", "hv.", "-"),
             ],
         ),
-        Tok(kind=TOK.WORD, txt="þm.", val=[BIN_Tuple("þingmaður", 0, "kk", "skst", "þm.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="þm.",
+            val=[BIN_Tuple("þingmaður", 0, "kk", "skst", "þm.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="Halldóru", val=None),
         Tok(kind=TOK.WORD, txt="Mogensen", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
@@ -1201,7 +1305,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Nú", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="s.",
+            val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")],
+        ),
         Tok(kind=TOK.TELNO, txt="550-1234", val=("550-1234", "354")),
         Tok(kind=TOK.WORD, txt="hjá", val=None),
         Tok(kind=TOK.WORD, txt="bankanum", val=None),
@@ -1215,7 +1323,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="s.",
+            val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")],
+        ),
         Tok(kind=TOK.TELNO, txt="550-1234", val=("550-1234", "354")),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1227,7 +1339,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="s.",
+            val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="en", val=None),
         Tok(kind=TOK.WORD, txt="hin", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
@@ -1243,7 +1359,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="s.",
+            val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")],
+        ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Hin", val=None),
@@ -1260,7 +1380,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="er", val=None),
         Tok(kind=TOK.WORD, txt="með", val=None),
-        Tok(kind=TOK.WORD, txt="s.", val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="s.",
+            val=[BIN_Tuple("símanúmer", 0, "hk", "skst", "s.", "-")],
+        ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Hinrik", val=None),
@@ -1334,7 +1458,9 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="tók", val=None),
         Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
         Tok(
-            kind=TOK.WORD, txt="frák.", val=[BIN_Tuple("fráköst", 0, "hk", "skst", "frák.", "-")]
+            kind=TOK.WORD,
+            txt="frák.",
+            val=[BIN_Tuple("fráköst", 0, "hk", "skst", "frák.", "-")],
         ),
         Tok(kind=TOK.WORD, txt="en", val=None),
         Tok(kind=TOK.WORD, txt="Valur", val=None),
@@ -1350,7 +1476,9 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="tók", val=None),
         Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
         Tok(
-            kind=TOK.WORD, txt="frák.", val=[BIN_Tuple("fráköst", 0, "hk", "skst", "frák.", "-")]
+            kind=TOK.WORD,
+            txt="frák.",
+            val=[BIN_Tuple("fráköst", 0, "hk", "skst", "frák.", "-")],
         ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1368,7 +1496,9 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="tók", val=None),
         Tok(kind=TOK.NUMBER, txt="11", val=(11, None, None)),
         Tok(
-            kind=TOK.WORD, txt="frák.", val=[BIN_Tuple("fráköst", 0, "hk", "skst", "frák.", "-")]
+            kind=TOK.WORD,
+            txt="frák.",
+            val=[BIN_Tuple("fráköst", 0, "hk", "skst", "frák.", "-")],
         ),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1383,7 +1513,11 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Ath.", val=[BIN_Tuple("athuga", 0, "so", "skst", "ath.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="Ath.",
+            val=[BIN_Tuple("athuga", 0, "so", "skst", "ath.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="ekki", val=None),
         Tok(kind=TOK.WORD, txt="ganga", val=None),
         Tok(kind=TOK.WORD, txt="um", val=None),
@@ -1395,7 +1529,11 @@ def test_abbrev() -> None:
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
-        Tok(kind=TOK.WORD, txt="Ath.", val=[BIN_Tuple("athuga", 0, "so", "skst", "ath.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="Ath.",
+            val=[BIN_Tuple("athuga", 0, "so", "skst", "ath.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="Marteinn", val=None),
         Tok(kind=TOK.WORD, txt="verður", val=None),
         Tok(kind=TOK.WORD, txt="ekki", val=None),
@@ -1414,7 +1552,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="átta", val=None),
         Tok(kind=TOK.WORD, txt="kýr", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
-        Tok(kind=TOK.WORD, txt="ath.", val=[BIN_Tuple("athuga", 0, "so", "skst", "ath.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="ath.",
+            val=[BIN_Tuple("athuga", 0, "so", "skst", "ath.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="heimildir", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1558,7 +1700,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(kind=TOK.WORD, txt="milli", val=None),
         Tok(kind=TOK.WORD, txt="matar", val=None),
-        Tok(kind=TOK.WORD, txt="vs.", val=[BIN_Tuple("gegn", 0, "fs", "skst", "vs.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="vs.",
+            val=[BIN_Tuple("gegn", 0, "fs", "skst", "vs.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="reikninga", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1574,7 +1720,11 @@ def test_abbrev() -> None:
         Tok(kind=TOK.WORD, txt="á", val=None),
         Tok(kind=TOK.WORD, txt="milli", val=None),
         Tok(kind=TOK.WORD, txt="Íslands", val=None),
-        Tok(kind=TOK.WORD, txt="vs.", val=[BIN_Tuple("gegn", 0, "fs", "skst", "vs.", "-")]),
+        Tok(
+            kind=TOK.WORD,
+            txt="vs.",
+            val=[BIN_Tuple("gegn", 0, "fs", "skst", "vs.", "-")],
+        ),
         Tok(kind=TOK.WORD, txt="Svíþjóðar", val=None),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
@@ -1594,7 +1744,7 @@ def test_abbrev() -> None:
     ]
     tokens = list(
         t.tokenize("Ég jafnaði 3 km. Marteins.")
-    )  # TODO can't handle cases before names in same sentenve
+    )  # TODO can't handle cases before names in same sentence
     tokens = strip_originals(tokens)
     # assert tokens == [
     #    Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1636,7 +1786,7 @@ def test_abbrev() -> None:
     ]
     tokens = list(
         t.tokenize("Ég jafnaði 3 kcal. Marteins.")
-    )  # TODO can't handle cases before names in same sentenve
+    )  # TODO can't handle cases before names in same sentence
     tokens = strip_originals(tokens)
     # assert tokens == [
     #    Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1653,7 +1803,7 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
         Tok(kind=TOK.WORD, txt="Ég", val=None),
         Tok(kind=TOK.WORD, txt="keypti", val=None),
-        Tok(kind=TOK.MEASUREMENT, txt="3 kcal", val=("J", 12552)),
+        Tok(kind=TOK.MEASUREMENT, txt="3 kcal", val=("J", 12552.0)),
         Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
         Tok(kind=TOK.S_END, txt=None, val=None),
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
@@ -1714,6 +1864,327 @@ def test_abbrev() -> None:
         Tok(kind=TOK.S_END, txt=None, val=None),
     ]
 
+    tokens = list(t.tokenize("Sjö millj. krónur fóru í lagfæringarnar."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Sjö", val=None),
+        Tok(
+            kind=TOK.WORD,
+            txt="millj.",
+            val=[
+                BIN_Tuple(
+                    stofn="milljónir",
+                    utg=0,
+                    ordfl="kvk",
+                    fl="skst",
+                    ordmynd="millj.",
+                    beyging="-",
+                ),
+                BIN_Tuple(
+                    stofn="milljarðar",
+                    utg=0,
+                    ordfl="kk",
+                    fl="skst",
+                    ordmynd="millj.",
+                    beyging="-",
+                ),
+            ],
+        ),
+        Tok(kind=TOK.WORD, txt="krónur", val=None),  # Should this be amount?
+        Tok(kind=TOK.WORD, txt="fóru", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="lagfæringarnar", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Aðgerðin kostaði níutíu þús.kr."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Aðgerðin", val=None),
+        Tok(kind=TOK.WORD, txt="kostaði", val=None),
+        Tok(kind=TOK.WORD, txt="níutíu", val=None),
+        Tok(
+            kind=TOK.WORD,
+            txt="þús.kr.",
+            val=[BIN_Tuple("þúsundir króna", 0, "kvk", "skst", "þús.kr.", "-")],
+        ),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Aðgerðin kostaði 14 þús.kr."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Aðgerðin", val=None),
+        Tok(kind=TOK.WORD, txt="kostaði", val=None),
+        Tok(kind=TOK.AMOUNT, txt="14 þús.kr.", val=(14e3, "ISK", None, None)),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Aðgerðin þann 5.     mars kostaði 14     þús.kr."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(
+            kind=TOK.WORD,
+            txt="Aðgerðin",
+            val=None,
+            original="Aðgerðin",
+            origin_spans=[0, 1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="þann",
+            val=None,
+            original=" þann",
+            origin_spans=[1, 2, 3, 4],
+        ),
+        Tok(
+            kind=TOK.DATEREL,
+            txt="5. mars",
+            val=(0, 3, 5),
+            original=" 5.     mars",
+            origin_spans=[1, 2, 3, 8, 9, 10, 11],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="kostaði",
+            val=None,
+            original=" kostaði",
+            origin_spans=[1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.AMOUNT,
+            txt="14 þús.kr.",
+            val=(14000.0, "ISK", None, None),
+            original=" 14     þús.kr.",
+            origin_spans=[1, 2, 3, 8, 9, 10, 11, 12, 13, 14],
+        ),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Aðgerðin þann 5.mars kostaði 14þús.kr."))
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(
+            kind=TOK.WORD,
+            txt="Aðgerðin",
+            val=None,
+            original="Aðgerðin",
+            origin_spans=[0, 1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="þann",
+            val=None,
+            original=" þann",
+            origin_spans=[1, 2, 3, 4],
+        ),
+        Tok(
+            kind=TOK.DATEREL,
+            txt="5. mars",
+            val=(0, 3, 5),
+            original=" 5.mars",
+            origin_spans=[1, 2, 3, 3, 4, 5, 6],
+        ),
+        Tok(
+            kind=TOK.WORD,
+            txt="kostaði",
+            val=None,
+            original=" kostaði",
+            origin_spans=[1, 2, 3, 4, 5, 6, 7],
+        ),
+        Tok(
+            kind=TOK.AMOUNT,
+            txt="14 þús.kr.",
+            val=(14000.0, "ISK", None, None),
+            original=" 14þús.kr.",
+            origin_spans=[1, 2, 3, 3, 4, 5, 6, 7, 8, 9],
+        ),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Átta menn áttu að fara að hátta klukkan átta."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Átta", val=None),
+        Tok(kind=TOK.WORD, txt="menn", val=None),
+        Tok(kind=TOK.WORD, txt="áttu", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="fara", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="hátta", val=None),
+        Tok(kind=TOK.TIME, txt="klukkan átta", val=(8, 0, 0)),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(
+        t.tokenize(
+            "Níu þúsund kvaðrilljarðar billjarða tuttugu og ein milljón og eitt."
+        )
+    )
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Níu", val=None),
+        Tok(kind=TOK.WORD, txt="þúsund", val=None),
+        Tok(kind=TOK.WORD, txt="kvaðrilljarðar", val=None),
+        Tok(kind=TOK.WORD, txt="billjarða", val=None),
+        Tok(kind=TOK.WORD, txt="tuttugu", val=None),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.WORD, txt="ein", val=None),
+        Tok(kind=TOK.WORD, txt="milljón", val=None),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.WORD, txt="eitt", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Oktilljón septilljónir og ein kvintilljón."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Oktilljón", val=None),
+        Tok(kind=TOK.WORD, txt="septilljónir", val=None),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.WORD, txt="ein", val=None),
+        Tok(kind=TOK.WORD, txt="kvintilljón", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(
+        t.tokenize(
+            "Um 14,5 milljarðar króna hafa verið greiddir í tekjufalls- og viðspyrnustyrki."
+        )
+    )
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Um", val=None),
+        Tok(kind=TOK.NUMBER, txt="14,5", val=(14.5, None, None)),
+        Tok(kind=TOK.WORD, txt="milljarðar", val=None),
+        Tok(kind=TOK.WORD, txt="króna", val=None),
+        Tok(kind=TOK.WORD, txt="hafa", val=None),
+        Tok(kind=TOK.WORD, txt="verið", val=None),
+        Tok(kind=TOK.WORD, txt="greiddir", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="tekjufalls- og viðspyrnustyrki", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Ekki einn einasti maður var hlynntur breytingunum."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Ekki", val=None),
+        Tok(kind=TOK.WORD, txt="einn", val=None),
+        Tok(kind=TOK.WORD, txt="einasti", val=None),
+        Tok(kind=TOK.WORD, txt="maður", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        Tok(kind=TOK.WORD, txt="hlynntur", val=None),
+        Tok(kind=TOK.WORD, txt="breytingunum", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Barnið var eins árs en gekk eitt í skólann."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Barnið", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        # Tok(kind=TOK.NUMBER, txt="eins", val=(1, None, None)),
+        Tok(kind=TOK.WORD, txt="eins", val=None),  # TODO
+        Tok(kind=TOK.WORD, txt="árs", val=None),
+        Tok(kind=TOK.WORD, txt="en", val=None),
+        Tok(kind=TOK.WORD, txt="gekk", val=None),
+        Tok(kind=TOK.WORD, txt="eitt", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="skólann", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Það eina sem vantaði í lautarferðina var góða skapið."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Það", val=None),
+        Tok(kind=TOK.WORD, txt="eina", val=None),
+        Tok(kind=TOK.WORD, txt="sem", val=None),
+        Tok(kind=TOK.WORD, txt="vantaði", val=None),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="lautarferðina", val=None),
+        Tok(kind=TOK.WORD, txt="var", val=None),
+        Tok(kind=TOK.WORD, txt="góða", val=None),
+        Tok(kind=TOK.WORD, txt="skapið", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Þriggja daga ferð ílengdist þegar þrjú börn veiktust."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Þriggja", val=None),
+        Tok(kind=TOK.WORD, txt="daga", val=None),
+        Tok(kind=TOK.WORD, txt="ferð", val=None),
+        Tok(kind=TOK.WORD, txt="ílengdist", val=None),
+        Tok(kind=TOK.WORD, txt="þegar", val=None),
+        Tok(kind=TOK.WORD, txt="þrjú", val=None),
+        Tok(kind=TOK.WORD, txt="börn", val=None),
+        Tok(kind=TOK.WORD, txt="veiktust", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(
+        t.tokenize("Þær voru ekki einar um það að hafa lesið Þúsund og eina nótt.")
+    )
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Þær", val=None),
+        Tok(kind=TOK.WORD, txt="voru", val=None),
+        Tok(kind=TOK.WORD, txt="ekki", val=None),
+        Tok(kind=TOK.WORD, txt="einar", val=None),
+        Tok(kind=TOK.WORD, txt="um", val=None),
+        Tok(kind=TOK.WORD, txt="það", val=None),
+        Tok(kind=TOK.WORD, txt="að", val=None),
+        Tok(kind=TOK.WORD, txt="hafa", val=None),
+        Tok(kind=TOK.WORD, txt="lesið", val=None),
+        Tok(kind=TOK.WORD, txt="Þúsund", val=None),
+        Tok(kind=TOK.WORD, txt="og", val=None),
+        Tok(kind=TOK.WORD, txt="eina", val=None),
+        Tok(kind=TOK.WORD, txt="nótt", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
+    tokens = list(t.tokenize("Eitt sinn, fyrir langa löngu, í fjarlægri vetrarbraut."))
+    tokens = strip_originals(tokens)
+    assert tokens == [
+        Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),
+        Tok(kind=TOK.WORD, txt="Eitt", val=None),
+        Tok(kind=TOK.WORD, txt="sinn", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
+        Tok(kind=TOK.WORD, txt="fyrir", val=None),
+        Tok(kind=TOK.WORD, txt="langa", val=None),
+        Tok(kind=TOK.WORD, txt="löngu", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=",", val=(3, ",")),
+        Tok(kind=TOK.WORD, txt="í", val=None),
+        Tok(kind=TOK.WORD, txt="fjarlægri", val=None),
+        Tok(kind=TOK.WORD, txt="vetrarbraut", val=None),
+        Tok(kind=TOK.PUNCTUATION, txt=".", val=(3, ".")),
+        Tok(kind=TOK.S_END, txt=None, val=None),
+    ]
+
 
 def test_overlap() -> None:
     # Make sure that there is no overlap between the punctuation sets
@@ -1726,7 +2197,7 @@ def test_overlap() -> None:
 
 
 def test_split_sentences() -> None:
-    """ Test shallow tokenization """
+    """Test shallow tokenization"""
     s = (
         "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000.  \n"
         "200.000 manns mótmæltu.\n"
@@ -1876,7 +2347,7 @@ def test_normalization() -> None:
 
 
 def test_abbr_at_eos() -> None:
-    """ Test that 'Örn.' is not treated as an abbreviation here """
+    """Test that 'Örn.' is not treated as an abbreviation here"""
     toklist = list(
         t.tokenize(
             "„Mér leiddist ekki,“ segir Einar Örn. Hann telur þó að "

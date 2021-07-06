@@ -643,57 +643,15 @@ def roman_to_int(s: str) -> int:
     assert i == len(s)
     return result
 
-
-# Recognize words that multiply numbers
-MULTIPLIERS = {
-    # "núll": 0,
-    # "hálfur": 0.5,
-    # "helmingur": 0.5,
-    # "þriðjungur": 1.0 / 3,
-    # "fjórðungur": 1.0 / 4,
-    # "fimmtungur": 1.0 / 5,
-    "einn": 1,
-    "tveir": 2,
-    "þrír": 3,
-    "fjórir": 4,
-    "fimm": 5,
-    "sex": 6,
-    "sjö": 7,
-    "átta": 8,
-    "níu": 9,
-    "tíu": 10,
-    "ellefu": 11,
-    "tólf": 12,
-    "þrettán": 13,
-    "fjórtán": 14,
-    "fimmtán": 15,
-    "sextán": 16,
-    "sautján": 17,
-    "seytján": 17,
-    "átján": 18,
-    "nítján": 19,
-    "tuttugu": 20,
-    "þrjátíu": 30,
-    "fjörutíu": 40,
-    "fimmtíu": 50,
-    "sextíu": 60,
-    "sjötíu": 70,
-    "áttatíu": 80,
-    "níutíu": 90,
-    # "par": 2,
-    # "tugur": 10,
-    # "tylft": 12,
-    "hundrað": 100,
-    "þúsund": 1000,  # !!! Bæði hk og kvk!
+NUMBER_ABBREV = {
     "þús.": 1000,
-    "milljón": 1e6,
-    "milla": 1e6,
-    "millj.": 1e6,
-    "mljó.": 1e6,
-    "milljarður": 1e9,
-    "miljarður": 1e9,
-    "ma.": 1e9,
-    "mrð.": 1e9,
+    "millj.": 10 ** 6,
+    "mljó.": 10 ** 6,
+    "ma.": 10 ** 9,
+    "mrð.": 10 ** 9,
+    "billj.": 10 ** 12,
+    "bljó.": 10 ** 12,
+    "trillj.": 10 ** 18,
 }
 
 # Recognize words for percentages
@@ -739,6 +697,12 @@ AMOUNT_ABBREV = {
     "mö.kr": 1e9,
     "mlja.kr.": 1e9,
     "mlja.kr": 1e9,
+    # "mrð.kr.": 1e9,
+    # "mrð.kr": 1e9,
+    # "billj.kr.": 1e12,
+    # "billj.kr": 1e12,
+    # "trillj.kr.": 1e18,
+    # "trillj.kr": 1e18,
 }
 
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
