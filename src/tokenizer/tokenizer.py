@@ -355,20 +355,20 @@ class TOK:
 
     Each of the various constructors can accept as first parameter either
     a string or a Tok object.
-    
+
     The string version is the old one (from versions 2 and earlier).
     These take in a string and sometimes value and return a token with
     that string and value.
     This should be preserved while there are downstream users that depend on
     this behavior. The tokenizer does not use this internally.
-    
+
     The Tok version of the constructors isn't really a constructor but rather
-    a converter. It takes in a token and returns a token with the given type 
+    a converter. It takes in a token and returns a token with the given type
     and value but preserves other attributes, in particular origin tracking.
     Note that the current version modifies the input and returns it again.
     This particular detail should not be depended on (assume the input is eaten
     and something new is returned).
-    
+
     If, at some point, we can be reasonably certain that downstream users are
     not using the string version any more we should consider removing it.
     """
@@ -1928,7 +1928,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     # geta merkt það sem villu. Ætti líklega að setja í sérlista,
                     # WRONG_MONTHS, og sérif-lykkju og setja inn villu í tókann.
                     finish = could_be_end_of_sentence(
-                        follow_token, test_set, abbrev in MULTIPLIERS
+                        follow_token, test_set, abbrev in NUMBER_ABBREV
                     )
                     if finish:
                         # Potentially at the end of a sentence
@@ -2668,76 +2668,7 @@ def parse_phrases_2(
             # Logic for numbers and fractions that are partially or entirely
             # written out in words
 
-            def number(tok: Tok) -> Optional[float]:
-                """ If the token denotes a number, return that number - or None """
-                if tok.txt.lower() == "áttu":
-                    # Do not accept 'áttu' (stem='átta', no kvk) as a number
-                    return None
-                return match_stem_list(tok, MULTIPLIERS)
-
-            # Check whether we have an initial number word
-            multiplier = number(token) if token.kind == TOK.WORD else None
-
-            # Check for [number] 'hundred|thousand|million|billion'
-            while (
-                token.kind == TOK.NUMBER or multiplier is not None
-            ) and next_token.kind == TOK.WORD:
-
-                multiplier_next = number(next_token)
-
-                def convert_to_num(token: Tok) -> Tok:
-                    if multiplier is not None:
-                        token = TOK.Number(token, multiplier)
-                    return token
-
-                if multiplier_next is not None:
-                    # Retain the case of the last multiplier
-                    token = convert_to_num(token)
-                    token = TOK.Number(
-                        token.concatenate(next_token, separator=" "),
-                        token.number * multiplier_next,
-                    )
-                    # Eat the multiplier token
-                    next_token = next(token_stream)
-                elif next_token.txt in AMOUNT_ABBREV:
-                    # Abbreviations for ISK amounts
-                    # For abbreviations, we do not know the case,
-                    # but we try to retain the previous case information if any
-                    token = convert_to_num(token)
-                    token = TOK.Amount(
-                        token.concatenate(next_token, separator=" "),
-                        "ISK",
-                        token.number * AMOUNT_ABBREV[next_token.txt],
-                    )
-                    next_token = next(token_stream)
-                elif next_token.txt in CURRENCY_ABBREV:
-                    # A number followed by an ISO currency abbreviation
-                    token = convert_to_num(token)
-                    token = TOK.Amount(
-                        token.concatenate(next_token, separator=" "),
-                        next_token.txt,
-                        token.number,
-                    )
-                    next_token = next(token_stream)
-                else:
-                    # Check for [number] 'prósent/prósentustig/hundraðshlutar'
-                    if coalesce_percent:
-                        percentage = match_stem_list(next_token, PERCENTAGES)
-                    else:
-                        percentage = None
-                    if percentage is None:
-                        break
-                    # We have '17 prósent': coalesce into a single token
-                    token = convert_to_num(token)
-                    token = TOK.Percent(
-                        token.concatenate(next_token, separator=" "), token.number
-                    )
-                    # Eat the percent word token
-                    next_token = next(token_stream)
-
-                multiplier = None
-
-            # Check for [currency] [number] (e.g. kr. 9.900 or USD 50)
+            # Check for [CURRENCY] [number] (e.g. kr. 9.900 or USD 50)
             if next_token.kind == TOK.NUMBER and (
                 token.txt in ISK_AMOUNT_PRECEDING or token.txt in CURRENCY_ABBREV
             ):
@@ -2748,6 +2679,44 @@ def parse_phrases_2(
                     next_token.number,
                 )
                 next_token = next(token_stream)
+
+            # Check for [number] [ISK_AMOUNT|CURRENCY|PERCENTAGE]
+            elif token.kind == TOK.NUMBER and next_token.kind == TOK.WORD:
+
+                if next_token.txt in AMOUNT_ABBREV:
+                    # Abbreviations for ISK amounts
+                    # For abbreviations, we do not know the case,
+                    # but we try to retain the previous case information if any
+                    token = TOK.Amount(
+                        token.concatenate(next_token, separator=" "),
+                        "ISK",
+                        token.number * AMOUNT_ABBREV[next_token.txt],
+                    )
+                    next_token = next(token_stream)
+
+                elif next_token.txt in CURRENCY_ABBREV:
+                    # A number followed by an ISO currency abbreviation
+                    token = TOK.Amount(
+                        token.concatenate(next_token, separator=" "),
+                        next_token.txt,
+                        token.number,
+                    )
+                    next_token = next(token_stream)
+
+                else:
+                    # Check for [number] 'prósent/prósentustig/hundraðshlutar'
+                    if coalesce_percent:
+                        percentage = match_stem_list(next_token, PERCENTAGES)
+                    else:
+                        percentage = None
+
+                    if percentage is not None:
+                        # We have '17 prósent': coalesce into a single token
+                        token = TOK.Percent(
+                            token.concatenate(next_token, separator=" "), token.number
+                        )
+                        # Eat the percent word token
+                        next_token = next(token_stream)
 
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
