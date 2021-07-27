@@ -59,7 +59,7 @@ from typing import (
 import re
 import datetime
 import unicodedata  # type: ignore
-from _collections import deque
+from collections import deque
 
 from .definitions import *
 from .abbrev import Abbreviations
@@ -853,6 +853,8 @@ class TokenStream:
     def __init__(self, token_it, *, lookahead_size=2):
         """Initialize from token iterator."""
         self.__it = token_it
+        if lookahead_size <= 0:
+            lookahead_size = 1
         self.__lookahead = deque(maxlen=lookahead_size)
         self.__max_lookahead = lookahead_size
 
