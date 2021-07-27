@@ -48,6 +48,7 @@ from typing import (
     Iterator,
     Iterable,
     Tuple,
+    Deque,
     Union,
     Match,
     TypeVar,
@@ -58,6 +59,7 @@ from typing import (
 import re
 import datetime
 import unicodedata  # type: ignore
+from _collections import deque
 
 from .definitions import *
 from .abbrev import Abbreviations
@@ -841,6 +843,39 @@ class TOK:
         t.kind = TOK.S_SPLIT
         t.val = None
         return t
+
+
+class TokenStream:
+    """
+    Wrapper for token iterator allowing lookahead.
+    """
+
+    def __init__(self, token_it, *, lookahead_size=2):
+        """Initialize from token iterator."""
+        self.__it = token_it
+        self.__lookahead = deque(maxlen=lookahead_size)
+        self.__max_lookahead = lookahead_size
+
+    def __next__(self):
+        if self.__lookahead:
+            return self.__lookahead.popleft()
+        return next(self.__it)
+
+    def __iter__(self):
+        return self
+
+    def __getitem__(self, i):
+        if 0 <= i < self.__max_lookahead:
+            l = len(self.__lookahead)
+            try:
+                while l <= i:
+                    # Extend deque to lookahead
+                    self.__lookahead.append(next(self.__it))
+                    l += 1
+                return self.__lookahead[i]
+            except StopIteration:
+                pass
+        return None
 
 
 def normalized_text(token: Tok) -> str:
