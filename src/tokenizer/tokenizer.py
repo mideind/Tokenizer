@@ -863,7 +863,7 @@ class TokenStream:
             return self.__lookahead.popleft()
         return next(self.__it)
 
-    def __iter__(self) -> TokenStream:
+    def __iter__(self):
         return self
 
     def __getitem__(self, i: int) -> Optional[Tok]:
