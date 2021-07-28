@@ -855,15 +855,15 @@ class TokenStream:
         self.__it: Iterator[Tok] = token_it
         if lookahead_size <= 0:
             lookahead_size = 1
-        self.__lookahead: Deque = deque(maxlen=lookahead_size)
+        self.__lookahead: Deque[Tok] = deque(maxlen=lookahead_size)
         self.__max_lookahead: int = lookahead_size
 
-    def __next__(self):
+    def __next__(self) -> Tok:
         if self.__lookahead:
             return self.__lookahead.popleft()
         return next(self.__it)
 
-    def __iter__(self):
+    def __iter__(self) -> TokenStream:
         return self
 
     def __getitem__(self, i: int) -> Optional[Tok]:
@@ -934,7 +934,7 @@ class TokenStream:
         Wrapper to safely check if token at index i could be end of sentence.
         """
         t = self[i]
-        return could_be_end_of_sentence(cast(Tok, t), *args) if t else False
+        return could_be_end_of_sentence(t, *args) if t else False
 
 
 def normalized_text(token: Tok) -> str:
