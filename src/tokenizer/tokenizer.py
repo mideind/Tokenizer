@@ -40,7 +40,6 @@
 
 from typing import (
     Any,
-    Callable,
     List,
     Mapping,
     FrozenSet,
@@ -846,9 +845,6 @@ class TOK:
         return t
 
 
-_AttrFunc = Callable[[Optional[int]], Any]
-
-
 class TokenStream:
     """
     Wrapper for token iterator allowing lookahead.
@@ -883,23 +879,62 @@ class TokenStream:
                 pass
         return None
 
-    def __getattr__(self, attr: str) -> _AttrFunc:
-        """
-        Allows fetching attribute from token at index i (default 0 if no args).
-        Returns None in case of error (nonexistent attribute or invalid index).
-        Example (with ts as TokenStream instance):
-            ts.kind(0) -> ts[0].kind
-            ts.txt(2)  -> ts[2].txt
-        """
-        return cast(_AttrFunc, (lambda i=0: getattr(self[i], attr, None)))
+    def txt(self, i: int = 0) -> Optional[str]:
+        """Return token.txt for token at index i."""
+        t = self[i]
+        return t.txt if t else None
+
+    def kind(self, i: int = 0) -> Optional[int]:
+        """Return token.kind for token at index i."""
+        t = self[i]
+        return t.kind if t else None
+
+    def punctuation(self, i: int = 0) -> Optional[str]:
+        """Return token.punctuation for token at index i."""
+        t = self[i]
+        return t.punctuation if t else None
+
+    def number(self, i: int = 0) -> Optional[float]:
+        """Return token.number for token at index i."""
+        t = self[i]
+        return t.number if t else None
+
+    def integer(self, i: int = 0) -> Optional[int]:
+        """Return token.integer for token at index i."""
+        t = self[i]
+        return t.integer if t else None
+
+    def ordinal(self, i: int = 0) -> Optional[int]:
+        """Return token.ordinal for token at index i."""
+        t = self[i]
+        return t.ordinal if t else None
+
+    def has_meanings(self, i: int = 0) -> Optional[bool]:
+        """Return token.has_meanings for token at index i."""
+        t = self[i]
+        return t.has_meanings if t else None
+
+    def meanings(self, i: int = 0) -> Optional[BIN_TupleList]:
+        """Return token.meanings for token at index i."""
+        t = self[i]
+        return t.meanings if t else None
+
+    def person_names(self, i: int = 0) -> Optional[PersonNameList]:
+        """Return token.person_names for token at index i."""
+        t = self[i]
+        return t.person_names if t else None
+
+    def as_tuple(self, i: int = 0) -> Optional[Tuple[Any, ...]]:
+        """Return token.as_tuple for token at index i."""
+        t = self[i]
+        return t.as_tuple if t else None
 
     def could_be_end_of_sentence(self, i: int = 0, *args) -> bool:
         """
         Wrapper to safely check if token at index i could be end of sentence.
         """
-        if self[i]:
-            return could_be_end_of_sentence(cast(Tok, self[i]), *args)
-        return False
+        t = self[i]
+        return could_be_end_of_sentence(cast(Tok, t), *args) if t else False
 
 
 def normalized_text(token: Tok) -> str:
