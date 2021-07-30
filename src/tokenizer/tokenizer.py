@@ -48,6 +48,7 @@ from typing import (
     Iterator,
     Iterable,
     Tuple,
+    Deque,
     Union,
     Match,
     TypeVar,
@@ -58,6 +59,7 @@ from typing import (
 import re
 import datetime
 import unicodedata  # type: ignore
+from collections import deque
 
 from .definitions import *
 from .abbrev import Abbreviations
@@ -841,6 +843,98 @@ class TOK:
         t.kind = TOK.S_SPLIT
         t.val = None
         return t
+
+
+class TokenStream:
+    """
+    Wrapper for token iterator allowing lookahead.
+    """
+
+    def __init__(self, token_it: Iterator[Tok], *, lookahead_size: int = 2):
+        """Initialize from token iterator."""
+        self.__it: Iterator[Tok] = token_it
+        if lookahead_size <= 0:
+            lookahead_size = 1
+        self.__lookahead: Deque[Tok] = deque(maxlen=lookahead_size)
+        self.__max_lookahead: int = lookahead_size
+
+    def __next__(self) -> Tok:
+        if self.__lookahead:
+            return self.__lookahead.popleft()
+        return next(self.__it)
+
+    def __iter__(self):
+        return self
+
+    def __getitem__(self, i: int) -> Optional[Tok]:
+        if 0 <= i < self.__max_lookahead:
+            l = len(self.__lookahead)
+            try:
+                while l <= i:
+                    # Extend deque to lookahead
+                    self.__lookahead.append(next(self.__it))
+                    l += 1
+                return self.__lookahead[i]
+            except StopIteration:
+                pass
+        return None
+
+    def txt(self, i: int = 0) -> Optional[str]:
+        """Return token.txt for token at index i."""
+        t = self[i]
+        return t.txt if t else None
+
+    def kind(self, i: int = 0) -> Optional[int]:
+        """Return token.kind for token at index i."""
+        t = self[i]
+        return t.kind if t else None
+
+    def punctuation(self, i: int = 0) -> Optional[str]:
+        """Return token.punctuation for token at index i."""
+        t = self[i]
+        return t.punctuation if t else None
+
+    def number(self, i: int = 0) -> Optional[float]:
+        """Return token.number for token at index i."""
+        t = self[i]
+        return t.number if t else None
+
+    def integer(self, i: int = 0) -> Optional[int]:
+        """Return token.integer for token at index i."""
+        t = self[i]
+        return t.integer if t else None
+
+    def ordinal(self, i: int = 0) -> Optional[int]:
+        """Return token.ordinal for token at index i."""
+        t = self[i]
+        return t.ordinal if t else None
+
+    def has_meanings(self, i: int = 0) -> Optional[bool]:
+        """Return token.has_meanings for token at index i."""
+        t = self[i]
+        return t.has_meanings if t else None
+
+    def meanings(self, i: int = 0) -> Optional[BIN_TupleList]:
+        """Return token.meanings for token at index i."""
+        t = self[i]
+        return t.meanings if t else None
+
+    def person_names(self, i: int = 0) -> Optional[PersonNameList]:
+        """Return token.person_names for token at index i."""
+        t = self[i]
+        return t.person_names if t else None
+
+    def as_tuple(self, i: int = 0) -> Optional[Tuple[Any, ...]]:
+        """Return token.as_tuple for token at index i."""
+        t = self[i]
+        return t.as_tuple if t else None
+
+    def could_be_end_of_sentence(self, i: int = 0, *args) -> bool:
+        """
+        Wrapper to safely check if token at index i could be end of sentence.
+        """
+        t = self[i]
+        return could_be_end_of_sentence(t, *args) if t else False
 
 
 def normalized_text(token: Tok) -> str:
@@ -1865,6 +1959,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
 
     token = cast(Tok, None)
     try:
+        # Use TokenStream wrapper for this phase (for lookahead)
+        token_stream = TokenStream(token_stream)
         # Maintain a one-token lookahead
         token = next(token_stream)
         while True:
@@ -1885,17 +1981,14 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             # Special case for a DATEREL token of the form "25.10.",
             # i.e. with a trailing period: It can end a sentence
             if token.kind == TOK.DATEREL and "." in token.txt:
-                if next_token.txt == ".":
-                    next_next_token = next(token_stream)
-                    if could_be_end_of_sentence(next_next_token):
-                        # This is something like 'Ég fæddist 25.9. Það var gaman.'
-                        yield token
-                        token = next_token
-                    else:
-                        # This is something like 'Ég fæddist 25.9. í Svarfaðardal.'
-                        y, m, d = cast(Tuple[int, int, int], token.val)
-                        token = TOK.Daterel(token.concatenate(next_token), y, m, d)
-                    next_token = next_next_token
+                if (
+                    next_token.txt == "."
+                    and not token_stream.could_be_end_of_sentence()
+                ):
+                    # This is something like 'Ég fæddist 25.9. í Svarfaðardal.'
+                    y, m, d = cast(Tuple[int, int, int], token.val)
+                    token = TOK.Daterel(token.concatenate(next_token), y, m, d)
+                    next_token = next(token_stream)
 
             # Coalesce abbreviations ending with a period into a single
             # abbreviation token
@@ -2066,8 +2159,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 ):
                     # Ordinal, i.e. whole number or Roman numeral followed by period:
                     # convert to an ordinal token
-                    follow_token = next(token_stream)
-                    if (
+                    follow_token = token_stream[0]
+                    if follow_token and not (
                         follow_token.kind in TOK.END
                         or follow_token.punctuation in {"„", '"'}
                         or (
@@ -2076,14 +2169,6 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                             and month_for_token(follow_token, True) is None
                         )
                     ):
-                        # Next token is a sentence or paragraph end, or opening quotes,
-                        # or an uppercase word (and not a month name misspelled in
-                        # upper case): fall back from assuming that this is an ordinal
-                        yield token  # Yield the number or Roman numeral
-                        token = next_token  # The period
-                        # The following (uppercase) word or sentence end
-                        next_token = follow_token
-                    else:
                         # OK: replace the number/Roman numeral and the period
                         # with an ordinal token
                         num = (
@@ -2093,7 +2178,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                         )
                         token = TOK.Ordinal(token.concatenate(next_token), num)
                         # Continue with the following word
-                        next_token = follow_token
+                        next_token = next(token_stream)
 
             # Convert "1920 mm" or "30 °C" to a single measurement token
             if (
@@ -2126,19 +2211,17 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     token.kind == TOK.MEASUREMENT
                     and orig_unit == "km"
                     and next_token.txt == "/"
+                    and token_stream.txt(0) == "klst"
                 ):
                     slashtok = next_token
                     next_token = next(token_stream)
-                    if next_token.txt == "klst":
-                        unit = token.txt + "/" + next_token.txt
-                        temp_tok = token.concatenate(slashtok)
-                        temp_tok = temp_tok.concatenate(next_token)
-                        token = TOK.Measurement(temp_tok, unit, value)
-                        # Eat extra unit
-                        next_token = next(token_stream)
-                    else:
-                        yield token
-                        token = slashtok
+
+                    unit = token.txt + "/" + next_token.txt
+                    temp_tok = token.concatenate(slashtok)
+                    temp_tok = temp_tok.concatenate(next_token)
+                    token = TOK.Measurement(temp_tok, unit, value)
+                    # Eat extra unit
+                    next_token = next(token_stream)
 
             if (
                 token.kind == TOK.MEASUREMENT
@@ -2187,33 +2270,23 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 and next_token.txt == "."
                 and txt[-1].isalpha()
                 # and token.txt.split()[-1] + "." not in Abbreviations.DICT
+                and not token_stream.could_be_end_of_sentence()
             ):
-                puncttoken = next_token
+                unit, value = cast(MeasurementTuple, token.val)
+                # Add the period to the token text
+                token = TOK.Measurement(token.concatenate(next_token), unit, value)
                 next_token = next(token_stream)
-                if could_be_end_of_sentence(next_token):
-                    # We are at the end of the current sentence; back up
-                    yield token
-                    token = puncttoken
-                else:
-                    unit, value = cast(MeasurementTuple, token.val)
-                    # Add the period to the token text
-                    token = TOK.Measurement(token.concatenate(puncttoken), unit, value)
 
             # Cases such as USD. 44
             if (
                 token.txt in CURRENCY_ABBREV
                 and next_token.kind == TOK.PUNCTUATION
                 and next_token.txt == "."
+                and not token_stream.could_be_end_of_sentence()
             ):
-                puncttoken = next_token
+                txt = token.txt  # Hack to avoid Pylance/Pyright message
+                token = TOK.Currency(token.concatenate(next_token), txt)
                 next_token = next(token_stream)
-                if could_be_end_of_sentence(next_token):
-                    # We are at the end of the current sentence; back up
-                    yield token
-                    token = puncttoken
-                else:
-                    txt = token.txt  # Hack to avoid Pylance/Pyright message
-                    token = TOK.Currency(token.concatenate(puncttoken), txt)
 
             # Cases such as 19 $, 199.99 $
             if (
