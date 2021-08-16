@@ -514,3 +514,9 @@ def test_converted_measurements() -> None:
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
     assert char_indexes == [0, 7, 14, 16, 22, 26, 29, 34, 41, 42]
     assert byte_indexes == [0, 8, 15, 18, 25, 29, 33, 38, 46, 47]
+
+
+def test_compound() -> None:
+    s = "  Katrín   Júlíusdóttir   var   iðnaðar-  \n\t  og \t\t  viðskiptaráðherra"
+    tlist = list(tokenizer.tokenize(s))
+    assert sum(len(t.original or "") for t in tlist) == len(s)
