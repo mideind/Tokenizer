@@ -33,7 +33,7 @@ from .definitions import (
     BIN_Tuple, BIN_TupleList
 )
 from .tokenizer import (
-    TOK, Tok, TokenStream, tokenize, tokenize_without_annotation, split_into_sentences,
+    TOK, Tok, tokenize, tokenize_without_annotation, split_into_sentences,
     parse_tokens, correct_spaces, detokenize, mark_paragraphs, paragraphs,
     normalized_text, normalized_text_from_tokens, text_from_tokens,
     calculate_indexes, generate_rough_tokens

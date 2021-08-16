@@ -929,7 +929,7 @@ class TokenStream:
         t = self[i]
         return t.as_tuple if t else None
 
-    def could_be_end_of_sentence(self, i: int = 0, *args) -> bool:
+    def could_be_end_of_sentence(self, i: int = 0, *args: Any) -> bool:
         """
         Wrapper to safely check if token at index i could be end of sentence.
         """
@@ -1877,22 +1877,21 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     yield TOK.Punctuation(punct)
                     yield TOK.Word(word2)
 
+                elif ww.endswith("-og") or ww.endswith("-eða"):
+                    # Handle missing space before 'og'/'eða',
+                    # such as 'fjármála-og efnahagsráðuneyti'
+                    a = ww.split("-")
+
+                    word1, rt = rt.split(len(a[0]))
+                    punct, rt = rt.split(1)
+                    word2, rt = rt.split(len(a[1]))
+                    yield TOK.Word(word1)
+                    yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
+                    yield TOK.Word(word2)
+
                 else:
-                    if ww.endswith("-og") or ww.endswith("-eða"):
-                        # Handle missing space before 'og'/'eða',
-                        # such as 'fjármála-og efnahagsráðuneyti'
-                        a = ww.split("-")
-
-                        word1, rt = rt.split(len(a[0]))
-                        punct, rt = rt.split(1)
-                        word2, rt = rt.split(len(a[1]))
-                        yield TOK.Word(word1)
-                        yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
-                        yield TOK.Word(word2)
-
-                    else:
-                        word, rt = rt.split(i)
-                        yield TOK.Word(word)
+                    word, rt = rt.split(i)
+                    yield TOK.Word(word)
 
                 if rt.txt and rt.txt[0] in COMPOSITE_HYPHENS:
                     # This is a hyphen or en dash directly appended to a word:
