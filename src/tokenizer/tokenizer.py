@@ -795,20 +795,18 @@ class TOK:
         return t
 
     @staticmethod
-    def Begin_Paragraph(t: Optional[Tok] = None) -> Tok:
-        if t is None:
-            return Tok(TOK.P_BEGIN, None, None)
-        t.kind = TOK.P_BEGIN
-        t.val = None
-        return t
+    def Begin_Paragraph() -> Tok:
+        """ Return a special paragraph begin marker token """
+        marker = Tok(TOK.P_BEGIN, "[[", None, "[[", list(range(2)))
+        marker.substitute((0, 2), "")
+        return marker
 
     @staticmethod
-    def End_Paragraph(t: Optional[Tok] = None) -> Tok:
-        if t is None:
-            return Tok(TOK.P_END, None, None)
-        t.kind = TOK.P_END
-        t.val = None
-        return t
+    def End_Paragraph() -> Tok:
+        """ Return a special paragraph end marker token """
+        marker = Tok(TOK.P_END, "]]", None, "]]", list(range(2)))
+        marker.substitute((0, 2), "")
+        return marker
 
     @staticmethod
     def Begin_Sentence(
@@ -1396,7 +1394,9 @@ def generate_rough_tokens(
             # Only split on newline
             sentence_split_pattern = r"(\n)"
         else:
-            sentence_split_pattern = r"(\n\s*\n|^\s+$)"
+            # Split on empty lines, eventually containing whitespace,
+            # but also on paragraph splits within a line
+            sentence_split_pattern = r"(\n\s*\n|^\s+$|\]\]\[\[)"
 
         splits = re.split(sentence_split_pattern, big_text)
         # We know that splits will contain alternatively useful text and the splitting
@@ -1406,6 +1406,18 @@ def generate_rough_tokens(
         for text in splits:
             if is_text:
                 # 'text' is text to be tokenized
+                insert_paragraph_end = False
+                if not one_sent_per_line:
+                    # Convert paragraph separators to TOK.P_BEGIN and TOK.P_END tokens
+                    if text.startswith("[["):
+                        # Begin paragraph
+                        text = text[2:]
+                        yield TOK.Begin_Paragraph()
+                    if text.endswith("]]"):
+                        # End paragraph
+                        text = text[:-2]
+                        # Postpone the yield until after the rough token loop
+                        insert_paragraph_end = True
                 tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
                 if replace_composite_glyphs:
                     # Replace composite glyphs with single code points
@@ -1430,12 +1442,22 @@ def generate_rough_tokens(
                         saved = tok
                     else:
                         yield tok
+
+                if insert_paragraph_end:
+                    # Yield the postponed TOK.P_END token
+                    yield TOK.End_Paragraph()
+            elif text == "]][[":
+                # Paragraph split: Yield TOK.P_BEGIN and TOK.P_END tokens
+                yield TOK.End_Paragraph()
+                yield TOK.Begin_Paragraph()
             else:
-                # 'text' is the split pattern
+                # Sentence split: 'text' is the split pattern
                 tok_split = Tok(TOK.RAW, text, None, text, list(range(len(text))))
-                # This token should have no output text, but we still want to preserve its origin.
+                # This token should have no output text, but we still want to preserve
+                # the original text.
                 tok_split.substitute((0, len(text)), "")
                 yield TOK.Split_Sentence(tok_split)
+
             is_text = not is_text
 
     if saved:
@@ -1498,16 +1520,15 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
     #    exhausted. At that point, we obtain the next token and start from 2).
 
     rtxt: str = ""
-    inside_paragraph_marker: bool = False
 
     for rt in generate_rough_tokens(
         txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
     ):
         # rt: raw token
 
-        # Handle each sequence w of non-whitespace characters
-        if rt.kind == TOK.S_SPLIT:
-            # Sentence split markers require no further processing. Yield them immediately.
+        if rt.kind in {TOK.S_SPLIT, TOK.P_BEGIN, TOK.P_END}:
+            # Sentence split markers and paragraph separators require
+            # no further processing. Yield them immediately.
             yield rt
             continue
 
@@ -1522,20 +1543,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             # Shortcut for most common case: pure word
             yield TOK.Word(rt)
             continue
-
-        if len(rtxt) >= 2 and (
-            (rtxt.startswith("[[") and not inside_paragraph_marker)
-            or (rtxt.startswith("]]") and inside_paragraph_marker)
-        ):
-            # Begin or end paragraph marker
-            marker, rt = rt.split(2)
-            if marker.txt == "[[":
-                yield TOK.Begin_Paragraph(marker)
-                inside_paragraph_marker = True
-            elif marker.txt == "]]":
-                yield TOK.End_Paragraph(marker)
-                inside_paragraph_marker = False
-            rtxt = rt.txt
 
         if len(rtxt) > 1:
             if rtxt[0] in SIGN_PREFIX and rtxt[1] in DIGITS_PREFIX:
@@ -1639,18 +1646,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     # Probably an idiot trying to type opening double quotes with commas
                     punct, rt = rt.split(2)
                     yield TOK.Punctuation(punct, normalized="„")
-                elif lw >= 2 and (
-                    (rtxt.startswith("[[") and not inside_paragraph_marker)
-                    or (rtxt.startswith("]]") and inside_paragraph_marker)
-                ):
-                    # Begin or end paragraph marker
-                    marker, rt = rt.split(2)
-                    if marker.txt == "[[":
-                        yield TOK.Begin_Paragraph(marker)
-                        inside_paragraph_marker = True
-                    elif marker.txt == "]]":
-                        yield TOK.End_Paragraph(marker)
-                        inside_paragraph_marker = False
                 elif rtxt[0] in HYPHENS:
                     # Normalize all hyphens the same way
                     punct, rt = rt.split(1)
