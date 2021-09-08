@@ -1502,6 +1502,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
 
     rt: Tok
     inside_paragraph_marker: bool = False
+
     for rt in generate_rough_tokens(
         txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
     ):
@@ -1519,10 +1520,25 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
         # !!! probably a good idea to go back to using rt.txt since it
         # !!! makes the code more resilient (if a bit slower).
         rtxt: str = rt.txt
+
         if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
             yield TOK.Word(rt)
             continue
+
+        if len(rtxt) >= 2 and (
+            (rtxt.startswith("[[") and not inside_paragraph_marker)
+            or (rtxt.startswith("]]") and inside_paragraph_marker)
+        ):
+            # Begin or end paragraph marker
+            marker, rt = rt.split(2)
+            if marker.txt == "[[":
+                yield TOK.Begin_Paragraph(marker)
+                inside_paragraph_marker = True
+            elif marker.txt == "]]":
+                yield TOK.End_Paragraph(marker)
+                inside_paragraph_marker = False
+            rtxt = rt.txt
 
         if len(rtxt) > 1:
             if rtxt[0] in SIGN_PREFIX and rtxt[1] in DIGITS_PREFIX:
@@ -1544,9 +1560,9 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 if rtxt[:i].islower() or (i > 2 and rtxt[:i].isupper()):
                     head, rt = rt.split(i)
                     yield TOK.Word(head)
+            rtxt = rt.txt
 
         # Shortcut for quotes around a single word
-        rtxt = rt.txt
         if len(rtxt) >= 3:
             if rtxt[0] in DQUOTES and rtxt[-1] in DQUOTES:
                 # Convert to matching Icelandic quotes
@@ -1571,7 +1587,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
 
         # Special case for leading quotes, which are interpreted
         # as opening quotes
-        rtxt = rt.txt
         if len(rtxt) > 1:
             if rtxt[0] in DQUOTES:
                 # Convert simple quotes to proper opening quotes
