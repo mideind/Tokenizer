@@ -846,12 +846,11 @@ class TOK:
 
 
 class TokenStream:
-    """
-    Wrapper for token iterator allowing lookahead.
-    """
+
+    """ Wrapper for token iterator allowing lookahead. """
 
     def __init__(self, token_it: Iterator[Tok], *, lookahead_size: int = 2):
-        """Initialize from token iterator."""
+        """ Initialize from token iterator. """
         self.__it: Iterator[Tok] = token_it
         if lookahead_size <= 0:
             lookahead_size = 1
@@ -880,59 +879,57 @@ class TokenStream:
         return None
 
     def txt(self, i: int = 0) -> Optional[str]:
-        """Return token.txt for token at index i."""
+        """ Return token.txt for token at index i. """
         t = self[i]
         return t.txt if t else None
 
     def kind(self, i: int = 0) -> Optional[int]:
-        """Return token.kind for token at index i."""
+        """ Return token.kind for token at index i. """
         t = self[i]
         return t.kind if t else None
 
     def punctuation(self, i: int = 0) -> Optional[str]:
-        """Return token.punctuation for token at index i."""
+        """ Return token.punctuation for token at index i. """
         t = self[i]
         return t.punctuation if t else None
 
     def number(self, i: int = 0) -> Optional[float]:
-        """Return token.number for token at index i."""
+        """ Return token.number for token at index i. """
         t = self[i]
         return t.number if t else None
 
     def integer(self, i: int = 0) -> Optional[int]:
-        """Return token.integer for token at index i."""
+        """ Return token.integer for token at index i. """
         t = self[i]
         return t.integer if t else None
 
     def ordinal(self, i: int = 0) -> Optional[int]:
-        """Return token.ordinal for token at index i."""
+        """ Return token.ordinal for token at index i. """
         t = self[i]
         return t.ordinal if t else None
 
     def has_meanings(self, i: int = 0) -> Optional[bool]:
-        """Return token.has_meanings for token at index i."""
+        """ Return token.has_meanings for token at index i. """
         t = self[i]
         return t.has_meanings if t else None
 
     def meanings(self, i: int = 0) -> Optional[BIN_TupleList]:
-        """Return token.meanings for token at index i."""
+        """ Return token.meanings for token at index i. """
         t = self[i]
         return t.meanings if t else None
 
     def person_names(self, i: int = 0) -> Optional[PersonNameList]:
-        """Return token.person_names for token at index i."""
+        """ Return token.person_names for token at index i. """
         t = self[i]
         return t.person_names if t else None
 
     def as_tuple(self, i: int = 0) -> Optional[Tuple[Any, ...]]:
-        """Return token.as_tuple for token at index i."""
+        """ Return token.as_tuple for token at index i. """
         t = self[i]
         return t.as_tuple if t else None
 
     def could_be_end_of_sentence(self, i: int = 0, *args: Any) -> bool:
-        """
-        Wrapper to safely check if token at index i could be end of sentence.
-        """
+        """ Wrapper to safely check if token at index i could be end of sentence. """
         t = self[i]
         return could_be_end_of_sentence(t, *args) if t else False
 
@@ -1500,7 +1497,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
     # 7) The process is repeated from step 4) until the current raw token is
     #    exhausted. At that point, we obtain the next token and start from 2).
 
-    rt: Tok
+    rtxt: str = ""
     inside_paragraph_marker: bool = False
 
     for rt in generate_rough_tokens(
@@ -1519,7 +1516,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
         # !!! the .txt attribute. Once Pylance/Pyright has been fixed, it is
         # !!! probably a good idea to go back to using rt.txt since it
         # !!! makes the code more resilient (if a bit slower).
-        rtxt: str = rt.txt
+        rtxt = rt.txt
 
         if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
@@ -1840,10 +1837,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                     ate = True
 
             # Alphabetic characters
-            # (or a hyphen immediately followed by alphabetic characters,
-            # such as in 'þingkonur og -menn')
             if rt.txt and rt.txt[0].isalpha():
-                # XXX: This does not seem to fit the comment above ('-'.isalpha()==False)
                 ate = True
                 lw = len(rt.txt)
                 i = 1

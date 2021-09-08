@@ -809,11 +809,13 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.3.0: Fixed bug where opening quotes at the start of paragraphs
+  were sometimes incorrectly recognized and normalized.
 * Version 3.2.0: Numbers and amounts that consist of word tokens only ('sex hundruð')
   are now returned as the original ``TOK.WORD``s ('sex' and 'hundruð'), not as single
   coalesced ``TOK.NUMBER``/``TOK.AMOUNT``/etc. tokens.
-* Version 3.1.2: Changed paragraph markers to ``[[`` and ``]]`` (removing spaces)
-* Version 3.1.1: Minor fixes; added Tok.from_token()
+* Version 3.1.2: Changed paragraph markers to ``[[`` and ``]]`` (removing spaces).
+* Version 3.1.1: Minor fixes; added Tok.from_token().
 * Version 3.1.0: Added ``-o`` switch to ``tokenize`` command to return original 
   token text, enabling the tokenizer to run as a sentence splitter only.
 * Version 3.0.0: Added tracking of character offsets for tokens within the
