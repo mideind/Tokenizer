@@ -1,3 +1,5 @@
+# type: ignore
+
 """
 
     test_detokenize.py

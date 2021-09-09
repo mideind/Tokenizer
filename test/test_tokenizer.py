@@ -1,3 +1,4 @@
+# type: ignore
 """
 
     test_tokenizer.py
