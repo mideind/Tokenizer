@@ -1406,18 +1406,18 @@ def generate_rough_tokens(
         for text in splits:
             if is_text:
                 # 'text' is text to be tokenized
-                insert_paragraph_end = False
+                paragraph_end = 0
                 if not one_sent_per_line:
                     # Convert paragraph separators to TOK.P_BEGIN and TOK.P_END tokens
-                    if text.startswith("[["):
+                    while text.startswith("[["):
                         # Begin paragraph
                         text = text[2:]
                         yield TOK.Begin_Paragraph()
-                    if text.endswith("]]"):
+                    while text.endswith("]]"):
                         # End paragraph
                         text = text[:-2]
                         # Postpone the yield until after the rough token loop
-                        insert_paragraph_end = True
+                        paragraph_end += 1
                 tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
                 if replace_composite_glyphs:
                     # Replace composite glyphs with single code points
@@ -1443,9 +1443,10 @@ def generate_rough_tokens(
                     else:
                         yield tok
 
-                if insert_paragraph_end:
+                while paragraph_end:
                     # Yield the postponed TOK.P_END token
                     yield TOK.End_Paragraph()
+                    paragraph_end -= 1
             elif text == "]][[":
                 # Paragraph split: Yield TOK.P_BEGIN and TOK.P_END tokens
                 yield TOK.End_Paragraph()
