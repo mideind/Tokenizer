@@ -36,10 +36,13 @@ from .tokenizer import (
     TOK, Tok, tokenize, tokenize_without_annotation, split_into_sentences,
     parse_tokens, correct_spaces, detokenize, mark_paragraphs, paragraphs,
     normalized_text, normalized_text_from_tokens, text_from_tokens,
-    calculate_indexes, generate_rough_tokens
+    calculate_indexes, generate_rough_tokens, TokenStream
 )
 from .abbrev import Abbreviations, ConfigError
 from .version import __version__
+
+__author__ = "Miðeind ehf"
+__copyright__ = "(C) 2021 Miðeind ehf."
 
 __all__ = (
     "TP_LEFT","TP_CENTER", "TP_RIGHT", "TP_NONE", "TP_WORD",
@@ -49,9 +52,7 @@ __all__ = (
     "TOK", "Tok", "tokenize", "tokenize_without_annotation", "split_into_sentences",
     "parse_tokens", "correct_spaces", "detokenize", "mark_paragraphs", "paragraphs",
     "normalized_text", "normalized_text_from_tokens", "text_from_tokens",
-    "calculate_indexes", "generate_rough_tokens",
-    "Abbreviations", "ConfigError"
+    "calculate_indexes", "generate_rough_tokens", "TokenStream",
+    "Abbreviations", "ConfigError", "__version__", "__author__", "__copyright__"
 )
 
-__author__ = "Miðeind ehf"
-__copyright__ = "(C) 2021 Miðeind ehf."

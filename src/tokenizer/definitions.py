@@ -54,27 +54,21 @@ AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
 TelnoTuple = Tuple[str, str]
 CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 
-BIN_Tuple = NamedTuple(
-    "BIN_Tuple",
-    [
-        ("stofn", str),
-        ("utg", int),
-        ("ordfl", str),
-        ("fl", str),
-        ("ordmynd", str),
-        ("beyging", str),
-    ],
-)
+class BIN_Tuple(NamedTuple):
+    stofn: str
+    utg: int
+    ordfl: str
+    fl: str
+    ordmynd: str
+    beyging: str
+
 BIN_TupleList = Sequence[BIN_Tuple]
 
-PersonNameTuple = NamedTuple(
-    "PersonNameTuple",
-    [
-        ("name", str),
-        ("gender", Optional[str]),
-        ("case", Optional[str]),
-    ]
-)
+class PersonNameTuple(NamedTuple):
+    name: str
+    gender: Optional[str]
+    case: Optional[str]
+
 PersonNameList = Sequence[PersonNameTuple]
 
 # All possible contents of the Tok.val attribute
