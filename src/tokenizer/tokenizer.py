@@ -1141,7 +1141,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
         ln = s.group(1)
         vf = s.group(2)
         orig_unit = s.group(3)
-        value = float(ln) + cast(float, unicodedata.numeric(vf))
+        value = float(ln) + unicodedata.numeric(vf)
         if orig_unit in CURRENCY_SYMBOLS:
             # This is an amount with a currency symbol at the end
             iso = CURRENCY_SYMBOLS[orig_unit]
@@ -1165,7 +1165,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
         g = s.group()
         ln = s.group(1)
         vf = s.group(2)
-        val = float(ln) + cast(float, unicodedata.numeric(vf))
+        val = float(ln) + unicodedata.numeric(vf)
         t, rest = tok.split(s.end())
         return TOK.Number(t, val), rest
 
@@ -1345,13 +1345,13 @@ def html_replacement(token: Tok) -> Tok:
     return token
 
 
-def generate_rough_tokens(
+def generate_raw_tokens(
     text_or_gen: Union[str, Iterable[str]],
     replace_composite_glyphs: bool = True,
     replace_html_escapes: bool = False,
     one_sent_per_line: bool = False,
 ) -> Iterator[Tok]:
-    """ Generate rough tokens from a string or an iterable
+    """ Generate raw tokens from a string or an iterable
         that contains strings """
 
     if isinstance(text_or_gen, str):
@@ -1377,7 +1377,9 @@ def generate_rough_tokens(
             continue
 
         if saved is not None:
-            big_text = (saved.original or "") + big_text
+            # The following strange code satisfies Pylance
+            so: Optional[str] = saved.original
+            big_text = (so or "") + big_text
             saved = None
 
         # Force sentence splits
@@ -1416,7 +1418,7 @@ def generate_rough_tokens(
                     while text.endswith("]]"):
                         # End paragraph
                         text = text[:-2]
-                        # Postpone the yield until after the rough token loop
+                        # Postpone the yield until after the raw token loop
                         paragraph_end += 1
                 tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
                 if replace_composite_glyphs:
@@ -1461,7 +1463,7 @@ def generate_rough_tokens(
 
             is_text = not is_text
 
-    if saved:
+    if saved is not None:
         # There is trailing whitespace at the end of everything.
         # The only option to conserve this is to emit a token with empty text.
         # Set the type to S_SPLIT to get proper sentence detection in later phases.
@@ -1486,18 +1488,398 @@ def could_be_end_of_sentence(
     )
 
 
+class LetterParser:
+
+    """ Parses a sequence of alphabetic characters
+        off the front of a raw token """
+
+    def __init__(self, rt: Tok) -> None:
+        self.rt = rt
+
+    def parse(self) -> Iterable[Tok]:
+        """ Parse the raw token, yielding result tokens """
+        rt = self.rt
+        lw = len(rt.txt)
+        i = 1
+        while i < lw and (
+            rt.txt[i].isalpha()
+            or (
+                rt.txt[i] in PUNCT_INSIDE_WORD
+                and i + 1 < lw
+                and rt.txt[i + 1].isalpha()
+            )
+        ):
+            # We allow dots to occur inside words in the case of
+            # abbreviations; also apostrophes are allowed within
+            # words and at the end (albeit not consecutively)
+            # (O'Malley, Mary's, it's, childrens', O‘Donnell).
+            # The same goes for ² and ³
+            i += 1
+        if i < lw and rt.txt[i] in PUNCT_ENDING_WORD:
+            i += 1
+        # Make a special check for the occasional erroneous source text
+        # case where sentences run together over a period without a space:
+        # 'sjávarútvegi.Það'
+        # TODO STILLING Viljum merkja sem villu fyrir málrýni, og hafa
+        # sem mögulega stillingu.
+        ww: str = rt.txt[0:i]
+        a = ww.split(".")
+
+        if (
+            len(a) == 2
+            # First part must be more than one letter for us to split
+            and len(a[0]) > 1
+            # The first part may start with an uppercase or lowercase letter
+            # but the rest of it must be lowercase
+            and a[0][1:].islower()
+            and a[1]
+            # The second part must start with an uppercase letter
+            and a[1][0].isupper()
+            # Corner case: an abbrev such as 'f.Kr' should not be split
+            and rt.txt[0 : i + 1] not in Abbreviations.DICT
+        ):
+            # We have a lowercase word immediately followed by a period
+            # and an uppercase word
+            word1, rt = rt.split(len(a[0]))
+            punct, rt = rt.split(1)
+            word2, rt = rt.split(len(a[1]))
+            yield TOK.Word(word1)
+            yield TOK.Punctuation(punct)
+            yield TOK.Word(word2)
+
+        elif ww.endswith("-og") or ww.endswith("-eða"):
+            # Handle missing space before 'og'/'eða',
+            # such as 'fjármála-og efnahagsráðuneyti'
+            a = ww.split("-")
+
+            word1, rt = rt.split(len(a[0]))
+            punct, rt = rt.split(1)
+            word2, rt = rt.split(len(a[1]))
+            yield TOK.Word(word1)
+            yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
+            yield TOK.Word(word2)
+
+        else:
+            word, rt = rt.split(i)
+            yield TOK.Word(word)
+
+        if rt.txt and rt.txt[0] in COMPOSITE_HYPHENS:
+            # This is a hyphen or en dash directly appended to a word:
+            # might be a continuation ('fjármála- og efnahagsráðuneyti')
+            # Yield a special hyphen as a marker
+            punct, rt = rt.split(1)
+            yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
+
+        self.rt = rt
+
+
+class NumberParser:
+
+    """ Parses a sequence of digits off the front of a raw token """
+
+    def __init__(
+        self, rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool
+    ) -> None:
+        self.rt = rt
+        self.handle_kludgy_ordinals = handle_kludgy_ordinals
+        self.convert_numbers = convert_numbers
+
+    def parse(self) -> Iterable[Tok]:
+        """ Parse the raw token, yielding result tokens """
+        # Handle kludgy ordinals: '3ji', '5ti', etc.
+        rt = self.rt
+        handle_kludgy_ordinals = self.handle_kludgy_ordinals
+        convert_numbers = self.convert_numbers
+        for key, val in ORDINAL_ERRORS.items():
+            rtxt = rt.txt
+            if rtxt.startswith(key):
+                # This is a kludgy ordinal
+                key_tok, rt = rt.split(len(key))
+                if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
+                    # Convert ordinals to corresponding word tokens:
+                    # '1sti' -> 'fyrsti', '3ji' -> 'þriðji', etc.
+                    key_tok.substitute_longer((0, len(key)), val)
+                    yield TOK.Word(key_tok)
+                elif (
+                    handle_kludgy_ordinals == KLUDGY_ORDINALS_TRANSLATE
+                    and key in ORDINAL_NUMBERS
+                ):
+                    # Convert word-form ordinals into ordinal tokens,
+                    # i.e. '1sti' -> TOK.Ordinal('1sti', 1),
+                    # but leave other kludgy constructs ('2ja')
+                    # as word tokens
+                    yield TOK.Ordinal(key_tok, ORDINAL_NUMBERS[key])
+                else:
+                    # No special handling of kludgy ordinals:
+                    # yield them unchanged as word tokens
+                    yield TOK.Word(key_tok)
+                break  # This skips the for loop 'else'
+        else:
+            # Not a kludgy ordinal: eat tokens starting with a digit
+            t, rt = parse_digits(rt, convert_numbers)
+            yield t
+
+        # Continue where the digits parser left off
+        if rt.txt:
+            # Check for an SI unit immediately following a number
+            r = SI_UNITS_REGEX.match(rt.txt)
+            if r:
+                # Handle the case where a measurement unit is
+                # immediately following a number, without an intervening space
+                # (note that some of them contain nonalphabetic characters,
+                # so they won't be caught by the isalpha() check below)
+                unit, rt = rt.split(r.end())
+                yield TOK.Word(unit)
+
+        self.rt = rt
+
+
+class PunctuationParser:
+
+    """ Parses a sequence of punctuation off the front of a raw token """
+
+    def __init__(self) -> None:
+        self.rt = cast(Tok, None)
+        self.ate = False
+
+    def parse(self, rt: Tok) -> Iterable[Tok]:
+        """ Parse the raw token, yielding result tokens """
+        ate = False
+        while rt.txt and rt.txt[0] in PUNCTUATION:
+            ate = True
+            rtxt = rt.txt
+            lw = len(rtxt)
+            if rtxt.startswith("[...]"):
+                punct, rt = rt.split(5)
+                yield TOK.Punctuation(punct, normalized="[…]")
+            elif rtxt.startswith("[…]"):
+                punct, rt = rt.split(3)
+                yield TOK.Punctuation(punct)
+            elif rtxt.startswith("..."):
+                # Treat ellipsis as one piece of punctuation
+                numdots = 0
+                for c in rtxt:
+                    if c == ".":
+                        numdots += 1
+                    else:
+                        break
+                dots, rt = rt.split(numdots)
+                yield TOK.Punctuation(dots, normalized="…")
+            elif rtxt.startswith("…"):
+                # Treat ellipsis as one piece of punctuation
+                numdots = 0
+                for c in rtxt:
+                    if c == "…":
+                        numdots += 1
+                    else:
+                        break
+                dots, rt = rt.split(numdots)
+                yield TOK.Punctuation(dots, normalized="…")
+                # TODO LAGA Hér ætti að safna áfram.
+            # TODO Was at the end of a word or by itself, should be ",".
+            # Won't correct automatically, check for M6
+            elif rt.txt == ",,":
+                punct, rt = rt.split(2)
+                yield TOK.Punctuation(punct, normalized=",")
+            # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
+            elif rtxt.startswith(",,"):
+                # Probably an idiot trying to type opening double quotes with commas
+                punct, rt = rt.split(2)
+                yield TOK.Punctuation(punct, normalized="„")
+            elif rtxt[0] in HYPHENS:
+                # Normalize all hyphens the same way
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized=HYPHEN)
+            elif rtxt[0] in DQUOTES:
+                # Convert to a proper closing double quote
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized="“")
+            elif rtxt[0] in SQUOTES:
+                # Left with a single quote, convert to proper closing quote
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized="‘")
+            elif lw > 1 and rtxt.startswith("#"):
+                # Might be a hashtag, processed later
+                ate = False
+                break
+            elif lw > 1 and rtxt.startswith("@"):
+                # Username on Twitter or other social media platforms
+                # User names may contain alphabetic characters, digits
+                # and embedded periods (but not consecutive ones)
+                s = re.match(r"\@[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*", rtxt)
+                if s:
+                    g = s.group()
+                    username, rt = rt.split(s.end())
+                    yield TOK.Username(username, g[1:])
+                else:
+                    # Return the @-sign and leave the rest
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct)
+            else:
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct)
+
+        # End of punctuation loop
+        self.rt = rt
+        self.ate = ate
+
+
+def parse_mixed(
+    rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool
+) -> Iterable[Tok]:
+    """ Parse a mixed raw token string, from the token rt """
+
+    # Initialize a singleton parser for punctuation
+    pp = PunctuationParser()
+
+    while rt.txt:
+
+        # Handle punctuation
+        yield from pp.parse(rt)
+        rt, ate = pp.rt, pp.ate
+
+        # Check for specific token types other than punctuation
+
+        rtxt = rt.txt
+        if rtxt and "@" in rtxt:
+            # Check for valid e-mail
+            # Note: we don't allow double quotes (simple or closing ones) in e-mails here
+            # even though they're technically allowed according to the RFCs
+            s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rtxt)
+            if s:
+                email, rt = rt.split(s.end())
+                yield TOK.Email(email)
+                ate = True
+
+        # Unicode single-char vulgar fractions
+        # TODO: Support multiple-char unicode fractions that
+        # use super/subscript w. DIVISION SLASH (U+2215)
+        if rt.txt and rt.txt[0] in SINGLECHAR_FRACTIONS:
+            num, rt = rt.split(1)
+            yield TOK.Number(num, unicodedata.numeric(num.txt[0]))
+            ate = True
+
+        rtxt = rt.txt
+        if rtxt and rtxt.startswith(URL_PREFIXES):
+            # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
+            # even though many of them are actually allowed according to
+            # the IETF RFC
+            endp = ""
+            w = rtxt
+            while w and w[-1] in RIGHT_PUNCTUATION:
+                endp = w[-1] + endp
+                w = w[:-1]
+            url, rt = rt.split(len(w))
+            yield TOK.Url(url)
+            ate = True
+
+        if rtxt and len(rtxt) >= 2 and re.match(r"#\w", rtxt, re.UNICODE):
+            # Handle hashtags. Eat all text up to next punctuation character
+            # so we can handle strings like "#MeToo-hreyfingin" as two words
+            w = rtxt
+            tag = w[:1]
+            w = w[1:]
+            while w and w[0] not in PUNCTUATION:
+                tag += w[0]
+                w = w[1:]
+            tag_tok, rt = rt.split(len(tag))
+            if re.match(r"#\d+$", tag):
+                # Hash is being used as a number sign, e.g. "#12"
+                yield TOK.Ordinal(tag_tok, int(tag[1:]))
+            else:
+                yield TOK.Hashtag(tag_tok)
+            ate = True
+
+        rtxt = rt.txt
+        # Domain name (e.g. greynir.is)
+        if (
+            rtxt
+            and len(rtxt) >= MIN_DOMAIN_LENGTH
+            and rtxt[0].isalnum()  # All domains start with an alphanumeric char
+            and "." in rtxt[1:-2]  # Optimization, TLD is at least 2 chars
+            and DOMAIN_REGEX.search(rtxt)
+        ):
+            w = rtxt
+            endp = ""
+            while w and w[-1] in PUNCTUATION:
+                endp = w[-1] + endp
+                w = w[:-1]
+            domain, rt = rt.split(len(w))
+            yield TOK.Domain(domain)
+            ate = True
+
+        rtxt = rt.txt
+        # Numbers or other stuff starting with a digit
+        # (eventually prefixed by a '+' or '-')
+        if rtxt and (
+            rtxt[0] in DIGITS_PREFIX
+            or (rtxt[0] in SIGN_PREFIX and len(rtxt) >= 2 and rtxt[1] in DIGITS_PREFIX)
+        ):
+            np = NumberParser(rt, handle_kludgy_ordinals, convert_numbers)
+            yield from np.parse()
+            rt = np.rt
+            ate = True
+
+        # Check for molecular formula ('H2SO4')
+        if rt.txt:
+            r = MOLECULE_REGEX.match(rt.txt)
+            if r is not None:
+                g = r.group()
+                if g not in Abbreviations.DICT and MOLECULE_FILTER.search(g):
+                    # Correct format, containing at least one digit
+                    # and not separately defined as an abbreviation:
+                    # We assume that this is a molecular formula
+                    molecule, rt = rt.split(r.end())
+                    yield TOK.Molecule(molecule)
+                    ate = True
+
+        # Check for currency abbreviations immediately followed by a number
+        if len(rt.txt) > 3 and rt.txt[0:3] in CURRENCY_ABBREV and rt.txt[3].isdigit():
+            # XXX: This feels a little hacky
+            temp_tok = Tok(TOK.RAW, rt.txt[3:], None)
+            digit_tok, _ = parse_digits(temp_tok, convert_numbers)
+            if digit_tok.kind == TOK.NUMBER:
+                amount, rt = rt.split(3 + len(digit_tok.txt))
+                yield TOK.Amount(amount, amount.txt[:3], digit_tok.number)
+                ate = True
+
+        # Alphabetic characters
+        if rt.txt and rt.txt[0].isalpha():
+            lp = LetterParser(rt)
+            yield from lp.parse()
+            rt = lp.rt
+            ate = True
+
+        # Special case for quotes attached on the right hand side to other stuff,
+        # assumed to be closing quotes rather than opening ones
+        if rt.txt:
+            if rt.txt[0] in SQUOTES:
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized="‘")
+                ate = True
+            elif rt.txt[0] in DQUOTES:
+                punct, rt = rt.split(1)
+                yield TOK.Punctuation(punct, normalized="“")
+                ate = True
+
+        if not ate:
+            # Ensure that we eat everything, even unknown stuff
+            unk, rt = rt.split(1)
+            yield TOK.Unknown(unk)
+
+
 def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok]:
     """ Generator that parses contiguous text into a stream of tokens """
 
     # Obtain individual flags from the options dict
-    convert_numbers = options.get("convert_numbers", False)
-    replace_composite_glyphs = options.get("replace_composite_glyphs", True)
-    replace_html_escapes = options.get("replace_html_escapes", False)
-    one_sent_per_line = options.get("one_sent_per_line", False)
+    convert_numbers: bool = options.get("convert_numbers", False)
+    replace_composite_glyphs: bool = options.get("replace_composite_glyphs", True)
+    replace_html_escapes: bool = options.get("replace_html_escapes", False)
+    one_sent_per_line: bool = options.get("one_sent_per_line", False)
 
     # The default behavior for kludgy ordinals is to pass them
     # through as word tokens
-    handle_kludgy_ordinals = options.get(
+    handle_kludgy_ordinals: int = options.get(
         "handle_kludgy_ordinals", KLUDGY_ORDINALS_PASS_THROUGH
     )
 
@@ -1522,7 +1904,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
 
     rtxt: str = ""
 
-    for rt in generate_rough_tokens(
+    for rt in generate_raw_tokens(
         txt, replace_composite_glyphs, replace_html_escapes, one_sent_per_line
     ):
         # rt: raw token
@@ -1533,13 +1915,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             yield rt
             continue
 
-        # !!! NOTE: The rtxt variable was introduced chiefly because of
-        # !!! a bug in Pylance/Pyright, causing it to lose track of the type of
-        # !!! the .txt attribute. Once Pylance/Pyright has been fixed, it is
-        # !!! probably a good idea to go back to using rt.txt since it
-        # !!! makes the code more resilient (if a bit slower).
         rtxt = rt.txt
-
         if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
             yield TOK.Word(rt)
@@ -1603,324 +1979,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield TOK.Punctuation(punct, normalized="‚")
 
         # More complex case of mixed punctuation, letters and numbers
-        while rt.txt:
-            # Handle punctuation
-            ate = False
-            while rt.txt and rt.txt[0] in PUNCTUATION:
-                ate = True
-                rtxt = rt.txt
-                lw = len(rtxt)
-                if rtxt.startswith("[...]"):
-                    punct, rt = rt.split(5)
-                    yield TOK.Punctuation(punct, normalized="[…]")
-                elif rtxt.startswith("[…]"):
-                    punct, rt = rt.split(3)
-                    yield TOK.Punctuation(punct)
-                elif rtxt.startswith("..."):
-                    # Treat ellipsis as one piece of punctuation
-                    numdots = 0
-                    for c in rtxt:
-                        if c == ".":
-                            numdots += 1
-                        else:
-                            break
-                    dots, rt = rt.split(numdots)
-                    yield TOK.Punctuation(dots, normalized="…")
-                elif rtxt.startswith("…"):
-                    # Treat ellipsis as one piece of punctuation
-                    numdots = 0
-                    for c in rtxt:
-                        if c == "…":
-                            numdots += 1
-                        else:
-                            break
-                    dots, rt = rt.split(numdots)
-                    yield TOK.Punctuation(dots, normalized="…")
-                    # TODO LAGA Hér ætti að safna áfram.
-                # TODO Was at the end of a word or by itself, should be ",".
-                # Won't correct automatically, check for M6
-                elif rt.txt == ",,":
-                    punct, rt = rt.split(2)
-                    yield TOK.Punctuation(punct, normalized=",")
-                # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
-                elif rtxt.startswith(",,"):
-                    # Probably an idiot trying to type opening double quotes with commas
-                    punct, rt = rt.split(2)
-                    yield TOK.Punctuation(punct, normalized="„")
-                elif rtxt[0] in HYPHENS:
-                    # Normalize all hyphens the same way
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct, normalized=HYPHEN)
-                elif rtxt[0] in DQUOTES:
-                    # Convert to a proper closing double quote
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct, normalized="“")
-                elif rtxt[0] in SQUOTES:
-                    # Left with a single quote, convert to proper closing quote
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct, normalized="‘")
-                elif lw > 1 and rtxt.startswith("#"):
-                    # Might be a hashtag, processed later
-                    ate = False
-                    break
-                elif lw > 1 and rtxt.startswith("@"):
-                    # Username on Twitter or other social media platforms
-                    # User names may contain alphabetic characters, digits
-                    # and embedded periods (but not consecutive ones)
-                    s = re.match(r"\@[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*", rtxt)
-                    if s:
-                        g = s.group()
-                        username, rt = rt.split(s.end())
-                        yield TOK.Username(username, g[1:])
-                    else:
-                        # Return the @-sign and leave the rest
-                        punct, rt = rt.split(1)
-                        yield TOK.Punctuation(punct)
-                else:
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct)
-
-            # End of punctuation loop
-            # Check for specific token types other than punctuation
-
-            rtxt = rt.txt
-            if rtxt and "@" in rtxt:
-                # Check for valid e-mail
-                # Note: we don't allow double quotes (simple or closing ones) in e-mails here
-                # even though they're technically allowed according to the RFCs
-                s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rtxt)
-                if s:
-                    ate = True
-                    email, rt = rt.split(s.end())
-                    yield TOK.Email(email)
-
-            # Unicode single-char vulgar fractions
-            # TODO: Support multiple-char unicode fractions that
-            # use super/subscript w. DIVISION SLASH (U+2215)
-            if rt.txt and rt.txt[0] in SINGLECHAR_FRACTIONS:
-                ate = True
-                num, rt = rt.split(1)
-                yield TOK.Number(num, unicodedata.numeric(num.txt[0]))
-
-            rtxt = rt.txt
-            if rtxt and rtxt.startswith(URL_PREFIXES):
-                # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
-                # even though many of them are actually allowed according to
-                # the IETF RFC
-                endp = ""
-                w = rtxt
-                while w and w[-1] in RIGHT_PUNCTUATION:
-                    endp = w[-1] + endp
-                    w = w[:-1]
-                url, rt = rt.split(len(w))
-                yield TOK.Url(url)
-                ate = True
-
-            if rtxt and len(rtxt) >= 2 and re.match(r"#\w", rtxt, re.UNICODE):
-                # Handle hashtags. Eat all text up to next punctuation character
-                # so we can handle strings like "#MeToo-hreyfingin" as two words
-                w = rtxt
-                tag = w[:1]
-                w = w[1:]
-                while w and w[0] not in PUNCTUATION:
-                    tag += w[0]
-                    w = w[1:]
-                tag_tok, rt = rt.split(len(tag))
-                if re.match(r"#\d+$", tag):
-                    # Hash is being used as a number sign, e.g. "#12"
-                    yield TOK.Ordinal(tag_tok, int(tag[1:]))
-                else:
-                    yield TOK.Hashtag(tag_tok)
-                ate = True
-
-            rtxt = rt.txt
-            # Domain name (e.g. greynir.is)
-            if (
-                rtxt
-                and len(rtxt) >= MIN_DOMAIN_LENGTH
-                and rtxt[0].isalnum()  # All domains start with an alphanumeric char
-                and "." in rtxt[1:-2]  # Optimization, TLD is at least 2 chars
-                and DOMAIN_REGEX.search(rtxt)
-            ):
-                w = rtxt
-                endp = ""
-                while w and w[-1] in PUNCTUATION:
-                    endp = w[-1] + endp
-                    w = w[:-1]
-                domain, rt = rt.split(len(w))
-                yield TOK.Domain(domain)
-                ate = True
-
-            rtxt = rt.txt
-            # Numbers or other stuff starting with a digit
-            # (eventually prefixed by a '+' or '-')
-            if rtxt and (
-                rtxt[0] in DIGITS_PREFIX
-                or (
-                    rtxt[0] in SIGN_PREFIX
-                    and len(rtxt) >= 2
-                    and rtxt[1] in DIGITS_PREFIX
-                )
-            ):
-                # Handle kludgy ordinals: '3ji', '5ti', etc.
-                for key, val in ORDINAL_ERRORS.items():
-                    rtxt = rt.txt
-                    if rtxt.startswith(key):
-                        # This is a kludgy ordinal
-                        key_tok, rt = rt.split(len(key))
-                        if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
-                            # Convert ordinals to corresponding word tokens:
-                            # '1sti' -> 'fyrsti', '3ji' -> 'þriðji', etc.
-                            key_tok.substitute_longer((0, len(key)), val)
-                            yield TOK.Word(key_tok)
-                        elif (
-                            handle_kludgy_ordinals == KLUDGY_ORDINALS_TRANSLATE
-                            and key in ORDINAL_NUMBERS
-                        ):
-                            # Convert word-form ordinals into ordinal tokens,
-                            # i.e. '1sti' -> TOK.Ordinal('1sti', 1),
-                            # but leave other kludgy constructs ('2ja')
-                            # as word tokens
-                            yield TOK.Ordinal(key_tok, ORDINAL_NUMBERS[key])
-                        else:
-                            # No special handling of kludgy ordinals:
-                            # yield them unchanged as word tokens
-                            yield TOK.Word(key_tok)
-                        break  # This skips the for loop 'else'
-                else:
-                    # Not a kludgy ordinal: eat tokens starting with a digit
-                    t, rt = parse_digits(rt, convert_numbers)
-                    yield t
-                # Continue where the digits parser left off
-                ate = True
-
-                if rt.txt:
-                    # Check for an SI unit immediately following a number
-                    r = SI_UNITS_REGEX.match(rt.txt)
-                    if r:
-                        # Handle the case where a measurement unit is
-                        # immediately following a number, without an intervening space
-                        # (note that some of them contain nonalphabetic characters,
-                        # so they won't be caught by the isalpha() check below)
-                        unit, rt = rt.split(r.end())
-                        yield TOK.Word(unit)
-
-            # Check for molecular formula ('H2SO4')
-            if rt.txt:
-                r = MOLECULE_REGEX.match(rt.txt)
-                if r is not None:
-                    g = r.group()
-                    if g not in Abbreviations.DICT and MOLECULE_FILTER.search(g):
-                        # Correct format, containing at least one digit
-                        # and not separately defined as an abbreviation:
-                        # We assume that this is a molecular formula
-                        molecule, rt = rt.split(r.end())
-                        yield TOK.Molecule(molecule)
-                        ate = True
-
-            # Check for currency abbreviations immediately followed by a number
-            if (
-                len(rt.txt) > 3
-                and rt.txt[0:3] in CURRENCY_ABBREV
-                and rt.txt[3].isdigit()
-            ):
-                # XXX: This feels a little hacky
-                temp_tok = Tok(TOK.RAW, rt.txt[3:], None)
-                digit_tok, _ = parse_digits(temp_tok, convert_numbers)
-                if digit_tok.kind == TOK.NUMBER:
-                    amount, rt = rt.split(3 + len(digit_tok.txt))
-                    yield TOK.Amount(amount, amount.txt[:3], digit_tok.number)
-                    ate = True
-
-            # Alphabetic characters
-            if rt.txt and rt.txt[0].isalpha():
-                ate = True
-                lw = len(rt.txt)
-                i = 1
-                while i < lw and (
-                    rt.txt[i].isalpha()
-                    or (
-                        rt.txt[i] in PUNCT_INSIDE_WORD
-                        and i + 1 < lw
-                        and rt.txt[i + 1].isalpha()
-                    )
-                ):
-                    # We allow dots to occur inside words in the case of
-                    # abbreviations; also apostrophes are allowed within
-                    # words and at the end (albeit not consecutively)
-                    # (O'Malley, Mary's, it's, childrens', O‘Donnell).
-                    # The same goes for ² and ³
-                    i += 1
-                if i < lw and rt.txt[i] in PUNCT_ENDING_WORD:
-                    i += 1
-                # Make a special check for the occasional erroneous source text
-                # case where sentences run together over a period without a space:
-                # 'sjávarútvegi.Það'
-                # TODO STILLING Viljum merkja sem villu fyrir málrýni, og hafa
-                # sem mögulega stillingu.
-                ww: str = rt.txt[0:i]
-                a = ww.split(".")
-                if (
-                    len(a) == 2
-                    # First part must be more than one letter for us to split
-                    and len(a[0]) > 1
-                    # The first part may start with an uppercase or lowercase letter
-                    # but the rest of it must be lowercase
-                    and a[0][1:].islower()
-                    and a[1]
-                    # The second part must start with an uppercase letter
-                    and a[1][0].isupper()
-                    # Corner case: an abbrev such as 'f.Kr' should not be split
-                    and rt.txt[0 : i + 1] not in Abbreviations.DICT
-                ):
-                    # We have a lowercase word immediately followed by a period
-                    # and an uppercase word
-                    word1, rt = rt.split(len(a[0]))
-                    punct, rt = rt.split(1)
-                    word2, rt = rt.split(len(a[1]))
-                    yield TOK.Word(word1)
-                    yield TOK.Punctuation(punct)
-                    yield TOK.Word(word2)
-
-                elif ww.endswith("-og") or ww.endswith("-eða"):
-                    # Handle missing space before 'og'/'eða',
-                    # such as 'fjármála-og efnahagsráðuneyti'
-                    a = ww.split("-")
-
-                    word1, rt = rt.split(len(a[0]))
-                    punct, rt = rt.split(1)
-                    word2, rt = rt.split(len(a[1]))
-                    yield TOK.Word(word1)
-                    yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
-                    yield TOK.Word(word2)
-
-                else:
-                    word, rt = rt.split(i)
-                    yield TOK.Word(word)
-
-                if rt.txt and rt.txt[0] in COMPOSITE_HYPHENS:
-                    # This is a hyphen or en dash directly appended to a word:
-                    # might be a continuation ('fjármála- og efnahagsráðuneyti')
-                    # Yield a special hyphen as a marker
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
-
-            # Special case for quotes attached on the right hand side to other stuff,
-            # assumed to be closing quotes rather than opening ones
-            if rt.txt:
-                if rt.txt[0] in SQUOTES:
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct, normalized="‘")
-                    ate = True
-                elif rt.txt[0] in DQUOTES:
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct, normalized="“")
-                    ate = True
-
-            if not ate:
-                # Ensure that we eat everything, even unknown stuff
-                unk, rt = rt.split(1)
-                yield TOK.Unknown(unk)
+        yield from parse_mixed(rt, handle_kludgy_ordinals, convert_numbers)
 
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
