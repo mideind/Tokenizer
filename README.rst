@@ -809,6 +809,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.3.2: Internal refactoring; bug fixes in paragraph handling.
 * Version 3.3.1: Fixed bug where opening quotes at the start of paragraphs
   were sometimes incorrectly recognized and normalized.
 * Version 3.2.0: Numbers and amounts that consist of word tokens only ('sex hundruð')
