@@ -70,7 +70,7 @@ _T = TypeVar("_T", bound="Tok")
 
 class Tok:
 
-    """ Information about a single token """
+    """Information about a single token"""
 
     def __init__(
         self,
@@ -97,7 +97,7 @@ class Tok:
 
     @classmethod
     def from_token(cls: Type[_T], t: "Tok") -> _T:
-        """ Create a new Tok instance by copying from a previously existing one """
+        """Create a new Tok instance by copying from a previously existing one"""
         return cls(
             t.kind,
             t.txt,
@@ -108,8 +108,8 @@ class Tok:
 
     @property
     def punctuation(self) -> str:
-        """ Return the punctuation symbol associated with the
-            token, if it is in fact a punctuation token """
+        """Return the punctuation symbol associated with the
+        token, if it is in fact a punctuation token"""
         if self.kind != TOK.PUNCTUATION:
             # This is not a punctuation token. In that case,
             # we return the Unicode 'unrecognized character'
@@ -120,7 +120,7 @@ class Tok:
 
     @property
     def number(self) -> float:
-        """ Return a float embedded in a Number or Year token """
+        """Return a float embedded in a Number or Year token"""
         if self.kind == TOK.YEAR:
             return float(cast(int, self.val))
         if self.kind == TOK.NUMBER:
@@ -129,8 +129,8 @@ class Tok:
 
     @property
     def integer(self) -> int:
-        """ Return an integer from a token, which is assumed
-            to be a Number or a Year token """
+        """Return an integer from a token, which is assumed
+        to be a Number or a Year token"""
         if self.kind == TOK.YEAR:
             return cast(int, self.val)
         if self.kind == TOK.NUMBER:
@@ -139,8 +139,8 @@ class Tok:
 
     @property
     def ordinal(self) -> int:
-        """ Return an ordinal number from a token,
-            which is assumed to be a Number or an Ordinal token """
+        """Return an ordinal number from a token,
+        which is assumed to be a Number or an Ordinal token"""
         if self.kind == TOK.ORDINAL:
             return cast(int, self.val)
         if self.kind == TOK.NUMBER:
@@ -149,32 +149,32 @@ class Tok:
 
     @property
     def has_meanings(self) -> bool:
-        """ Return True if this is a word token and has meanings,
-            i.e. associated BIN_Tuple instances """
+        """Return True if this is a word token and has meanings,
+        i.e. associated BIN_Tuple instances"""
         if self.kind != TOK.WORD:
             return False
         return bool(self.val)
 
     @property
     def meanings(self) -> BIN_TupleList:
-        """ Return the meanings of this token if it is a word,
-            otherwise return an empty list """
+        """Return the meanings of this token if it is a word,
+        otherwise return an empty list"""
         if self.kind != TOK.WORD:
             return []
         return cast(BIN_TupleList, self.val) or []
 
     @property
     def person_names(self) -> PersonNameList:
-        """ Return the person names of this token if it denotes a PERSON,
-            otherwise return an empty list """
+        """Return the person names of this token if it denotes a PERSON,
+        otherwise return an empty list"""
         if self.kind != TOK.PERSON:
             return []
         return cast(PersonNameList, self.val) or []
 
     def split(self, pos: int) -> Tuple["Tok", "Tok"]:
-        """ Split this token into two at 'pos'.
-            The first token returned will have 'pos'
-            characters and the second one will have the rest.
+        """Split this token into two at 'pos'.
+        The first token returned will have 'pos'
+        characters and the second one will have the rest.
         """
         # TODO: What happens if you split a token that has
         # txt=="" and original!=""?
@@ -209,7 +209,7 @@ class Tok:
         return l, r
 
     def substitute(self, span: Tuple[int, int], new: str) -> None:
-        """ Substitute a span with a single or empty character 'new'. """
+        """Substitute a span with a single or empty character 'new'."""
         self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
         if self.origin_spans is not None:
             # Remove origin entries that correspond to characters that are gone.
@@ -218,7 +218,7 @@ class Tok:
             )
 
     def substitute_longer(self, span: Tuple[int, int], new: str) -> None:
-        """ Substitute a span with a potentially longer string """
+        """Substitute a span with a potentially longer string"""
 
         # This tracks origin differently from the regular
         # substitution function.
@@ -248,8 +248,8 @@ class Tok:
             self.origin_spans = head + [new_origin] * len(new) + tail
 
     def substitute_all(self, old_str: str, new_char: str) -> None:
-        """ Substitute all occurrences of 'old_str' with 'new_char'.
-            The new character may be empty.
+        """Substitute all occurrences of 'old_str' with 'new_char'.
+        The new character may be empty.
         """
         # NOTE: This implementation is worst-case-quadratic in the
         #       length of the token text.
@@ -270,11 +270,11 @@ class Tok:
     def concatenate(
         self, other: "Tok", *, separator: str = "", metadata_from_other: bool = False
     ) -> "Tok":
-        """ Return a new token that consists of self with other
-            concatenated to the end.
-            A separator can optionally be supplied.
-            The new token will have metadata (kind and val)
-            from self unless 'metadata_from_other' is True.
+        """Return a new token that consists of self with other
+        concatenated to the end.
+        A separator can optionally be supplied.
+        The new token will have metadata (kind and val)
+        from self unless 'metadata_from_other' is True.
         """
         new_kind = self.kind if not metadata_from_other else other.kind
         new_val = self.val if not metadata_from_other else other.val
@@ -302,12 +302,12 @@ class Tok:
 
     @property
     def as_tuple(self) -> Tuple[Any, ...]:
-        """ Return the contents of this token as a generic tuple,
-            suitable e.g. for serialization """
+        """Return the contents of this token as a generic tuple,
+        suitable e.g. for serialization"""
         return (self.kind, self.txt, self.val)
 
     def __getitem__(self, i: int) -> Union[int, str, ValType]:
-        """ Backwards compatibility for when Tok was a namedtuple. """
+        """Backwards compatibility for when Tok was a namedtuple."""
         if i == 0:
             return self.kind
         elif i == 1:
@@ -318,14 +318,14 @@ class Tok:
             raise IndexError("Tok can only be indexed by 0, 1 or 2")
 
     def equal(self, other: "Tok") -> bool:
-        """ Equality of content between two tokens, i.e. ignoring the
-            'original' and 'origin_spans' attributes """
+        """Equality of content between two tokens, i.e. ignoring the
+        'original' and 'origin_spans' attributes"""
         return (
             self.kind == other.kind and self.txt == other.txt and self.val == other.val
         )
 
     def __eq__(self, o: Any) -> bool:
-        """ Full equality between two Tok instances """
+        """Full equality between two Tok instances"""
         if not isinstance(o, Tok):
             return False
         return (
@@ -796,14 +796,14 @@ class TOK:
 
     @staticmethod
     def Begin_Paragraph() -> Tok:
-        """ Return a special paragraph begin marker token """
+        """Return a special paragraph begin marker token"""
         marker = Tok(TOK.P_BEGIN, "[[", None, "[[", list(range(2)))
         marker.substitute((0, 2), "")
         return marker
 
     @staticmethod
     def End_Paragraph() -> Tok:
-        """ Return a special paragraph end marker token """
+        """Return a special paragraph end marker token"""
         marker = Tok(TOK.P_END, "]]", None, "]]", list(range(2)))
         marker.substitute((0, 2), "")
         return marker
@@ -845,10 +845,10 @@ class TOK:
 
 class TokenStream:
 
-    """ Wrapper for token iterator allowing lookahead. """
+    """Wrapper for token iterator allowing lookahead."""
 
     def __init__(self, token_it: Iterator[Tok], *, lookahead_size: int = 2):
-        """ Initialize from token iterator. """
+        """Initialize from token iterator."""
         self.__it: Iterator[Tok] = token_it
         if lookahead_size <= 0:
             lookahead_size = 1
@@ -877,63 +877,63 @@ class TokenStream:
         return None
 
     def txt(self, i: int = 0) -> Optional[str]:
-        """ Return token.txt for token at index i. """
+        """Return token.txt for token at index i."""
         t = self[i]
         return t.txt if t else None
 
     def kind(self, i: int = 0) -> Optional[int]:
-        """ Return token.kind for token at index i. """
+        """Return token.kind for token at index i."""
         t = self[i]
         return t.kind if t else None
 
     def punctuation(self, i: int = 0) -> Optional[str]:
-        """ Return token.punctuation for token at index i. """
+        """Return token.punctuation for token at index i."""
         t = self[i]
         return t.punctuation if t else None
 
     def number(self, i: int = 0) -> Optional[float]:
-        """ Return token.number for token at index i. """
+        """Return token.number for token at index i."""
         t = self[i]
         return t.number if t else None
 
     def integer(self, i: int = 0) -> Optional[int]:
-        """ Return token.integer for token at index i. """
+        """Return token.integer for token at index i."""
         t = self[i]
         return t.integer if t else None
 
     def ordinal(self, i: int = 0) -> Optional[int]:
-        """ Return token.ordinal for token at index i. """
+        """Return token.ordinal for token at index i."""
         t = self[i]
         return t.ordinal if t else None
 
     def has_meanings(self, i: int = 0) -> Optional[bool]:
-        """ Return token.has_meanings for token at index i. """
+        """Return token.has_meanings for token at index i."""
         t = self[i]
         return t.has_meanings if t else None
 
     def meanings(self, i: int = 0) -> Optional[BIN_TupleList]:
-        """ Return token.meanings for token at index i. """
+        """Return token.meanings for token at index i."""
         t = self[i]
         return t.meanings if t else None
 
     def person_names(self, i: int = 0) -> Optional[PersonNameList]:
-        """ Return token.person_names for token at index i. """
+        """Return token.person_names for token at index i."""
         t = self[i]
         return t.person_names if t else None
 
     def as_tuple(self, i: int = 0) -> Optional[Tuple[Any, ...]]:
-        """ Return token.as_tuple for token at index i. """
+        """Return token.as_tuple for token at index i."""
         t = self[i]
         return t.as_tuple if t else None
 
     def could_be_end_of_sentence(self, i: int = 0, *args: Any) -> bool:
-        """ Wrapper to safely check if token at index i could be end of sentence. """
+        """Wrapper to safely check if token at index i could be end of sentence."""
         t = self[i]
         return could_be_end_of_sentence(t, *args) if t else False
 
 
 def normalized_text(token: Tok) -> str:
-    """ Returns token text after normalizing punctuation """
+    """Returns token text after normalizing punctuation"""
     return (
         cast(Tuple[int, str], token.val)[1]
         if token.kind == TOK.PUNCTUATION
@@ -942,17 +942,17 @@ def normalized_text(token: Tok) -> str:
 
 
 def text_from_tokens(tokens: Iterable[Tok]) -> str:
-    """ Return text from a list of tokens, without normalization """
+    """Return text from a list of tokens, without normalization"""
     return " ".join(t.txt for t in tokens if t.txt)
 
 
 def normalized_text_from_tokens(tokens: Iterable[Tok]) -> str:
-    """ Return text from a list of tokens, with normalization """
+    """Return text from a list of tokens, with normalization"""
     return " ".join(filter(None, map(normalized_text, tokens)))
 
 
 def is_valid_date(y: int, m: int, d: int) -> bool:
-    """ Returns True if y, m, d is a valid date """
+    """Returns True if y, m, d is a valid date"""
     if (1776 <= y <= 2100) and (1 <= m <= 12) and (1 <= d <= DAYS_IN_MONTH[m]):
         try:
             datetime.datetime(year=y, month=m, day=d)
@@ -963,7 +963,7 @@ def is_valid_date(y: int, m: int, d: int) -> bool:
 
 
 def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
-    """ Parse a raw token starting with a digit """
+    """Parse a raw token starting with a digit"""
     w = tok.txt
     s: Optional[Match[str]] = re.match(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)", w)
     g: str
@@ -1306,7 +1306,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
 
 
 def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
-    """ Regex substitution function for HTML escape codes """
+    """Regex substitution function for HTML escape codes"""
     g = match.group(4)
     if g is not None:
         # HTML escape string: 'acute'
@@ -1322,7 +1322,7 @@ def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
 
 
 def unicode_replacement(token: Tok) -> Tok:
-    """ Replace some composite glyphs with single code points """
+    """Replace some composite glyphs with single code points"""
     total_reduction = 0
     for m in UNICODE_REGEX.finditer(token.txt):
         span, new_letter = m.span(), UNICODE_REPLACEMENTS[m.group(0)]
@@ -1334,7 +1334,7 @@ def unicode_replacement(token: Tok) -> Tok:
 
 
 def html_replacement(token: Tok) -> Tok:
-    """ Replace html escape sequences with their proper characters """
+    """Replace html escape sequences with their proper characters"""
     total_reduction = 0
     for m in HTML_ESCAPE_REGEX.finditer(token.txt):
         span, new_letter = html_escape(m)
@@ -1351,8 +1351,8 @@ def generate_raw_tokens(
     replace_html_escapes: bool = False,
     one_sent_per_line: bool = False,
 ) -> Iterator[Tok]:
-    """ Generate raw tokens from a string or an iterable
-        that contains strings """
+    """Generate raw tokens from a string or an iterable
+    that contains strings"""
 
     if isinstance(text_or_gen, str):
         if not text_or_gen:
@@ -1473,8 +1473,8 @@ def generate_raw_tokens(
 def could_be_end_of_sentence(
     next_token: Tok, test_set: FrozenSet[int] = TOK.TEXT, multiplier: bool = False
 ) -> bool:
-    """ Return True if next_token could be ending the current sentence or
-        starting the next one """
+    """Return True if next_token could be ending the current sentence or
+    starting the next one"""
     return next_token.kind in TOK.END or (
         # Check whether the next token is an uppercase word, except if
         # it is a month name (frequently misspelled in uppercase) or
@@ -1490,14 +1490,14 @@ def could_be_end_of_sentence(
 
 class LetterParser:
 
-    """ Parses a sequence of alphabetic characters
-        off the front of a raw token """
+    """Parses a sequence of alphabetic characters
+    off the front of a raw token"""
 
     def __init__(self, rt: Tok) -> None:
         self.rt = rt
 
     def parse(self) -> Iterable[Tok]:
-        """ Parse the raw token, yielding result tokens """
+        """Parse the raw token, yielding result tokens"""
         rt = self.rt
         lw = len(rt.txt)
         i = 1
@@ -1575,7 +1575,7 @@ class LetterParser:
 
 class NumberParser:
 
-    """ Parses a sequence of digits off the front of a raw token """
+    """Parses a sequence of digits off the front of a raw token"""
 
     def __init__(
         self, rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool
@@ -1585,7 +1585,7 @@ class NumberParser:
         self.convert_numbers = convert_numbers
 
     def parse(self) -> Iterable[Tok]:
-        """ Parse the raw token, yielding result tokens """
+        """Parse the raw token, yielding result tokens"""
         # Handle kludgy ordinals: '3ji', '5ti', etc.
         rt = self.rt
         handle_kludgy_ordinals = self.handle_kludgy_ordinals
@@ -1636,14 +1636,14 @@ class NumberParser:
 
 class PunctuationParser:
 
-    """ Parses a sequence of punctuation off the front of a raw token """
+    """Parses a sequence of punctuation off the front of a raw token"""
 
     def __init__(self) -> None:
         self.rt = cast(Tok, None)
         self.ate = False
 
     def parse(self, rt: Tok) -> Iterable[Tok]:
-        """ Parse the raw token, yielding result tokens """
+        """Parse the raw token, yielding result tokens"""
         ate = False
         while rt.txt and rt.txt[0] in PUNCTUATION:
             ate = True
@@ -1727,7 +1727,7 @@ class PunctuationParser:
 def parse_mixed(
     rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool
 ) -> Iterable[Tok]:
-    """ Parse a mixed raw token string, from the token rt """
+    """Parse a mixed raw token string, from the token rt"""
 
     # Initialize a singleton parser for punctuation
     pp = PunctuationParser()
@@ -1869,7 +1869,7 @@ def parse_mixed(
 
 
 def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok]:
-    """ Generator that parses contiguous text into a stream of tokens """
+    """Generator that parses contiguous text into a stream of tokens"""
 
     # Obtain individual flags from the options dict
     convert_numbers: bool = options.get("convert_numbers", False)
@@ -1986,14 +1986,14 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
 
 
 def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok]:
-    """ Parse a stream of tokens looking for 'particles'
-        (simple token pairs and abbreviations) and making substitutions """
+    """Parse a stream of tokens looking for 'particles'
+    (simple token pairs and abbreviations) and making substitutions"""
 
     convert_measurements = options.pop("convert_measurements", False)
 
     def is_abbr_with_period(txt: str) -> bool:
-        """ Return True if the given token text is an abbreviation
-            when followed by a period """
+        """Return True if the given token text is an abbreviation
+        when followed by a period"""
         if "." in txt:
             # There is already a period in it: must be an abbreviation
             # (this applies for instance to "t.d" but not to "mbl.is")
@@ -2013,8 +2013,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
         return False
 
     def lookup(abbrev: str) -> Optional[List[BIN_Tuple]]:
-        """ Look up an abbreviation, both in original case and in lower case,
-            and return either None if not found or a meaning list having one entry """
+        """Look up an abbreviation, both in original case and in lower case,
+        and return either None if not found or a meaning list having one entry"""
         m = Abbreviations.DICT.get(abbrev)
         if not m:
             m = Abbreviations.DICT.get(abbrev.lower())
@@ -2182,7 +2182,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 next_token.kind == TOK.YEAR or next_token.kind == TOK.NUMBER
             ):
                 token = TOK.Year(
-                    token.concatenate(next_token, separator=" "), next_token.integer,
+                    token.concatenate(next_token, separator=" "),
+                    next_token.integer,
                 )
                 next_token = next(token_stream)
 
@@ -2310,10 +2311,16 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     token.substitute(degree_symbol_span, "")
                     # Add it again in the correct place along with the unit
                     token = token.concatenate(next_token, separator=" °")
-                    token = TOK.Measurement(token, unit, val,)
+                    token = TOK.Measurement(
+                        token,
+                        unit,
+                        val,
+                    )
                 else:
                     token = TOK.Measurement(
-                        token.concatenate(next_token, separator=" "), unit, val,
+                        token.concatenate(next_token, separator=" "),
+                        unit,
+                        val,
                     )
 
                 next_token = next(token_stream)
@@ -2383,9 +2390,9 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
 
 
 def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
-    """ Parse a stream of tokens looking for sentences, i.e. substreams within
-        blocks delimited by sentence finishers (periods, question marks,
-        exclamation marks, etc.) """
+    """Parse a stream of tokens looking for sentences, i.e. substreams within
+    blocks delimited by sentence finishers (periods, question marks,
+    exclamation marks, etc.)"""
 
     in_sentence = False
     token = cast(Tok, None)
@@ -2490,15 +2497,15 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
 
 def match_stem_list(token: Tok, stems: Mapping[str, float]) -> Optional[float]:
-    """ Find the stem of a word token in given dict, or return None if not found """
+    """Find the stem of a word token in given dict, or return None if not found"""
     if token.kind != TOK.WORD:
         return None
     return stems.get(token.txt.lower(), None)
 
 
 def month_for_token(token: Tok, after_ordinal: bool = False) -> Optional[int]:
-    """ Return a number, 1..12, corresponding to a month name,
-        or None if the token does not contain a month name """
+    """Return a number, 1..12, corresponding to a month name,
+    or None if the token does not contain a month name"""
     if not after_ordinal and token.txt in MONTH_BLACKLIST:
         # Special case for 'Ágúst', which we do not recognize
         # as a month name unless it follows an ordinal number
@@ -2508,7 +2515,7 @@ def month_for_token(token: Tok, after_ordinal: bool = False) -> Optional[int]:
 
 
 def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
-    """ Handle dates and times """
+    """Handle dates and times"""
 
     token = cast(Tok, None)
     try:
@@ -2543,12 +2550,10 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     if next_token.txt == ".":
                         token = TOK.Year(token.concatenate(next_token), nval)
                         next_token = next(token_stream)
-            # TODO: "5 mars" greinist sem dagsetning, vantar punktinn.
             # Check for [number | ordinal] [month name]
             if (
                 token.kind == TOK.ORDINAL or token.kind == TOK.NUMBER
             ) and next_token.kind == TOK.WORD:
-
                 if next_token.txt == "gr.":
                     # Corner case: If we have an ordinal followed by
                     # the abbreviation "gr.", we assume that the only
@@ -2559,6 +2564,9 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
                 month = month_for_token(next_token, True)
                 if month is not None:
+                    if token.kind == TOK.NUMBER and not "." in token.txt:
+                        # Cases such as "5 mars"
+                        token.txt = token.txt + "."
                     token = TOK.Date(
                         token.concatenate(next_token, separator=" "),
                         y=0,
@@ -2626,7 +2634,7 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
 
 def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
-    """ Handle dates and times, absolute and relative. """
+    """Handle dates and times, absolute and relative."""
 
     token = cast(Tok, None)
     try:
@@ -2635,10 +2643,7 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
         token = next(token_stream)
 
         while True:
-
             next_token = next(token_stream)
-
-            # TODO: "5 mars" endar sem dagsetning. Þarf að geta merkt.
             # DATEABS and DATEREL made
             # Check for [number | ordinal] [month name]
             if (
@@ -2789,7 +2794,7 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 def parse_phrases_2(
     token_stream: Iterator[Tok], coalesce_percent: bool = False
 ) -> Iterator[Tok]:
-    """ Handle numbers, amounts and composite words. """
+    """Handle numbers, amounts and composite words."""
 
     token = cast(Tok, None)
     try:
@@ -2917,8 +2922,8 @@ def parse_phrases_2(
 
 
 def tokenize(text_or_gen: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok]:
-    """ Tokenize text in several phases, returning a generator
-        (iterable sequence) of tokens that processes tokens on-demand. """
+    """Tokenize text in several phases, returning a generator
+    (iterable sequence) of tokens that processes tokens on-demand."""
 
     # Thank you Python for enabling this programming pattern ;-)
 
@@ -2943,18 +2948,18 @@ def tokenize(text_or_gen: Union[str, Iterable[str]], **options: Any) -> Iterator
 def tokenize_without_annotation(
     text_or_gen: Union[str, Iterable[str]], **options: Any
 ) -> Iterator[Tok]:
-    """ Tokenize without the last pass which can be done more thoroughly if BÍN
-        annotation is available, for instance in GreynirPackage. """
+    """Tokenize without the last pass which can be done more thoroughly if BÍN
+    annotation is available, for instance in GreynirPackage."""
     return tokenize(text_or_gen, with_annotation=False, **options)
 
 
 def split_into_sentences(
     text_or_gen: Union[str, Iterable[str]], **options: Any
 ) -> Iterator[str]:
-    """ Shallow tokenization of the input text, which can be either
-        a text string or a generator of lines of text (such as a file).
-        This function returns a generator of strings, where each string
-        is a sentence, and tokens are separated by spaces. """
+    """Shallow tokenization of the input text, which can be either
+    a text string or a generator of lines of text (such as a file).
+    This function returns a generator of strings, where each string
+    is a sentence, and tokens are separated by spaces."""
     to_text: Callable[[Tok], str]
     og = options.pop("original", False)
     if options.pop("normalize", False):
@@ -2987,7 +2992,7 @@ def split_into_sentences(
 
 
 def mark_paragraphs(txt: str) -> str:
-    """ Insert paragraph markers into plaintext, by newlines """
+    """Insert paragraph markers into plaintext, by newlines"""
     if not txt:
         return "[[]]"
     return "[[" + "]][[".join(t for t in txt.split("\n") if t) + "]]"
@@ -2995,15 +3000,15 @@ def mark_paragraphs(txt: str) -> str:
 
 def paragraphs(tokens: Iterable[Tok]) -> Iterator[List[Tuple[int, List[Tok]]]]:
 
-    """ Generator yielding paragraphs from token iterable. Each paragraph is a list
-        of sentence tuples. Sentence tuples consist of the index of the first token
-        of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
-        sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
-        tokens. """
+    """Generator yielding paragraphs from token iterable. Each paragraph is a list
+    of sentence tuples. Sentence tuples consist of the index of the first token
+    of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
+    sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
+    tokens."""
 
     def valid_sent(sent: Optional[List[Tok]]) -> bool:
-        """ Return True if the token list in sent is a proper
-            sentence that we want to process further """
+        """Return True if the token list in sent is a proper
+        sentence that we want to process further"""
         if not sent:
             return False
         # A sentence with only punctuation is not valid
@@ -3059,10 +3064,10 @@ RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 
 def correct_spaces(s: str) -> str:
-    """ Utility function to split and re-compose a string
-        with correct spacing between tokens.
-        NOTE that this function uses a quick-and-dirty approach
-        which may not handle all edge cases! """
+    """Utility function to split and re-compose a string
+    with correct spacing between tokens.
+    NOTE that this function uses a quick-and-dirty approach
+    which may not handle all edge cases!"""
     r: List[str] = []
     last = TP_NONE
     double_quote_count = 0
@@ -3119,9 +3124,9 @@ def correct_spaces(s: str) -> str:
 
 
 def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
-    """ Utility function to convert an iterable of tokens back
-        to a correctly spaced string. If normalize is True,
-        punctuation is normalized before assembling the string. """
+    """Utility function to convert an iterable of tokens back
+    to a correctly spaced string. If normalize is True,
+    punctuation is normalized before assembling the string."""
     to_text: Callable[[Tok], str] = normalized_text if normalize else lambda t: t.txt
     r: List[str] = []
     last = TP_NONE
@@ -3158,11 +3163,11 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
 def calculate_indexes(
     tokens: Iterable[Tok], last_is_end: bool = False
 ) -> Tuple[List[int], List[int]]:
-    """ Calculate character and byte indexes for a token stream.
-        The indexes are the start positions of each token in the original
-        text that was tokenized.
-        'last_is_end' determines whether to include a "past-the-end" index
-        at the end. This index is also the total length of the sequence.
+    """Calculate character and byte indexes for a token stream.
+    The indexes are the start positions of each token in the original
+    text that was tokenized.
+    'last_is_end' determines whether to include a "past-the-end" index
+    at the end. This index is also the total length of the sequence.
     """
 
     def byte_len(string: str) -> int:
