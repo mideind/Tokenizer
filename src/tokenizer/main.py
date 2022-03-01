@@ -110,7 +110,10 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-o", "--original", action="store_true", help="Outputs original text of tokens",
+    "-o",
+    "--original",
+    action="store_true",
+    help="Outputs original text of tokens",
 )
 
 parser.add_argument(
@@ -152,27 +155,27 @@ parser.add_argument(
 
 
 def main() -> None:
-    """ Main function, called when the tokenize command is invoked """
+    """Main function, called when the tokenize command is invoked"""
 
     args = parser.parse_args()
     options: Dict[str, bool] = dict()
 
     def quote(s: str) -> str:
-        """ Return the string s within double quotes, and with any contained
-            backslashes and double quotes escaped with a backslash """
+        """Return the string s within double quotes, and with any contained
+        backslashes and double quotes escaped with a backslash"""
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
     def spanquote(l: List[int]) -> str:
-        """ Return the list l as a string within double quotes """
+        """Return the list l as a string within double quotes"""
         return '"' + "-".join(str(x) for x in l) + '"'
 
     def gen(f: TextIO) -> Iterator[str]:
-        """ Generate the lines of text in the input file """
+        """Generate the lines of text in the input file"""
         for line in f:
             yield line
 
     def val(t: Tok, quote_word: bool = False) -> Any:
-        """ Return the value part of the token t """
+        """Return the value part of the token t"""
         if t.val is None:
             return None
         if t.kind == TOK.WORD:
@@ -252,8 +255,7 @@ def main() -> None:
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
     curr_sent: List[str] = []
-    sep = "" if args.original else " "
-
+    tsep = "" if args.original else " "  # token separator
     for t in tokenize(gen(args.infile), **options):
         if args.csv:
             # Output the tokens in CSV format, one line per token
@@ -285,13 +287,18 @@ def main() -> None:
                 d["s"] = t.origin_spans
             print(json_dumps(d), file=args.outfile)
         else:
-            # Normal shallow parse, one line per sentence,
+            # Normal shallow parse, sentences separated by newline by default,
             # tokens separated by spaces
+            if t.kind in TOK.END:
+                # End of sentence/paragraph
+                if curr_sent:
+                    print(tsep.join(curr_sent), file=args.outfile)
+                    curr_sent = []
             txt = to_text(t)
             if txt:
                 curr_sent.append(txt)
     if curr_sent:
-        print(sep.join(curr_sent), file=args.outfile)
+        print(tsep.join(curr_sent), file=args.outfile)
 
 
 if __name__ == "__main__":
