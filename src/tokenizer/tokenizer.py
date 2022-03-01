@@ -1656,7 +1656,7 @@ class PunctuationParser:
                 punct, rt = rt.split(3)
                 yield TOK.Punctuation(punct)
             elif rtxt.startswith("..."):
-                # Treat ellipsis as one piece of punctuation
+                # Treat three periods as ellipsis, one piece of punctuation
                 numdots = 0
                 for c in rtxt:
                     if c == ".":
@@ -1676,14 +1676,16 @@ class PunctuationParser:
                 dots, rt = rt.split(numdots)
                 yield TOK.Punctuation(dots, normalized="…")
                 # TODO LAGA Hér ætti að safna áfram.
+            elif rtxt.startswith(".."):
+                # Normalize two periods to one
+                dots, rt = rt.split(4)
+                yield TOK.Punctuation(dots, normalized=".")
             # TODO Was at the end of a word or by itself, should be ",".
-            # Won't correct automatically, check for M6
             elif rt.txt == ",,":
                 punct, rt = rt.split(2)
                 yield TOK.Punctuation(punct, normalized=",")
-            # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
             elif rtxt.startswith(",,"):
-                # Probably an idiot trying to type opening double quotes with commas
+                # Probably someone trying to type opening double quotes with commas
                 punct, rt = rt.split(2)
                 yield TOK.Punctuation(punct, normalized="„")
             elif rtxt[0] in HYPHENS:
@@ -1715,6 +1717,14 @@ class PunctuationParser:
                     # Return the @-sign and leave the rest
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct)
+            elif len(rtxt) > 4:
+                # Probably '???!!!' or something of the sort
+                # Normalize to the first punctuation mark
+                numpunct = 0
+                for p in rtxt:
+                    numpunct += 1
+                punct, rt = rt.split(numpunct)
+                yield TOK.Punctuation(punct, normalized=rtxt[0])
             else:
                 punct, rt = rt.split(1)
                 yield TOK.Punctuation(punct)
