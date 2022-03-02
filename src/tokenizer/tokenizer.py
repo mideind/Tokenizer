@@ -1718,23 +1718,18 @@ class PunctuationParser:
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct)
             elif len(rtxt) > 4:
-                # Probably '???!!!' or something of the sort
+                # Possibly '???!!!' or something of the sort
                 # Normalize to the first punctuation mark
                 numpunct = 0
-                notallpunct = False
                 for p in rtxt:
                     if p in PUNCTUATION:
                         numpunct += 1
-                    else:
-                        # Something like (word) or "*word*"
-                        notallpunct = True
-                        break
-                if notallpunct:
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct)
-                else:
+                if numpunct == len(rtxt):
                     punct, rt = rt.split(numpunct)
                     yield TOK.Punctuation(punct, normalized=rtxt[0])
+                else:
+                    punct, rt = rt.split(1)
+                    yield TOK.Punctuation(punct)
             else:
                 punct, rt = rt.split(1)
                 yield TOK.Punctuation(punct)
