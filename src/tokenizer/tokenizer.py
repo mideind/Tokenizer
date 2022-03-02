@@ -2238,14 +2238,14 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 ):
                     # Ordinal, i.e. whole number or Roman numeral followed by period:
                     # convert to an ordinal token
-                    follow_token = token_stream[0]
-                    if follow_token and not (
-                        follow_token.kind in TOK.END
-                        or follow_token.punctuation in {"„", '"'}
+                    ord_token: Optional[Tok] = token_stream[0]
+                    if ord_token and not (
+                        ord_token.kind in TOK.END
+                        or ord_token.punctuation in {"„", '"'}
                         or (
-                            follow_token.kind == TOK.WORD
-                            and follow_token.txt[0].isupper()
-                            and month_for_token(follow_token, True) is None
+                            ord_token.kind == TOK.WORD
+                            and ord_token.txt[0].isupper()
+                            and month_for_token(ord_token, True) is None
                         )
                     ):
                         # OK: replace the number/Roman numeral and the period
