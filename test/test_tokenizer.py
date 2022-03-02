@@ -58,6 +58,11 @@ def strip_originals(tokens: List[Tok]) -> List[Tok]:
     return tokens
 
 
+def get_text_and_norm(orig: str) -> Tuple[str, str]:
+    toklist = list(t.tokenize(orig))
+    return t.text_from_tokens(toklist), t.normalized_text_from_tokens(toklist)
+
+
 def test_single_tokens() -> None:
 
     TEST_CASES = [
@@ -2319,16 +2324,12 @@ def test_split_sentences() -> None:
     g = t.split_into_sentences("Athugum [hvort [setningin sé rétt skilin]].")
     sents = list(g)
     assert len(sents) == 1
-    assert sents == [
-        "Athugum [ hvort [ setningin sé rétt skilin ] ] ."
-    ]
+    assert sents == ["Athugum [ hvort [ setningin sé rétt skilin ] ] ."]
 
     g = t.split_into_sentences("Þessi [ætti [líka að]] vera rétt skilin.")
     sents = list(g)
     assert len(sents) == 1
-    assert sents == [
-        "Þessi [ ætti [ líka að ] ] vera rétt skilin ."
-    ]
+    assert sents == ["Þessi [ ætti [ líka að ] ] vera rétt skilin ."]
 
     # g = t.split_into_sentences("Þessi á [[líka að]] vera rétt skilin.")
     # sents = list(g)
@@ -2342,9 +2343,58 @@ def test_split_sentences() -> None:
 
 
 def test_normalization() -> None:
-    toklist = list(t.tokenize('Hann sagði: "Þú ert ágæt!".'))
-    assert t.text_from_tokens(toklist) == 'Hann sagði : " Þú ert ágæt ! " .'
-    assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt ! “ ."
+    text, norm = get_text_and_norm('Hann sagði: "Þú ert ágæt!".')
+
+    assert text == 'Hann sagði : " Þú ert ágæt ! " .'
+    assert norm == "Hann sagði : „ Þú ert ágæt ! “ ."
+
+    text, norm = get_text_and_norm("Hún vinnur í fjármála-og efnahagsráðuneytinu.")
+    assert text == "Hún vinnur í fjármála- og efnahagsráðuneytinu ."
+    assert norm == "Hún vinnur í fjármála- og efnahagsráðuneytinu ."
+
+    text, norm = get_text_and_norm("Þetta er tyrfið...")
+    assert text == "Þetta er tyrfið ..."
+    assert norm == "Þetta er tyrfið …"
+
+    text, norm = get_text_and_norm("Þetta er gaman..")
+    assert text == "Þetta er gaman .."
+    assert norm == "Þetta er gaman ."
+
+    text, norm = get_text_and_norm("Þetta er hvellur.....")
+    assert text == "Þetta er hvellur ....."
+    assert norm == "Þetta er hvellur …"
+
+    text, norm = get_text_and_norm("Þetta er mergjað………")
+    assert text == "Þetta er mergjað ………"
+    assert norm == "Þetta er mergjað …"
+
+    text, norm = get_text_and_norm("Haldið var áfram [...] eftir langt hlé.")
+    assert text == "Haldið var áfram [...] eftir langt hlé ."
+    assert norm == "Haldið var áfram […] eftir langt hlé ."
+
+    text, norm = get_text_and_norm("Þetta er tyrfið,, en við höldum áfram.")
+    assert text == "Þetta er tyrfið ,, en við höldum áfram ."
+    assert norm == "Þetta er tyrfið , en við höldum áfram ."
+
+    text, norm = get_text_and_norm('Hinn svokallaði ,,Galileóhestur" hvarf.')
+    assert text == 'Hinn svokallaði ,, Galileóhestur " hvarf .'
+    assert norm == "Hinn svokallaði „ Galileóhestur “ hvarf ."
+
+    text, norm = get_text_and_norm("Mars - hin rauða pláneta - skín bjart í nótt.")
+    assert text == "Mars - hin rauða pláneta - skín bjart í nótt ."
+    assert norm == "Mars - hin rauða pláneta - skín bjart í nótt ."
+
+    text, norm = get_text_and_norm("Mars – hin rauða pláneta – skín bjart í nótt.")
+    assert text == "Mars – hin rauða pláneta – skín bjart í nótt ."
+    assert norm == "Mars - hin rauða pláneta - skín bjart í nótt ."
+
+    text, norm = get_text_and_norm("Mars — hin rauða pláneta — skín bjart í nótt.")
+    assert text == "Mars — hin rauða pláneta — skín bjart í nótt ."
+    assert norm == "Mars - hin rauða pláneta - skín bjart í nótt ."
+
+    text, norm = get_text_and_norm("Hvernig gastu gert þetta???!!!!!")
+    assert text == "Hvernig gastu gert þetta ???!!!!!"
+    assert norm == "Hvernig gastu gert þetta ?"
 
 
 def test_abbr_at_eos() -> None:
