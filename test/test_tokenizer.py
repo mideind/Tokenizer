@@ -2341,6 +2341,22 @@ def test_split_sentences() -> None:
     # ]
     # Test onesentperline
 
+    # Test whether indirect speech is split up
+    g = t.split_into_sentences("„Er einhver þarna?“ sagði konan.")
+    sents = list(g)
+    assert len(sents) == 1
+    assert sents == ["„ Er einhver þarna ? “ sagði konan ."]
+
+    g = t.split_into_sentences("„Er einhver þarna?“ Maðurinn þorði varla fram.")
+    sents = list(g)
+    assert len(sents) == 2
+    assert sents == ["„ Er einhver þarna ? “", "Maðurinn þorði varla fram ."]
+
+    g = t.split_into_sentences("„Hún hló,“ sagði barnið.")
+    sents = list(g)
+    assert len(sents) == 1
+    assert sents == ["„ Hún hló , “ sagði barnið ."]
+
 
 def test_normalization() -> None:
     text, norm = get_text_and_norm('Hann sagði: "Þú ert ágæt!".')

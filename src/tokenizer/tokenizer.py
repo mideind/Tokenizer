@@ -1680,7 +1680,7 @@ class PunctuationParser:
                 # Normalize two periods to one
                 dots, rt = rt.split(4)
                 yield TOK.Punctuation(dots, normalized=".")
-            # TODO Was at the end of a word or by itself, should be ",".
+            # TODO At the end of a word or by itself, should be ",".
             elif rt.txt == ",,":
                 punct, rt = rt.split(2)
                 yield TOK.Punctuation(punct, normalized=",")
@@ -2462,6 +2462,22 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # This token starts a new sentence
                     yield tok_begin_sentence
                     in_sentence = True
+                if (
+                    token.punctuation in PUNCT_INDIRECT_SPEECH
+                    and next_token.punctuation in DQUOTES
+                ):
+                    yield token
+                    token = next_token
+                    if next_token.txt.isalnum() and next_token.txt.islower():
+                        # Probably indirect speech
+                        # „Er einhver þarna?“ sagði konan.
+                        yield token
+                        token = next_token
+                        next_token = next(token_stream)
+                    else:
+                        yield token
+                        token = tok_end_sentence
+                        in_sentence = False
                 if token.punctuation in END_OF_SENTENCE and not (
                     token.punctuation
                     == "…"  # Excluding sentences with ellipsis in the middle
@@ -2538,7 +2554,6 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
         # Maintain a one-token lookahead
         token = next(token_stream)
         while True:
-
             next_token = next(token_stream)
             # Coalesce abbreviations and trailing period
             if token.kind == TOK.WORD and next_token.txt == ".":
