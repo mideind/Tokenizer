@@ -2468,6 +2468,7 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                 ):
                     yield token
                     token = next_token
+                    next_token = next(token_stream)
                     if next_token.txt.isalnum() and next_token.txt.islower():
                         # Probably indirect speech
                         # „Er einhver þarna?“ sagði konan.

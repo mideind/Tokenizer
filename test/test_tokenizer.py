@@ -2357,6 +2357,11 @@ def test_split_sentences() -> None:
     assert len(sents) == 1
     assert sents == ["„ Hún hló , “ sagði barnið ."]
 
+    # g = t.split_into_sentences("„Hvað meinarðu??“ sagði barnið.")
+    # sents = list(g)
+    # assert len(sents) == 1
+    # assert sents == ["„ Hvað meinarðu ?? “ sagði barnið ."]
+
 
 def test_normalization() -> None:
     text, norm = get_text_and_norm('Hann sagði: "Þú ert ágæt!".')
