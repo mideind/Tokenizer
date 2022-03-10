@@ -5,7 +5,7 @@
 
     Tests for Tokenizer module
 
-    Copyright (C) 2021 by Miðeind ehf.
+    Copyright (C) 2022 by Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -2345,6 +2345,31 @@ def test_normalization() -> None:
     toklist = list(t.tokenize('Hann sagði: "Þú ert ágæt!".'))
     assert t.text_from_tokens(toklist) == 'Hann sagði : " Þú ert ágæt ! " .'
     assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt ! “ ."
+
+    toklist = list(t.tokenize('Hann sagði: ,,Þú ert ágæt!!??!".'))
+    assert t.text_from_tokens(toklist) == 'Hann sagði : ,, Þú ert ágæt !!??! " .'
+    assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt ! “ ."
+
+    toklist = list(t.tokenize('Hann sagði: ,,Þú ert ágæt??!?".'))
+    assert t.text_from_tokens(toklist) == 'Hann sagði : ,, Þú ert ágæt ??!? " .'
+    assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt ? “ ."
+
+    toklist = list(t.tokenize('Jón,, farðu út.'))
+    assert t.text_from_tokens(toklist) == 'Jón ,, farðu út .'
+    assert t.normalized_text_from_tokens(toklist) == "Jón , farðu út ."
+
+    toklist = list(t.tokenize('Jón ,,farðu út.'))
+    assert t.text_from_tokens(toklist) == 'Jón ,, farðu út .'
+    assert t.normalized_text_from_tokens(toklist) == "Jón „ farðu út ."
+
+    toklist = list(t.tokenize('Hann sagði: ,,Þú ert ágæt.....".'))
+    assert t.text_from_tokens(toklist) == 'Hann sagði : ,, Þú ert ágæt ..... " .'
+    assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt … “ ."
+
+    toklist = list(t.tokenize('Hann sagði: ,,Þú ert ágæt…..".'))
+    assert t.text_from_tokens(toklist) == 'Hann sagði : ,, Þú ert ágæt ….. " .'
+    assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt … “ ."
+
 
 
 def test_abbr_at_eos() -> None:

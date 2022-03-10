@@ -2,7 +2,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2021 Miðeind ehf.
+    Copyright (C) 2022 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -66,6 +66,11 @@ from .abbrev import Abbreviations
 
 
 _T = TypeVar("_T", bound="Tok")
+
+
+# Set of punctuation characters that are grouped into one
+# normalized exclamation
+EXCLAMATIONS = frozenset(("!", "?"))
 
 
 class Tok:
@@ -1655,37 +1660,34 @@ class PunctuationParser:
             elif rtxt.startswith("[…]"):
                 punct, rt = rt.split(3)
                 yield TOK.Punctuation(punct)
-            elif rtxt.startswith("..."):
-                # Treat ellipsis as one piece of punctuation
+            elif rtxt.startswith("...") or rtxt.startswith("…"):
+                # Treat >= 3 periods as ellipsis, one piece of punctuation
                 numdots = 0
                 for c in rtxt:
-                    if c == ".":
+                    if c == "." or c == "…":
                         numdots += 1
                     else:
                         break
                 dots, rt = rt.split(numdots)
                 yield TOK.Punctuation(dots, normalized="…")
-            elif rtxt.startswith("…"):
-                # Treat ellipsis as one piece of punctuation
-                numdots = 0
-                for c in rtxt:
-                    if c == "…":
-                        numdots += 1
-                    else:
-                        break
-                dots, rt = rt.split(numdots)
-                yield TOK.Punctuation(dots, normalized="…")
-                # TODO LAGA Hér ætti að safna áfram.
-            # TODO Was at the end of a word or by itself, should be ",".
-            # Won't correct automatically, check for M6
-            elif rt.txt == ",,":
-                punct, rt = rt.split(2)
-                yield TOK.Punctuation(punct, normalized=",")
-            # TODO STILLING kommum í upphafi orðs breytt í gæsalappir
-            elif rtxt.startswith(",,"):
-                # Probably an idiot trying to type opening double quotes with commas
+            elif rtxt.startswith(".."):
+                # Normalize two periods to one
+                dots, rt = rt.split(2)
+                yield TOK.Punctuation(dots, normalized=".")
+            elif rtxt.startswith(",,") and rtxt[2:3].isalpha():
+                # Probably someone trying to type opening double quotes with commas
                 punct, rt = rt.split(2)
                 yield TOK.Punctuation(punct, normalized="„")
+            elif rtxt.startswith(",,"):
+                # Coalesce multiple commas into one normalized comma
+                numcommas = 2
+                for c in rtxt[2:]:
+                    if c == ",":
+                        numcommas += 1
+                    else:
+                        break
+                punct, rt = rt.split(numcommas)
+                yield TOK.Punctuation(punct, normalized=",")
             elif rtxt[0] in HYPHENS:
                 # Normalize all hyphens the same way
                 punct, rt = rt.split(1)
@@ -1715,6 +1717,16 @@ class PunctuationParser:
                     # Return the @-sign and leave the rest
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct)
+            elif len(rtxt) >= 2 and frozenset(rtxt) <= EXCLAMATIONS:
+                # Possibly '???!!!' or something of the sort
+                numpunct = 2
+                for p in rtxt[2:]:
+                    if p in EXCLAMATIONS:
+                        numpunct += 1
+                    else:
+                        break
+                punct, rt = rt.split(numpunct)
+                yield TOK.Punctuation(punct, normalized=rtxt[0])
             else:
                 punct, rt = rt.split(1)
                 yield TOK.Punctuation(punct)
@@ -2223,14 +2235,14 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 ):
                     # Ordinal, i.e. whole number or Roman numeral followed by period:
                     # convert to an ordinal token
-                    follow_token = token_stream[0]
-                    if follow_token and not (
-                        follow_token.kind in TOK.END
-                        or follow_token.punctuation in {"„", '"'}
+                    ord_token: Optional[Tok] = token_stream[0]
+                    if ord_token and not (
+                        ord_token.kind in TOK.END
+                        or ord_token.punctuation in {"„", '"'}
                         or (
-                            follow_token.kind == TOK.WORD
-                            and follow_token.txt[0].isupper()
-                            and month_for_token(follow_token, True) is None
+                            ord_token.kind == TOK.WORD
+                            and ord_token.txt[0].isupper()
+                            and month_for_token(ord_token, True) is None
                         )
                     ):
                         # OK: replace the number/Roman numeral and the period
