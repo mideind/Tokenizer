@@ -1674,20 +1674,21 @@ class PunctuationParser:
                 # Normalize two periods to one
                 dots, rt = rt.split(2)
                 yield TOK.Punctuation(dots, normalized=".")
-            elif rtxt.startswith(",,") and rtxt[2:3].isalpha():
-                # Probably someone trying to type opening double quotes with commas
-                punct, rt = rt.split(2)
-                yield TOK.Punctuation(punct, normalized="„")
             elif rtxt.startswith(",,"):
-                # Coalesce multiple commas into one normalized comma
-                numcommas = 2
-                for c in rtxt[2:]:
-                    if c == ",":
-                        numcommas += 1
-                    else:
-                        break
-                punct, rt = rt.split(numcommas)
-                yield TOK.Punctuation(punct, normalized=",")
+                if rtxt[2:3].isalnum():
+                    # Probably someone trying to type opening double quotes with commas
+                    punct, rt = rt.split(2)
+                    yield TOK.Punctuation(punct, normalized="„")
+                else:
+                    # Coalesce multiple commas into one normalized comma
+                    numcommas = 2
+                    for c in rtxt[2:]:
+                        if c == ",":
+                            numcommas += 1
+                        else:
+                            break
+                    punct, rt = rt.split(numcommas)
+                    yield TOK.Punctuation(punct, normalized=",")
             elif rtxt[0] in HYPHENS:
                 # Normalize all hyphens the same way
                 punct, rt = rt.split(1)
@@ -2459,6 +2460,23 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # This token starts a new sentence
                     yield tok_begin_sentence
                     in_sentence = True
+                if (
+                    token.punctuation in PUNCT_INDIRECT_SPEECH
+                    and next_token.punctuation in DQUOTES
+                ):
+                    yield token
+                    token = next_token
+                    next_token = next(token_stream)
+                    if next_token.txt.islower():
+                        # Probably indirect speech
+                        # „Er einhver þarna?“ sagði konan.
+                        yield token
+                        token = next_token
+                        next_token = next(token_stream)
+                    else:
+                        yield token
+                        token = tok_end_sentence
+                        in_sentence = False
                 if token.punctuation in END_OF_SENTENCE and not (
                     token.punctuation
                     == "…"  # Excluding sentences with ellipsis in the middle
@@ -2535,7 +2553,6 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
         # Maintain a one-token lookahead
         token = next(token_stream)
         while True:
-
             next_token = next(token_stream)
             # Coalesce abbreviations and trailing period
             if token.kind == TOK.WORD and next_token.txt == ".":

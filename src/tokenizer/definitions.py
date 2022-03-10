@@ -54,6 +54,7 @@ AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
 TelnoTuple = Tuple[str, str]
 CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 
+
 class BIN_Tuple(NamedTuple):
     stofn: str
     utg: int
@@ -62,12 +63,15 @@ class BIN_Tuple(NamedTuple):
     ordmynd: str
     beyging: str
 
+
 BIN_TupleList = Sequence[BIN_Tuple]
+
 
 class PersonNameTuple(NamedTuple):
     name: str
     gender: Optional[str]
     case: Optional[str]
+
 
 PersonNameList = Sequence[PersonNameTuple]
 
@@ -193,6 +197,9 @@ PUNCT_INSIDE_WORD = frozenset([".", "'", "‘", "´", "’", HYPHEN, EN_DASH])
 PUNCT_ENDING_WORD = frozenset(["'", "²", "³"])
 # Punctuation symbols that may occur together
 PUNCT_COMBINATIONS = frozenset(["?", "!", "…"])
+# Punctuation in end of indirect speech that doesn't necessarily end sentences
+PUNCT_INDIRECT_SPEECH = frozenset(["?", "!"])
+
 
 # Single and double quotes
 SQUOTES = "'‚‛‘´"
@@ -204,7 +211,13 @@ CLOCK_ABBREVS = frozenset(("kl", "kl.", "klukkan"))
 TELNO_PREFIXES = "45678"
 
 # Known telephone country codes
-COUNTRY_CODES = frozenset(("354", "+354", "00354",))
+COUNTRY_CODES = frozenset(
+    (
+        "354",
+        "+354",
+        "00354",
+    )
+)
 
 # Words that can precede a year number; will be assimilated into the year token
 YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
@@ -516,9 +529,9 @@ DIRECTIONS = {
     "N": "Norður",
 }
 
-_unit_lambda: Callable[[str], str] = lambda unit: unit + r"(?!\w)" if unit[
-    -1
-].isalpha() else unit
+_unit_lambda: Callable[[str], str] = (
+    lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit
+)
 
 SI_UNITS_SET: FrozenSet[str] = frozenset(SI_UNITS.keys())
 SI_UNITS_REGEX_STRING = r"|".join(
@@ -627,7 +640,7 @@ ROMAN_NUMERAL_MAP = tuple(
 
 
 def roman_to_int(s: str) -> int:
-    """ Quick and dirty conversion of an already validated Roman numeral to integer """
+    """Quick and dirty conversion of an already validated Roman numeral to integer"""
     # Adapted from http://code.activestate.com/recipes/81611-roman-numerals/
     i = result = 0
     for integer, numeral in ROMAN_NUMERAL_MAP:
@@ -636,6 +649,7 @@ def roman_to_int(s: str) -> int:
             i += len(numeral)
     assert i == len(s)
     return result
+
 
 NUMBER_ABBREV = {
     "þús.": 1000,
@@ -1147,7 +1161,7 @@ KT_MAGIC = [3, 2, 7, 6, 5, 4, 0, 3, 2]
 
 
 def valid_ssn(kt: str) -> bool:
-    """ Validate Icelandic social security number """
+    """Validate Icelandic social security number"""
     if not kt or len(kt) != 11 or kt[6] != "-":
         return False
     m = 11 - sum((ord(kt[i]) - 48) * KT_MAGIC[i] for i in range(9)) % 11
