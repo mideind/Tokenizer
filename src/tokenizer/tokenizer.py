@@ -1675,7 +1675,7 @@ class PunctuationParser:
                 dots, rt = rt.split(2)
                 yield TOK.Punctuation(dots, normalized=".")
             elif rtxt.startswith(",,"):
-                if rtxt[2:3].isalpha():
+                if rtxt[2:3].isalnum():
                     # Probably someone trying to type opening double quotes with commas
                     punct, rt = rt.split(2)
                     yield TOK.Punctuation(punct, normalized="„")
@@ -2467,7 +2467,7 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     yield token
                     token = next_token
                     next_token = next(token_stream)
-                    if next_token.txt.isalnum() and next_token.txt.islower():
+                    if next_token.txt.islower():
                         # Probably indirect speech
                         # „Er einhver þarna?“ sagði konan.
                         yield token
