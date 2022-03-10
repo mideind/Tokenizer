@@ -2,7 +2,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2021 Miðeind ehf.
+    Copyright (C) 2022 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -66,6 +66,11 @@ from .abbrev import Abbreviations
 
 
 _T = TypeVar("_T", bound="Tok")
+
+
+# Set of punctuation characters that are grouped into one
+# normalized exclamation
+EXCLAMATIONS = frozenset(("!", "?"))
 
 
 class Tok:
@@ -1655,39 +1660,35 @@ class PunctuationParser:
             elif rtxt.startswith("[…]"):
                 punct, rt = rt.split(3)
                 yield TOK.Punctuation(punct)
-            elif rtxt.startswith("..."):
-                # Treat three periods as ellipsis, one piece of punctuation
+            elif rtxt.startswith("...") or rtxt.startswith("…"):
+                # Treat >= 3 periods as ellipsis, one piece of punctuation
                 numdots = 0
                 for c in rtxt:
-                    if c == ".":
+                    if c == "." or c == "…":
                         numdots += 1
                     else:
                         break
                 dots, rt = rt.split(numdots)
                 yield TOK.Punctuation(dots, normalized="…")
-            elif rtxt.startswith("…"):
-                # Treat ellipsis as one piece of punctuation
-                numdots = 0
-                for c in rtxt:
-                    if c == "…":
-                        numdots += 1
-                    else:
-                        break
-                dots, rt = rt.split(numdots)
-                yield TOK.Punctuation(dots, normalized="…")
-                # TODO LAGA Hér ætti að safna áfram.
             elif rtxt.startswith(".."):
                 # Normalize two periods to one
-                dots, rt = rt.split(4)
+                dots, rt = rt.split(2)
                 yield TOK.Punctuation(dots, normalized=".")
-            # TODO At the end of a word or by itself, should be ",".
-            elif rt.txt == ",,":
-                punct, rt = rt.split(2)
-                yield TOK.Punctuation(punct, normalized=",")
             elif rtxt.startswith(",,"):
-                # Probably someone trying to type opening double quotes with commas
-                punct, rt = rt.split(2)
-                yield TOK.Punctuation(punct, normalized="„")
+                if rtxt[2:3].isalpha():
+                    # Probably someone trying to type opening double quotes with commas
+                    punct, rt = rt.split(2)
+                    yield TOK.Punctuation(punct, normalized="„")
+                else:
+                    # Coalesce multiple commas into one normalized comma
+                    numcommas = 2
+                    for c in rtxt[2:]:
+                        if c == ",":
+                            numcommas += 1
+                        else:
+                            break
+                    punct, rt = rt.split(numcommas)
+                    yield TOK.Punctuation(punct, normalized=",")
             elif rtxt[0] in HYPHENS:
                 # Normalize all hyphens the same way
                 punct, rt = rt.split(1)
@@ -1717,19 +1718,16 @@ class PunctuationParser:
                     # Return the @-sign and leave the rest
                     punct, rt = rt.split(1)
                     yield TOK.Punctuation(punct)
-            elif len(rtxt) > 4:
+            elif len(rtxt) >= 2 and frozenset(rtxt) <= EXCLAMATIONS:
                 # Possibly '???!!!' or something of the sort
-                # Normalize to the first punctuation mark
-                numpunct = 0
-                for p in rtxt:
-                    if p in PUNCTUATION:
+                numpunct = 2
+                for p in rtxt[2:]:
+                    if p in EXCLAMATIONS:
                         numpunct += 1
-                if numpunct == len(rtxt):
-                    punct, rt = rt.split(numpunct)
-                    yield TOK.Punctuation(punct, normalized=rtxt[0])
-                else:
-                    punct, rt = rt.split(1)
-                    yield TOK.Punctuation(punct)
+                    else:
+                        break
+                punct, rt = rt.split(numpunct)
+                yield TOK.Punctuation(punct, normalized=rtxt[0])
             else:
                 punct, rt = rt.split(1)
                 yield TOK.Punctuation(punct)

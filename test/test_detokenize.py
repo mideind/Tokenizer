@@ -6,7 +6,7 @@
 
     Tests for Tokenizer module
 
-    Copyright (C) 2021 by Miðeind ehf.
+    Copyright (C) 2022 by Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -61,6 +61,7 @@ def test_detokenize() -> None:
         "Páll var með \"netfangið\" palli@einn.i.heiminum.is.",
         "Páll var með „netfangið“ palli@einn.i.heiminum.is."
     )
+
     # !!! BUG
     #should_be(
     #    "Páll var með \"netfangið\", þ.e.a.s. (\"þetta\").",
