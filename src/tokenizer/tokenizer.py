@@ -38,32 +38,16 @@
 
 """
 
-from typing import (
-    Any,
-    List,
-    Mapping,
-    FrozenSet,
-    Callable,
-    Optional,
-    Iterator,
-    Iterable,
-    Tuple,
-    Deque,
-    Union,
-    Match,
-    TypeVar,
-    Type,
-    cast,
-)
-
-import re
 import datetime
+import re
 import unicodedata  # type: ignore
 from collections import deque
+from typing import (Any, Callable, Deque, FrozenSet, Iterable, Iterator, List,
+                    Mapping, Match, Optional, Tuple, Type, TypeVar, Union,
+                    cast)
 
-from .definitions import *
 from .abbrev import Abbreviations
-
+from .definitions import *
 
 _T = TypeVar("_T", bound="Tok")
 
@@ -99,6 +83,11 @@ class Tok:
         # (which may have substitutions) to its index in 'original'.
         # This is required to preserve 'original' correctly when splitting.
         self.origin_spans: Optional[List[int]] = origin_spans
+
+    @classmethod
+    def from_txt(cls: Type[_T], txt: str) -> _T:
+        """Create a token from text"""
+        return cls(TOK.RAW, txt, None, txt, list(range(len(txt))))
 
     @classmethod
     def from_token(cls: Type[_T], t: "Tok") -> _T:
@@ -1350,6 +1339,60 @@ def html_replacement(token: Tok) -> Tok:
     return token
 
 
+def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
+    """Generate rough tokens from a string"""
+    rough_token_regex_all_groups = 0
+    rough_token_regex_white_space_group = 1
+    # For completeness
+    # rough_token_regex_text_group = 2
+    span_start = 0
+    span_end = 1
+    # pos tracks the index in the text we have covered so far.
+    # We want to track pos, instead of treating text as a buffer,
+    # since that would lead to a lot of unnecessary copying.
+    pos = 0
+    while pos != len(text):
+        res = ROUGH_TOKEN_REGEX.match(text, pos)
+        assert res is not None
+        tok = Tok.from_txt(text[
+            res.span(rough_token_regex_all_groups)[span_start] : res.span(rough_token_regex_all_groups)[span_end]
+        ])
+        pos = res.span(rough_token_regex_all_groups)[span_end]
+        yield tok
+
+
+def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
+    """Generate rough tokens from a token.
+
+    Some tokens might have whitespaces in them after we escape HTML and unicode characters.
+    This function splits those tokens into multiple tokens."""
+    rough_token_regex_all_groups = 0
+    rough_token_regex_white_space_group = 1
+    # For completeness
+    # rough_token_regex_text_group = 2
+    span_start = 0
+    span_end = 1
+    text = tok.txt
+    # pos tracks the index in the text we have covered so far.
+    # We want to track pos, instead of treating text as a buffer,
+    # since that would lead to a lot of unnecessary copying.
+    pos = 0
+    while pos != len(text):
+        res = ROUGH_TOKEN_REGEX.match(text, pos)
+        assert res is not None
+        small_tok, tok = tok.split(res.span(rough_token_regex_all_groups)[span_end])
+        # Since the match from the regex contains indicies to the original string,
+        # we need to adjust them to the new string.
+        white_space_span = res.span(rough_token_regex_white_space_group)
+        adjusted_white_space_span_start, adjusted_white_space_span_end = (
+            white_space_span[span_start] - pos, white_space_span[span_end] - pos
+        )
+        # Remove whitespace from the start of the token
+        small_tok.substitute((adjusted_white_space_span_start, adjusted_white_space_span_end), "")
+        pos = res.span(rough_token_regex_all_groups)[span_end]
+        yield small_tok
+
+
 def generate_raw_tokens(
     text_or_gen: Union[str, Iterable[str]],
     replace_composite_glyphs: bool = True,
@@ -1425,30 +1468,34 @@ def generate_raw_tokens(
                         text = text[:-2]
                         # Postpone the yield until after the raw token loop
                         paragraph_end += 1
-                tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
-                if replace_composite_glyphs:
-                    # Replace composite glyphs with single code points
-                    tok_big = unicode_replacement(tok_big)
-                if replace_html_escapes:
-                    # Replace HTML escapes: '&aacute;' -> 'á'
-                    tok_big = html_replacement(tok_big)
+                for tok in generate_rough_tokens_from_txt(text):
+                    if replace_composite_glyphs:
+                        # Replace composite glyphs with single code points
+                        tok = unicode_replacement(tok)
 
-                while tok_big.txt != "":
-                    res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
-                    assert res is not None
-                    tok, tok_big = tok_big.split(res.span(0)[1])
-
-                    # Remove whitespace from the start of the token
-                    tok.substitute(res.span(1), "")
-                    if tok.txt == "":
-                        # We have some trailing whitespace at the end of a 'big_text'
-                        # This can only be the last item in 'splits'.
-                        # See ROUGH_TOKEN_REGEX to convince yourself this is true.
-                        # Save this bit and attach it to the front of the next 'big_text'
-                        # since we don't want to yield a word token with empty text.
-                        saved = tok
-                    else:
-                        yield tok
+                    if replace_html_escapes:
+                        # Replace HTML escapes: '&aacute;' -> 'á'
+                        tok = html_replacement(tok)
+                    # The HTML escapes and unicode possibly contain whitespaces
+                    # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
+                    # Here we split those tokens into multiple tokens
+                    for small_tok in generate_rough_tokens_from_tok(tok):
+                        if small_tok.txt == "":
+                            # There was a white space at the end of the last token.
+                            # We do not want to yield a token with empty text if possible.
+                            # We want to attach it to the next token, if there is one.
+                            # If there is no next token, we attach it to the the next 'big_text'.
+                            # This will happen when the text has a space at the end
+                            # or when we have replaced either a composite glyph or an HTML escape
+                            # with a white space.
+                            # See ROUGH_TOKEN_REGEX to convince yourself this is true.
+                            saved = small_tok
+                        else:
+                            if saved is not None:
+                                # Attach the saved token in front of the current token
+                                small_tok = saved.concatenate(small_tok)
+                                saved = None
+                            yield small_tok
 
                 while paragraph_end:
                     # Yield the postponed TOK.P_END token
@@ -1460,7 +1507,7 @@ def generate_raw_tokens(
                 yield TOK.Begin_Paragraph()
             else:
                 # Sentence split: 'text' is the split pattern
-                tok_split = Tok(TOK.RAW, text, None, text, list(range(len(text))))
+                tok_split = Tok.from_txt(text)
                 # This token should have no output text, but we still want to preserve
                 # the original text.
                 tok_split.substitute((0, len(text)), "")
