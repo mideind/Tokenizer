@@ -38,13 +38,14 @@
 
 """
 
+from typing import (Any, Callable, Deque, FrozenSet, Iterable, Iterator, List,
+                    Mapping, Match, Optional, Tuple, Type, TypeVar, Union,
+                    cast)
+
 import datetime
 import re
 import unicodedata  # type: ignore
 from collections import deque
-from typing import (Any, Callable, Deque, FrozenSet, Iterable, Iterator, List,
-                    Mapping, Match, Optional, Tuple, Type, TypeVar, Union,
-                    cast)
 
 from .abbrev import Abbreviations
 from .definitions import *
@@ -56,6 +57,9 @@ _T = TypeVar("_T", bound="Tok")
 # normalized exclamation
 EXCLAMATIONS = frozenset(("!", "?"))
 
+# Global variables for readability
+SPAN_START = 0
+SPAN_END = 1
 
 class Tok:
 
@@ -1340,56 +1344,50 @@ def html_replacement(token: Tok) -> Tok:
 
 
 def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
-    """Generate rough tokens from a string"""
-    rough_token_regex_all_groups = 0
-    rough_token_regex_white_space_group = 1
-    # For completeness
-    # rough_token_regex_text_group = 2
-    span_start = 0
-    span_end = 1
+    """Generate rough tokens from a string."""
+    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
     # pos tracks the index in the text we have covered so far.
     # We want to track pos, instead of treating text as a buffer,
     # since that would lead to a lot of unnecessary copying.
     pos = 0
-    while pos != len(text):
-        res = ROUGH_TOKEN_REGEX.match(text, pos)
-        assert res is not None
-        tok = Tok.from_txt(text[
-            res.span(rough_token_regex_all_groups)[span_start] : res.span(rough_token_regex_all_groups)[span_end]
-        ])
-        pos = res.span(rough_token_regex_all_groups)[span_end]
+    while pos < len(text):
+        match = ROUGH_TOKEN_REGEX.match(text, pos)
+        assert match is not None
+        match_span = match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS)
+        tok = Tok.from_txt(text[match_span[SPAN_START] : match_span[SPAN_END]])
+        pos = match_span[SPAN_END]
         yield tok
 
 
 def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
-    """Generate rough tokens from a token.
+    """Generate rough tokens from a token."""
+    # Some tokens might have whitespaces in them after we replace composite unicode glyphs
+    # and replace HTML escapes.
+    # This function further splits those tokens into multiple tokens.
+    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
 
-    Some tokens might have whitespaces in them after we escape HTML and unicode characters.
-    This function splits those tokens into multiple tokens."""
-    rough_token_regex_all_groups = 0
-    rough_token_regex_white_space_group = 1
-    # For completeness
-    # rough_token_regex_text_group = 2
-    span_start = 0
-    span_end = 1
+    def shift_span(span: Tuple[int, int], pos: int):
+        """Shift a span by a given amount"""
+        return (span[SPAN_START] + pos, span[SPAN_END] + pos)
+
     text = tok.txt
     # pos tracks the index in the text we have covered so far.
     # We want to track pos, instead of treating text as a buffer,
     # since that would lead to a lot of unnecessary copying.
     pos = 0
-    while pos != len(text):
-        res = ROUGH_TOKEN_REGEX.match(text, pos)
-        assert res is not None
-        small_tok, tok = tok.split(res.span(rough_token_regex_all_groups)[span_end])
-        # Since the match from the regex contains indicies to the original string,
-        # we need to adjust them to the new string.
-        white_space_span = res.span(rough_token_regex_white_space_group)
-        adjusted_white_space_span_start, adjusted_white_space_span_end = (
-            white_space_span[span_start] - pos, white_space_span[span_end] - pos
-        )
+    while pos < len(text):
+        match = ROUGH_TOKEN_REGEX.match(text, pos)
+        assert match is not None
+        # Since the match indexes the text of the original token,
+        # we need to shift the indices so that they match the current token.
+        shifted_all_group_span = shift_span(match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS), -pos)
+        shifted_white_space_span = shift_span(match.span(ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP), -pos)
+        # Then we split the current token using the shifted spans
+        small_tok, tok = tok.split(shifted_all_group_span[SPAN_END])
         # Remove whitespace from the start of the token
-        small_tok.substitute((adjusted_white_space_span_start, adjusted_white_space_span_end), "")
-        pos = res.span(rough_token_regex_all_groups)[span_end]
+        small_tok.substitute(shifted_white_space_span, "")
+        # The pos is not shifted
+        pos = match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS)[SPAN_END]
         yield small_tok
 
 
@@ -1472,22 +1470,21 @@ def generate_raw_tokens(
                     if replace_composite_glyphs:
                         # Replace composite glyphs with single code points
                         tok = unicode_replacement(tok)
-
                     if replace_html_escapes:
                         # Replace HTML escapes: '&aacute;' -> 'á'
                         tok = html_replacement(tok)
                     # The HTML escapes and unicode possibly contain whitespaces
                     # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
-                    # Here we split those tokens into multiple tokens
+                    # Here we split those tokens into multiple tokens.
                     for small_tok in generate_rough_tokens_from_tok(tok):
                         if small_tok.txt == "":
                             # There was a white space at the end of the last token.
                             # We do not want to yield a token with empty text if possible.
-                            # We want to attach it to the next token, if there is one.
-                            # If there is no next token, we attach it to the the next 'big_text'.
-                            # This will happen when the text has a space at the end
-                            # or when we have replaced either a composite glyph or an HTML escape
-                            # with a white space.
+                            # We want to attach it in front of the next token, if there is one.
+                            # If there is no next token, we attach it in front of the next 'big_text'.
+                            # This will happen when:
+                            # 1. When 'text' has a space at the end
+                            # 2. When we have replaced a composite glyph or an HTML escape with a white space.
                             # See ROUGH_TOKEN_REGEX to convince yourself this is true.
                             saved = small_tok
                         else:

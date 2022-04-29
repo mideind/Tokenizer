@@ -2490,7 +2490,15 @@ def test_html_escapes() -> None:
         Tok(kind=11002, txt=None, val=None),
     ]
     assert toklist == correct
-
+    toklist = list(
+        t.tokenize(
+            # En space and Em space
+            "Ég&#8194;fór &aacute; &lt;bömmer&gt;&#8195;og bor&shy;ðaði köku.",
+            replace_html_escapes=True,
+        )
+    )
+    toklist = strip_originals(toklist)
+    assert toklist == correct
     toklist = list(
         t.tokenize(
             "Ég fór &uacute;t og &#97;fs&#x61;kaði mig", replace_html_escapes=True
