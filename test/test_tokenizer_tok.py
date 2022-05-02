@@ -150,27 +150,71 @@ def test_substitute_bugfix_1() -> None:
     test_string = "xya" + ACCENT + "zu" + ACCENT + "w&aacute;o" + UMLAUT + "b"
     #              012    3         45    6         7890123456    7         8
     #              0123456789012345
-    t = Tok(kind=-1, txt=test_string, val=None, original=test_string, origin_spans=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    t = Tok(
+        kind=-1,
+        txt=test_string,
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+    )
     t.substitute((2, 4), "á")
-    assert t == Tok(kind=-1, txt="xyázu" + ACCENT + "w&aacute;o" + UMLAUT + "b", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    assert t == Tok(
+        kind=-1,
+        txt="xyázu" + ACCENT + "w&aacute;o" + UMLAUT + "b",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+    )
 
     t.substitute((4, 6), "ú")
-    assert t == Tok(kind=-1, txt="xyázúw&aacute;o" + UMLAUT + "b", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
+    assert t == Tok(
+        kind=-1,
+        txt="xyázúw&aacute;o" + UMLAUT + "b",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+    )
 
     t.substitute((14, 16), "ö")
-    assert t == Tok(kind=-1, txt="xyázúw&aacute;öb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18])
+    assert t == Tok(
+        kind=-1,
+        txt="xyázúw&aacute;öb",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 18],
+    )
 
     # bug was here
     t.substitute((6, 14), "á")
-    assert t == Tok(kind=-1, txt="xyázúwáöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
+    assert t == Tok(
+        kind=-1,
+        txt="xyázúwáöb",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18],
+    )
 
 
 def test_multiple_substitutions() -> None:
-    t = Tok(TOK.RAW, "a&123b&456&789c", None, "a&123b&456&789c", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+    t = Tok(
+        TOK.RAW,
+        "a&123b&456&789c",
+        None,
+        "a&123b&456&789c",
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    )
     t.substitute((1, 5), "x")
-    assert t == Tok(TOK.RAW, "axb&456&789c", None, "a&123b&456&789c", [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+    assert t == Tok(
+        TOK.RAW,
+        "axb&456&789c",
+        None,
+        "a&123b&456&789c",
+        [0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+    )
     t.substitute((3, 7), "y")
-    assert t == Tok(TOK.RAW, "axby&789c", None, "a&123b&456&789c", [0, 1, 5, 6, 10, 11, 12, 13, 14])
+    assert t == Tok(
+        TOK.RAW, "axby&789c", None, "a&123b&456&789c", [0, 1, 5, 6, 10, 11, 12, 13, 14]
+    )
     t.substitute((4, 8), "z")
     assert t == Tok(TOK.RAW, "axbyzc", None, "a&123b&456&789c", [0, 1, 5, 6, 10, 14])
 
@@ -255,7 +299,13 @@ def test_html_escapes_with_origin_tracking() -> None:
     test_string = "xy&#x61;z&aacute;w&#97;b"
     tokens = list(tokenizer.generate_raw_tokens(test_string, replace_html_escapes=True))
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyazáwab", val=None, original=test_string, origin_spans=[0, 1, 2, 8, 9, 17, 18, 23])
+    assert tokens[0] == Tok(
+        kind=TOK.RAW,
+        txt="xyazáwab",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 8, 9, 17, 18, 23],
+    )
     # Note the space after &nbsp;
     test_string = "Ég&nbsp; fór út."
     #              0101234567890123
@@ -264,7 +314,13 @@ def test_html_escapes_with_origin_tracking() -> None:
     assert len(tokens) == 3
     assert tokens == [
         Tok(kind=TOK.RAW, txt="Ég", val=None, original="Ég", origin_spans=[0, 1]),
-        Tok(kind=TOK.RAW, txt="fór", val=None, original="&nbsp; fór", origin_spans=[7, 8, 9]),
+        Tok(
+            kind=TOK.RAW,
+            txt="fór",
+            val=None,
+            original="&nbsp; fór",
+            origin_spans=[7, 8, 9],
+        ),
         Tok(kind=TOK.RAW, txt="út.", val=None, original=" út.", origin_spans=[1, 2, 3]),
     ]
     test_string = "Ég&nbsp;&nbsp;fór út."
@@ -274,7 +330,13 @@ def test_html_escapes_with_origin_tracking() -> None:
     assert len(tokens) == 3
     assert tokens == [
         Tok(kind=TOK.RAW, txt="Ég", val=None, original="Ég", origin_spans=[0, 1]),
-        Tok(kind=TOK.RAW, txt="fór", val=None, original="&nbsp;&nbsp;fór", origin_spans=[12, 13, 14]),
+        Tok(
+            kind=TOK.RAW,
+            txt="fór",
+            val=None,
+            original="&nbsp;&nbsp;fór",
+            origin_spans=[12, 13, 14],
+        ),
         Tok(kind=TOK.RAW, txt="út.", val=None, original=" út.", origin_spans=[1, 2, 3]),
     ]
     test_string = "Ég&nbsp;fór&nbsp;út."
@@ -284,8 +346,20 @@ def test_html_escapes_with_origin_tracking() -> None:
     assert len(tokens) == 3
     assert tokens == [
         Tok(kind=TOK.RAW, txt="Ég", val=None, original="Ég", origin_spans=[0, 1]),
-        Tok(kind=TOK.RAW, txt="fór", val=None, original="&nbsp;fór", origin_spans=[6, 7, 8]),
-        Tok(kind=TOK.RAW, txt="út.", val=None, original="&nbsp;út.", origin_spans=[6, 7, 8]),
+        Tok(
+            kind=TOK.RAW,
+            txt="fór",
+            val=None,
+            original="&nbsp;fór",
+            origin_spans=[6, 7, 8],
+        ),
+        Tok(
+            kind=TOK.RAW,
+            txt="út.",
+            val=None,
+            original="&nbsp;út.",
+            origin_spans=[6, 7, 8],
+        ),
     ]
     test_string = "Ég fór út.&nbsp;"
     #              0101230123012345
@@ -312,24 +386,46 @@ def test_html_escapes_with_origin_tracking() -> None:
 
 def test_unicode_escapes_with_origin_tracking() -> None:
     test_string = "xya" + ACCENT + "zu" + ACCENT + "wo" + UMLAUT + "b"
-    tokens = list(tokenizer.generate_raw_tokens(test_string, replace_composite_glyphs=True))
+    tokens = list(
+        tokenizer.generate_raw_tokens(test_string, replace_composite_glyphs=True)
+    )
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 10])
+    assert tokens[0] == Tok(
+        kind=TOK.RAW,
+        txt="xyázúwöb",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 4, 5, 7, 8, 10],
+    )
 
 
 def test_unicode_escapes_that_are_removed() -> None:
     test_string = "a\xadb\xadc"
-    tokens = list(tokenizer.generate_raw_tokens(test_string, replace_composite_glyphs=True))
+    tokens = list(
+        tokenizer.generate_raw_tokens(test_string, replace_composite_glyphs=True)
+    )
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="abc", val=None, original=test_string, origin_spans=[0, 2, 4])
+    assert tokens[0] == Tok(
+        kind=TOK.RAW, txt="abc", val=None, original=test_string, origin_spans=[0, 2, 4]
+    )
 
 
 def test_html_unicode_mix() -> None:
     test_string = "xya" + ACCENT + "zu" + ACCENT + "w&aacute;o" + UMLAUT + "b"
     #              012    3         45    6         7890123456    7         8
-    tokens = list(tokenizer.generate_raw_tokens(test_string, replace_composite_glyphs=True, replace_html_escapes=True))
+    tokens = list(
+        tokenizer.generate_raw_tokens(
+            test_string, replace_composite_glyphs=True, replace_html_escapes=True
+        )
+    )
     assert len(tokens) == 1
-    assert tokens[0] == Tok(kind=TOK.RAW, txt="xyázúwáöb", val=None, original=test_string, origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18])
+    assert tokens[0] == Tok(
+        kind=TOK.RAW,
+        txt="xyázúwáöb",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 4, 5, 7, 8, 16, 18],
+    )
 
 
 def test_tok_concatenation() -> None:
@@ -337,7 +433,9 @@ def test_tok_concatenation() -> None:
     tok1 = Tok(TOK.RAW, str1, None, str1, list(range(len(str1))))
     str2 = "jklæ"
     tok2 = Tok(TOK.RAW, str2, None, str2, list(range(len(str1))))
-    assert tok1.concatenate(tok2) == Tok(TOK.RAW, str1 + str2, None, str1 + str2, list(range(len(str1 + str2))))
+    assert tok1.concatenate(tok2) == Tok(
+        TOK.RAW, str1 + str2, None, str1 + str2, list(range(len(str1 + str2)))
+    )
 
     str1 = "abc"
     or1 = "&123&456&789"
@@ -345,7 +443,9 @@ def test_tok_concatenation() -> None:
     or2 = "&xx&yy&zz"
     tok1 = Tok(TOK.RAW, str1, None, or1, [0, 4, 8])
     tok2 = Tok(TOK.RAW, str2, None, or2, [0, 2, 4])
-    assert tok1.concatenate(tok2) == Tok(TOK.RAW, str1 + str2, None, or1 + or2, [0, 4, 8, 12, 14, 16])
+    assert tok1.concatenate(tok2) == Tok(
+        TOK.RAW, str1 + str2, None, or1 + or2, [0, 4, 8, 12, 14, 16]
+    )
 
 
 def test_tok_concatenation_with_separator() -> None:
@@ -354,7 +454,13 @@ def test_tok_concatenation_with_separator() -> None:
     str2 = "jklæ"
     tok2 = Tok(TOK.RAW, str2, None, str2, list(range(len(str1))))
     sep = "WOLOLO"
-    assert tok1.concatenate(tok2, separator=sep) == Tok(TOK.RAW, str1 + sep + str2, None, str1 + str2, [0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 5, 6, 7])
+    assert tok1.concatenate(tok2, separator=sep) == Tok(
+        TOK.RAW,
+        str1 + sep + str2,
+        None,
+        str1 + str2,
+        [0, 1, 2, 3, 4, 4, 4, 4, 4, 4, 4, 5, 6, 7],
+    )
 
     str1 = "abc"
     or1 = "&123&456&789"
@@ -363,7 +469,13 @@ def test_tok_concatenation_with_separator() -> None:
     tok1 = Tok(TOK.RAW, str1, None, or1, [0, 4, 8])
     tok2 = Tok(TOK.RAW, str2, None, or2, [0, 2, 4])
     sep = "WOLOLO"
-    assert tok1.concatenate(tok2, separator=sep) == Tok(TOK.RAW, str1 + sep + str2, None, or1 + or2, [0, 4, 8, 12, 12, 12, 12, 12, 12, 12, 14, 16])
+    assert tok1.concatenate(tok2, separator=sep) == Tok(
+        TOK.RAW,
+        str1 + sep + str2,
+        None,
+        or1 + or2,
+        [0, 4, 8, 12, 12, 12, 12, 12, 12, 12, 14, 16],
+    )
 
 
 def test_tok_substitute_all() -> None:
@@ -386,7 +498,13 @@ def test_tok_substitute_all() -> None:
     #    01234567890123456789
     t = Tok(TOK.RAW, s, None, s, list(range(len(s))))
     t.substitute_all("r", "")
-    assert t == Tok(TOK.RAW, "Þessi veðu lengi.", None, s, [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 18, 19])
+    assert t == Tok(
+        TOK.RAW,
+        "Þessi veðu lengi.",
+        None,
+        s,
+        [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 12, 13, 14, 15, 16, 18, 19],
+    )
 
 
 def test_tok_substitute_longer() -> None:

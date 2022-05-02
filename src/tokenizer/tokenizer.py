@@ -38,9 +38,23 @@
 
 """
 
-from typing import (Any, Callable, Deque, FrozenSet, Iterable, Iterator, List,
-                    Mapping, Match, Optional, Tuple, Type, TypeVar, Union,
-                    cast)
+from typing import (
+    Any,
+    Callable,
+    Deque,
+    FrozenSet,
+    Iterable,
+    Iterator,
+    List,
+    Mapping,
+    Match,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 import datetime
 import re
@@ -60,6 +74,7 @@ EXCLAMATIONS = frozenset(("!", "?"))
 # Global variables for readability
 SPAN_START = 0
 SPAN_END = 1
+
 
 class Tok:
 
@@ -183,7 +198,13 @@ class Tok:
 
         if self.origin_spans is not None and self.original is not None:
             if pos >= len(self.origin_spans):
-                l = Tok(self.kind, self.txt, self.val, self.original, self.origin_spans)
+                l = Tok(
+                    self.kind,
+                    self.txt,
+                    self.val,
+                    self.original,
+                    self.origin_spans,
+                )
                 r = Tok(self.kind, "", None, "", [])
             else:
                 l = Tok(
@@ -266,7 +287,11 @@ class Tok:
             self.substitute((i, i + len(old_str)), new_char)
 
     def concatenate(
-        self, other: "Tok", *, separator: str = "", metadata_from_other: bool = False
+        self,
+        other: "Tok",
+        *,
+        separator: str = "",
+        metadata_from_other: bool = False,
     ) -> "Tok":
         """Return a new token that consists of self with other
         concatenated to the end.
@@ -808,7 +833,9 @@ class TOK:
 
     @staticmethod
     def Begin_Sentence(
-        t: Optional[Tok] = None, num_parses: int = 0, err_index: Optional[int] = None
+        t: Optional[Tok] = None,
+        num_parses: int = 0,
+        err_index: Optional[int] = None,
     ) -> Tok:
         if t is None:
             return Tok(TOK.S_BEGIN, None, (num_parses, err_index))
@@ -1380,8 +1407,12 @@ def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
         assert match is not None
         # Since the match indexes the text of the original token,
         # we need to shift the indices so that they match the current token.
-        shifted_all_group_span = shift_span(match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS), -pos)
-        shifted_white_space_span = shift_span(match.span(ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP), -pos)
+        shifted_all_group_span = shift_span(
+            match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS), -pos
+        )
+        shifted_white_space_span = shift_span(
+            match.span(ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP), -pos
+        )
         # Then we split the current token using the shifted spans
         small_tok, tok = tok.split(shifted_all_group_span[SPAN_END])
         # Remove whitespace from the start of the token
@@ -1520,7 +1551,9 @@ def generate_raw_tokens(
 
 
 def could_be_end_of_sentence(
-    next_token: Tok, test_set: FrozenSet[int] = TOK.TEXT, multiplier: bool = False
+    next_token: Tok,
+    test_set: FrozenSet[int] = TOK.TEXT,
+    multiplier: bool = False,
 ) -> bool:
     """Return True if next_token could be ending the current sentence or
     starting the next one"""
@@ -2187,7 +2220,10 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                         a = "{0:.2f}".format(next_token.number).split(".")
                         h, m = int(a[0]), int(a[1])
                         token = TOK.Time(
-                            token.concatenate(next_token, separator=" "), h, m, 0
+                            token.concatenate(next_token, separator=" "),
+                            h,
+                            m,
+                            0,
                         )
                     else:
                         # next_token.kind is TOK.TIME
@@ -2323,7 +2359,9 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     )
                 else:
                     token = TOK.Measurement(
-                        token.concatenate(next_token, separator=" "), unit, value
+                        token.concatenate(next_token, separator=" "),
+                        unit,
+                        value,
                     )
                 next_token = next(token_stream)
 
@@ -2522,9 +2560,10 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                         token = tok_end_sentence
                         in_sentence = False
                 if token.punctuation in END_OF_SENTENCE and not (
-                    token.punctuation
-                    == "…"  # Excluding sentences with ellipsis in the middle
-                    and not could_be_end_of_sentence(next_token)
+                    token.punctuation == "…"
+                    and not could_be_end_of_sentence(
+                        next_token
+                    )  # Excluding sentences with ellipsis in the middle
                 ):
                     # Combining punctuation ('??!!!')
                     while (
@@ -2632,7 +2671,8 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # the abbreviation "gr.", we assume that the only
                     # interpretation of the abbreviation is "grein".
                     next_token = TOK.Word(
-                        next_token, [BIN_Tuple("grein", 0, "kvk", "skst", "gr.", "-")]
+                        next_token,
+                        [BIN_Tuple("grein", 0, "kvk", "skst", "gr.", "-")],
                     )
 
                 month = month_for_token(next_token, True)
@@ -2927,7 +2967,8 @@ def parse_phrases_2(
                     if percentage is not None:
                         # We have '17 prósent': coalesce into a single token
                         token = TOK.Percent(
-                            token.concatenate(next_token, separator=" "), token.number
+                            token.concatenate(next_token, separator=" "),
+                            token.number,
                         )
                         # Eat the percent word token
                         next_token = next(token_stream)
