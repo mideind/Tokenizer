@@ -31,11 +31,10 @@
 
 """
 
-from typing import Any, Iterable, Iterator, List, Union, Tuple, cast
+from typing import Any, Iterable, Iterator, List, Tuple, Union, cast
 
 import tokenizer as t
 from tokenizer.definitions import BIN_Tuple, ValType
-
 
 TOK = t.TOK
 Tok = t.Tok
@@ -2425,12 +2424,12 @@ def test_normalization() -> None:
     assert t.text_from_tokens(toklist) == 'Hann sagði : ,, Þú ert ágæt ??!? " .'
     assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt ? “ ."
 
-    toklist = list(t.tokenize('Jón,, farðu út.'))
-    assert t.text_from_tokens(toklist) == 'Jón ,, farðu út .'
+    toklist = list(t.tokenize("Jón,, farðu út."))
+    assert t.text_from_tokens(toklist) == "Jón ,, farðu út ."
     assert t.normalized_text_from_tokens(toklist) == "Jón , farðu út ."
 
-    toklist = list(t.tokenize('Jón ,,farðu út.'))
-    assert t.text_from_tokens(toklist) == 'Jón ,, farðu út .'
+    toklist = list(t.tokenize("Jón ,,farðu út."))
+    assert t.text_from_tokens(toklist) == "Jón ,, farðu út ."
     assert t.normalized_text_from_tokens(toklist) == "Jón „ farðu út ."
 
     toklist = list(t.tokenize('Hann sagði: ,,Þú ert ágæt.....".'))
@@ -2440,7 +2439,6 @@ def test_normalization() -> None:
     toklist = list(t.tokenize('Hann sagði: ,,Þú ert ágæt…..".'))
     assert t.text_from_tokens(toklist) == 'Hann sagði : ,, Þú ert ágæt ….. " .'
     assert t.normalized_text_from_tokens(toklist) == "Hann sagði : „ Þú ert ágæt … “ ."
-
 
 
 def test_abbr_at_eos() -> None:
@@ -2490,7 +2488,15 @@ def test_html_escapes() -> None:
         Tok(kind=11002, txt=None, val=None),
     ]
     assert toklist == correct
-
+    toklist = list(
+        t.tokenize(
+            # En space and Em space
+            "Ég&#8194;fór &aacute; &lt;bömmer&gt;&#8195;og bor&shy;ðaði köku.",
+            replace_html_escapes=True,
+        )
+    )
+    toklist = strip_originals(toklist)
+    assert toklist == correct
     toklist = list(
         t.tokenize(
             "Ég fór &uacute;t og &#97;fs&#x61;kaði mig", replace_html_escapes=True

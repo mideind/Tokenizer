@@ -40,30 +40,29 @@
 
 from typing import (
     Any,
+    Callable,
+    Deque,
+    FrozenSet,
+    Iterable,
+    Iterator,
     List,
     Mapping,
-    FrozenSet,
-    Callable,
-    Optional,
-    Iterator,
-    Iterable,
-    Tuple,
-    Deque,
-    Union,
     Match,
-    TypeVar,
+    Optional,
+    Tuple,
     Type,
+    TypeVar,
+    Union,
     cast,
 )
 
-import re
 import datetime
+import re
 import unicodedata  # type: ignore
 from collections import deque
 
-from .definitions import *
 from .abbrev import Abbreviations
-
+from .definitions import *
 
 _T = TypeVar("_T", bound="Tok")
 
@@ -71,6 +70,10 @@ _T = TypeVar("_T", bound="Tok")
 # Set of punctuation characters that are grouped into one
 # normalized exclamation
 EXCLAMATIONS = frozenset(("!", "?"))
+
+# Global constants for readability
+SPAN_START = 0
+SPAN_END = 1
 
 
 class Tok:
@@ -99,6 +102,11 @@ class Tok:
         # (which may have substitutions) to its index in 'original'.
         # This is required to preserve 'original' correctly when splitting.
         self.origin_spans: Optional[List[int]] = origin_spans
+
+    @classmethod
+    def from_txt(cls: Type[_T], txt: str) -> _T:
+        """Create a token from text"""
+        return cls(TOK.RAW, txt, None, txt, list(range(len(txt))))
 
     @classmethod
     def from_token(cls: Type[_T], t: "Tok") -> _T:
@@ -190,7 +198,13 @@ class Tok:
 
         if self.origin_spans is not None and self.original is not None:
             if pos >= len(self.origin_spans):
-                l = Tok(self.kind, self.txt, self.val, self.original, self.origin_spans)
+                l = Tok(
+                    self.kind,
+                    self.txt,
+                    self.val,
+                    self.original,
+                    self.origin_spans,
+                )
                 r = Tok(self.kind, "", None, "", [])
             else:
                 l = Tok(
@@ -273,7 +287,11 @@ class Tok:
             self.substitute((i, i + len(old_str)), new_char)
 
     def concatenate(
-        self, other: "Tok", *, separator: str = "", metadata_from_other: bool = False
+        self,
+        other: "Tok",
+        *,
+        separator: str = "",
+        metadata_from_other: bool = False,
     ) -> "Tok":
         """Return a new token that consists of self with other
         concatenated to the end.
@@ -815,7 +833,9 @@ class TOK:
 
     @staticmethod
     def Begin_Sentence(
-        t: Optional[Tok] = None, num_parses: int = 0, err_index: Optional[int] = None
+        t: Optional[Tok] = None,
+        num_parses: int = 0,
+        err_index: Optional[int] = None,
     ) -> Tok:
         if t is None:
             return Tok(TOK.S_BEGIN, None, (num_parses, err_index))
@@ -1350,6 +1370,58 @@ def html_replacement(token: Tok) -> Tok:
     return token
 
 
+def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
+    """Generate rough tokens from a string."""
+    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
+    # pos tracks the index in the text we have covered so far.
+    # We want to track pos, instead of treating text as a buffer,
+    # since that would lead to a lot of unnecessary copying.
+    pos = 0
+    while pos < len(text):
+        match = ROUGH_TOKEN_REGEX.match(text, pos)
+        assert match is not None
+        match_span = match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH)
+        tok = Tok.from_txt(text[match_span[SPAN_START] : match_span[SPAN_END]])
+        pos = match_span[SPAN_END]
+        yield tok
+
+
+def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
+    """Generate rough tokens from a token."""
+    # Some tokens might have whitespace characters after we replace composite unicode glyphs
+    # and replace HTML escapes.
+    # This function further splits those tokens into multiple tokens.
+    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
+
+    def shift_span(span: Tuple[int, int], pos: int):
+        """Shift a span by a given amount"""
+        return (span[SPAN_START] + pos, span[SPAN_END] + pos)
+
+    text = tok.txt
+    # pos tracks the index in the text we have covered so far.
+    # We want to track pos, instead of treating text as a buffer,
+    # since that would lead to a lot of unnecessary copying.
+    pos = 0
+    while pos < len(text):
+        match = ROUGH_TOKEN_REGEX.match(text, pos)
+        assert match is not None
+        # Since the match indexes the text of the original token,
+        # we need to shift the indices so that they match the current token.
+        shifted_all_group_span = shift_span(
+            match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH), -pos
+        )
+        shifted_white_space_span = shift_span(
+            match.span(ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP), -pos
+        )
+        # Then we split the current token using the shifted spans
+        small_tok, tok = tok.split(shifted_all_group_span[SPAN_END])
+        # Remove whitespace characters from the start of the token
+        small_tok.substitute(shifted_white_space_span, "")
+        # The pos is not shifted
+        pos = match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH)[SPAN_END]
+        yield small_tok
+
+
 def generate_raw_tokens(
     text_or_gen: Union[str, Iterable[str]],
     replace_composite_glyphs: bool = True,
@@ -1425,30 +1497,33 @@ def generate_raw_tokens(
                         text = text[:-2]
                         # Postpone the yield until after the raw token loop
                         paragraph_end += 1
-                tok_big = Tok(TOK.RAW, text, None, text, list(range(len(text))))
-                if replace_composite_glyphs:
-                    # Replace composite glyphs with single code points
-                    tok_big = unicode_replacement(tok_big)
-                if replace_html_escapes:
-                    # Replace HTML escapes: '&aacute;' -> 'á'
-                    tok_big = html_replacement(tok_big)
-
-                while tok_big.txt != "":
-                    res = ROUGH_TOKEN_REGEX.match(tok_big.txt)
-                    assert res is not None
-                    tok, tok_big = tok_big.split(res.span(0)[1])
-
-                    # Remove whitespace from the start of the token
-                    tok.substitute(res.span(1), "")
-                    if tok.txt == "":
-                        # We have some trailing whitespace at the end of a 'big_text'
-                        # This can only be the last item in 'splits'.
-                        # See ROUGH_TOKEN_REGEX to convince yourself this is true.
-                        # Save this bit and attach it to the front of the next 'big_text'
-                        # since we don't want to yield a word token with empty text.
-                        saved = tok
-                    else:
-                        yield tok
+                for tok in generate_rough_tokens_from_txt(text):
+                    if replace_composite_glyphs:
+                        # Replace composite glyphs with single code points
+                        tok = unicode_replacement(tok)
+                    if replace_html_escapes:
+                        # Replace HTML escapes: '&aacute;' -> 'á'
+                        tok = html_replacement(tok)
+                    # The HTML escapes and unicode possibly contain whitespace characters
+                    # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
+                    # Here we split those tokens into multiple tokens.
+                    for small_tok in generate_rough_tokens_from_tok(tok):
+                        if small_tok.txt == "":
+                            # There was whitespace at the end of the last token.
+                            # We do not want to yield a token with empty text if possible.
+                            # We want to attach it in front of the next token, if there is one.
+                            # If there is no next token, we attach it in front of the next 'big_text'.
+                            # This will happen when:
+                            # 1. When 'text' has whitespace at the end
+                            # 2. When we have replaced a composite glyph or an HTML escape with whitespace.
+                            # See ROUGH_TOKEN_REGEX to convince yourself this is true.
+                            saved = small_tok
+                        else:
+                            if saved is not None:
+                                # Attach the saved token in front of the current token
+                                small_tok = saved.concatenate(small_tok)
+                                saved = None
+                            yield small_tok
 
                 while paragraph_end:
                     # Yield the postponed TOK.P_END token
@@ -1460,7 +1535,7 @@ def generate_raw_tokens(
                 yield TOK.Begin_Paragraph()
             else:
                 # Sentence split: 'text' is the split pattern
-                tok_split = Tok(TOK.RAW, text, None, text, list(range(len(text))))
+                tok_split = Tok.from_txt(text)
                 # This token should have no output text, but we still want to preserve
                 # the original text.
                 tok_split.substitute((0, len(text)), "")
@@ -1476,7 +1551,9 @@ def generate_raw_tokens(
 
 
 def could_be_end_of_sentence(
-    next_token: Tok, test_set: FrozenSet[int] = TOK.TEXT, multiplier: bool = False
+    next_token: Tok,
+    test_set: FrozenSet[int] = TOK.TEXT,
+    multiplier: bool = False,
 ) -> bool:
     """Return True if next_token could be ending the current sentence or
     starting the next one"""
@@ -2143,7 +2220,10 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                         a = "{0:.2f}".format(next_token.number).split(".")
                         h, m = int(a[0]), int(a[1])
                         token = TOK.Time(
-                            token.concatenate(next_token, separator=" "), h, m, 0
+                            token.concatenate(next_token, separator=" "),
+                            h,
+                            m,
+                            0,
                         )
                     else:
                         # next_token.kind is TOK.TIME
@@ -2279,7 +2359,9 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     )
                 else:
                     token = TOK.Measurement(
-                        token.concatenate(next_token, separator=" "), unit, value
+                        token.concatenate(next_token, separator=" "),
+                        unit,
+                        value,
                     )
                 next_token = next(token_stream)
 
@@ -2478,9 +2560,10 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                         token = tok_end_sentence
                         in_sentence = False
                 if token.punctuation in END_OF_SENTENCE and not (
-                    token.punctuation
-                    == "…"  # Excluding sentences with ellipsis in the middle
-                    and not could_be_end_of_sentence(next_token)
+                    token.punctuation == "…"
+                    and not could_be_end_of_sentence(
+                        next_token
+                    )  # Excluding sentences with ellipsis in the middle
                 ):
                     # Combining punctuation ('??!!!')
                     while (
@@ -2588,7 +2671,8 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # the abbreviation "gr.", we assume that the only
                     # interpretation of the abbreviation is "grein".
                     next_token = TOK.Word(
-                        next_token, [BIN_Tuple("grein", 0, "kvk", "skst", "gr.", "-")]
+                        next_token,
+                        [BIN_Tuple("grein", 0, "kvk", "skst", "gr.", "-")],
                     )
 
                 month = month_for_token(next_token, True)
@@ -2883,7 +2967,8 @@ def parse_phrases_2(
                     if percentage is not None:
                         # We have '17 prósent': coalesce into a single token
                         token = TOK.Percent(
-                            token.concatenate(next_token, separator=" "), token.number
+                            token.concatenate(next_token, separator=" "),
+                            token.number,
                         )
                         # Eat the percent word token
                         next_token = next(token_stream)
