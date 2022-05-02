@@ -71,7 +71,7 @@ _T = TypeVar("_T", bound="Tok")
 # normalized exclamation
 EXCLAMATIONS = frozenset(("!", "?"))
 
-# Global variables for readability
+# Global constants for readability
 SPAN_START = 0
 SPAN_END = 1
 
@@ -1380,7 +1380,7 @@ def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
     while pos < len(text):
         match = ROUGH_TOKEN_REGEX.match(text, pos)
         assert match is not None
-        match_span = match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS)
+        match_span = match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH)
         tok = Tok.from_txt(text[match_span[SPAN_START] : match_span[SPAN_END]])
         pos = match_span[SPAN_END]
         yield tok
@@ -1388,7 +1388,7 @@ def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
 
 def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
     """Generate rough tokens from a token."""
-    # Some tokens might have whitespaces in them after we replace composite unicode glyphs
+    # Some tokens might have whitespace characters after we replace composite unicode glyphs
     # and replace HTML escapes.
     # This function further splits those tokens into multiple tokens.
     # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
@@ -1408,17 +1408,17 @@ def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
         # Since the match indexes the text of the original token,
         # we need to shift the indices so that they match the current token.
         shifted_all_group_span = shift_span(
-            match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS), -pos
+            match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH), -pos
         )
         shifted_white_space_span = shift_span(
             match.span(ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP), -pos
         )
         # Then we split the current token using the shifted spans
         small_tok, tok = tok.split(shifted_all_group_span[SPAN_END])
-        # Remove whitespace from the start of the token
+        # Remove whitespace characters from the start of the token
         small_tok.substitute(shifted_white_space_span, "")
         # The pos is not shifted
-        pos = match.span(ROUGH_TOKEN_REGEX_ALL_GROUPS)[SPAN_END]
+        pos = match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH)[SPAN_END]
         yield small_tok
 
 
@@ -1504,18 +1504,18 @@ def generate_raw_tokens(
                     if replace_html_escapes:
                         # Replace HTML escapes: '&aacute;' -> 'á'
                         tok = html_replacement(tok)
-                    # The HTML escapes and unicode possibly contain whitespaces
+                    # The HTML escapes and unicode possibly contain whitespace characters
                     # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
                     # Here we split those tokens into multiple tokens.
                     for small_tok in generate_rough_tokens_from_tok(tok):
                         if small_tok.txt == "":
-                            # There was a white space at the end of the last token.
+                            # There was whitespace at the end of the last token.
                             # We do not want to yield a token with empty text if possible.
                             # We want to attach it in front of the next token, if there is one.
                             # If there is no next token, we attach it in front of the next 'big_text'.
                             # This will happen when:
-                            # 1. When 'text' has a space at the end
-                            # 2. When we have replaced a composite glyph or an HTML escape with a white space.
+                            # 1. When 'text' has whitespace at the end
+                            # 2. When we have replaced a composite glyph or an HTML escape with whitespace.
                             # See ROUGH_TOKEN_REGEX to convince yourself this is true.
                             saved = small_tok
                         else:

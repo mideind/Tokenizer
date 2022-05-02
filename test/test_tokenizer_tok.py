@@ -35,6 +35,9 @@ TOK = tokenizer.TOK
 
 ACCENT = chr(769)
 UMLAUT = chr(776)
+SOFT_HYPHEN = chr(173)
+ZEROWIDTH_SPACE = chr(8203)
+ZEROWIDTH_NBSP = chr(65279)
 
 
 def test_split_simple() -> None:
@@ -308,7 +311,11 @@ def test_html_escapes_with_origin_tracking() -> None:
     )
     # Note the space after &nbsp;
     test_string = "Ég&nbsp; fór út."
+    # Here we show in comments when a new token starts in the string with "|" (inclusive).
+    #              | |         |
+    # We also show the character indices for each token.
     #              0101234567890123
+    # And where the 'txt' is.
     #              ^^       ^^^ ^^^
     tokens = list(tokenizer.generate_raw_tokens(test_string, replace_html_escapes=True))
     assert len(tokens) == 3
@@ -324,6 +331,7 @@ def test_html_escapes_with_origin_tracking() -> None:
         Tok(kind=TOK.RAW, txt="út.", val=None, original=" út.", origin_spans=[1, 2, 3]),
     ]
     test_string = "Ég&nbsp;&nbsp;fór út."
+    #              | |              |
     #              010123456789012340123
     #              ^^            ^^^ ^^^
     tokens = list(tokenizer.generate_raw_tokens(test_string, replace_html_escapes=True))
@@ -340,6 +348,7 @@ def test_html_escapes_with_origin_tracking() -> None:
         Tok(kind=TOK.RAW, txt="út.", val=None, original=" út.", origin_spans=[1, 2, 3]),
     ]
     test_string = "Ég&nbsp;fór&nbsp;út."
+    #              | |        |
     #              01012345678012345678
     #              ^^      ^^^      ^^^
     tokens = list(tokenizer.generate_raw_tokens(test_string, replace_html_escapes=True))
@@ -362,6 +371,7 @@ def test_html_escapes_with_origin_tracking() -> None:
         ),
     ]
     test_string = "Ég fór út.&nbsp;"
+    #              | |   |
     #              0101230123012345
     #              ^^ ^^^ ^^^
     tokens = list(tokenizer.generate_raw_tokens(test_string, replace_html_escapes=True))
@@ -373,6 +383,7 @@ def test_html_escapes_with_origin_tracking() -> None:
         Tok(kind=TOK.S_SPLIT, txt="", val=None, original="&nbsp;", origin_spans=[]),
     ]
     test_string = "&nbsp;Ég fór út."
+    #              |       |   |
     #              0123456701230123
     #                    ^^ ^^^ ^^^
     tokens = list(tokenizer.generate_raw_tokens(test_string, replace_html_escapes=True))
@@ -396,6 +407,21 @@ def test_unicode_escapes_with_origin_tracking() -> None:
         val=None,
         original=test_string,
         origin_spans=[0, 1, 2, 4, 5, 7, 8, 10],
+    )
+
+    test_string = (
+        "þetta" + ZEROWIDTH_SPACE + "er" + ZEROWIDTH_NBSP + "eitt" + SOFT_HYPHEN + "orð"
+    )
+    tokens = list(
+        tokenizer.generate_raw_tokens(test_string, replace_composite_glyphs=True)
+    )
+    assert len(tokens) == 1
+    assert tokens[0] == Tok(
+        kind=TOK.RAW,
+        txt="þettaereittorð",
+        val=None,
+        original=test_string,
+        origin_spans=[0, 1, 2, 3, 4, 6, 7, 9, 10, 11, 12, 14, 15, 16],
     )
 
 
@@ -529,14 +555,34 @@ def test_tok_from_txt() -> None:
     t = Tok.from_txt(s)
     assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
 
-    s = "   asdf"
+    s = " asdf"
     t = Tok.from_txt(s)
     assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
 
-    s = "asdf   "
+    s = "asdf "
+    t = Tok.from_txt(s)
+    assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
+
+    s = " asdf "
     t = Tok.from_txt(s)
     assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
 
     s = "Tok getur alveg verið heil setning."
+    t = Tok.from_txt(s)
+    assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
+
+    s = "HTML&nbsp;&amp; er líka óbreytt"
+    t = Tok.from_txt(s)
+    assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
+
+    s = (
+        "unicode"
+        + ZEROWIDTH_SPACE
+        + "er"
+        + ZEROWIDTH_NBSP
+        + "líka"
+        + SOFT_HYPHEN
+        + "óbreytt"
+    )
     t = Tok.from_txt(s)
     assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))

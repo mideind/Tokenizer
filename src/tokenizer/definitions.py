@@ -139,8 +139,8 @@ UNICODE_REGEX = re.compile(
 
 # Used for the first step of token splitting
 ROUGH_TOKEN_REGEX = re.compile(r"(\s*)([^\s]*)", re.UNICODE)
-# Variables for readability when using the ROUGH_TOKEN_REGEX
-ROUGH_TOKEN_REGEX_ALL_GROUPS = 0
+# Constants for readability when using the ROUGH_TOKEN_REGEX
+ROUGH_TOKEN_REGEX_ENTIRE_MATCH = 0
 ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP = 1
 ROUGH_TOKEN_REGEX_TOKEN_GROUP = 2
 
