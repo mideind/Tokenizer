@@ -2242,9 +2242,10 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             ):
                 if token.kind == TOK.WORD and token.txt.lower() in CLOCK_ABBREVS:
                     # Match: coalesce and step to next token
+                    next_txt = next_token.txt.lower()
                     token = TOK.Time(
                         token.concatenate(next_token, separator=" "),
-                        *CLOCK_NUMBERS[next_token.txt.lower()],
+                        *CLOCK_NUMBERS.get(next_txt, (0, 0, 0)),
                     )
                     next_token = next(token_stream)
 
@@ -2268,7 +2269,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             # Words like 'hálftólf' are only used in temporal expressions
             # so can stand alone
             if token.txt in CLOCK_HALF:
-                token = TOK.Time(token, *CLOCK_NUMBERS[token.txt])
+                token = TOK.Time(token, *CLOCK_NUMBERS.get(token.txt, (0, 0, 0)))
 
             # Coalesce 'árið' + [year|number] into year
             if (token.kind == TOK.WORD and token.txt.lower() in YEAR_WORD) and (
@@ -2345,7 +2346,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 value = token.number
                 orig_unit = next_token.txt
                 unit: str
-                unit, factor_func = SI_UNITS[orig_unit]
+                unit, factor_func = SI_UNITS.get(orig_unit, ("", 1.0))
                 if callable(factor_func):
                     # We have a lambda conversion function
                     value = factor_func(value)
@@ -2390,7 +2391,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             ):
                 # Handle 200° C
                 new_unit = "°" + next_token.txt
-                unit, factor_func = SI_UNITS[new_unit]
+                unit, factor_func = SI_UNITS.get(new_unit, ("", 1.0))
                 v = cast(MeasurementTuple, token.val)[1]
                 if callable(factor_func):
                     val = factor_func(v)
@@ -2461,7 +2462,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             ):
                 token = TOK.Amount(
                     token.concatenate(next_token, separator=" "),
-                    CURRENCY_SYMBOLS[next_token.txt],
+                    CURRENCY_SYMBOLS.get(next_token.txt, ""),
                     token.number,
                 )
                 next_token = next(token_stream)
@@ -2832,7 +2833,7 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
             # Split TIMESTAMP into TIMESTAMPABS and TIMESTAMPREL
             if token.kind == TOK.TIMESTAMP:
-                ts = cast(TimeStampTuple, token.val)
+                ts: TimeStampTuple = cast(TimeStampTuple, token.val)
                 if all(x != 0 for x in ts[0:3]):
                     # Year, month and day all non-zero (h, m, s can be zero)
                     token = TOK.Timestampabs(token, *ts)
