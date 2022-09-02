@@ -464,6 +464,15 @@ class TOK:
     SERIALNUMBER = 29
     # Company name ('Google Inc.')
     COMPANY = 30
+
+    # Sentinel value to for metatokens.
+    # Metatokens are tokens that are not directly based on characters in the text.
+    # Users can compare a token's kind with META_BEGIN to distinguish between
+    # metatokens and other tokens.
+    # Regular token kinds have a value less than META_BEGIN and
+    # metatokens have a kind greater than META_BEGIN.
+    META_BEGIN = 9999
+
     # Sentence split token
     S_SPLIT = 10000
     # Paragraph begin
