@@ -658,13 +658,13 @@ def roman_to_int(s: str) -> int:
 
 NUMBER_ABBREV = {
     "þús.": 1000,
-    "millj.": 10 ** 6,
-    "mljó.": 10 ** 6,
-    "ma.": 10 ** 9,
-    "mrð.": 10 ** 9,
-    "billj.": 10 ** 12,
-    "bljó.": 10 ** 12,
-    "trillj.": 10 ** 18,
+    "millj.": 10**6,
+    "mljó.": 10**6,
+    "ma.": 10**9,
+    "mrð.": 10**9,
+    "billj.": 10**12,
+    "bljó.": 10**12,
+    "trillj.": 10**18,
 }
 
 # Recognize words for percentages
@@ -731,6 +731,14 @@ URL_PREFIXES = (
     "ssh://",
     "sftp://",
     "smb://",
+    "git://",
+    "svn://",
+    "svn+ssh://",
+    "imap://",
+    "rtmp://",
+    "telnet://",
+    "udp://",
+    "vnc://",
 )
 
 TOP_LEVEL_DOMAINS = frozenset(
