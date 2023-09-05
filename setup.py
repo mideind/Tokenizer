@@ -63,6 +63,7 @@ setup(
         ),
         re.sub(":[a-z]+:`~?(.*?)`", r"``\1``", read("CHANGELOG.rst")),
     ),
+    long_description_content_type="text/x-rst",
     author="Miðeind ehf.",
     author_email="mideind@mideind.is",
     url="https://github.com/mideind/Tokenizer",
