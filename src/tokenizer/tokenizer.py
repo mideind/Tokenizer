@@ -878,34 +878,33 @@ class TOK:
 
 
 class TokenStream:
-
     """Wrapper for token iterator allowing lookahead."""
 
     def __init__(self, token_it: Iterator[Tok], *, lookahead_size: int = 2):
         """Initialize from token iterator."""
-        self.__it: Iterator[Tok] = token_it
+        self._it: Iterator[Tok] = token_it
         if lookahead_size <= 0:
             lookahead_size = 1
-        self.__lookahead: Deque[Tok] = deque(maxlen=lookahead_size)
-        self.__max_lookahead: int = lookahead_size
+        self._lookahead: Deque[Tok] = deque(maxlen=lookahead_size)
+        self._max_lookahead: int = lookahead_size
 
     def __next__(self) -> Tok:
-        if self.__lookahead:
-            return self.__lookahead.popleft()
-        return next(self.__it)
+        if self._lookahead:
+            return self._lookahead.popleft()
+        return next(self._it)
 
     def __iter__(self):
         return self
 
     def __getitem__(self, i: int) -> Optional[Tok]:
-        if 0 <= i < self.__max_lookahead:
-            l = len(self.__lookahead)
+        if 0 <= i < self._max_lookahead:
+            l = len(self._lookahead)
             try:
                 while l <= i:
                     # Extend deque to lookahead
-                    self.__lookahead.append(next(self.__it))
+                    self._lookahead.append(next(self._it))
                     l += 1
-                return self.__lookahead[i]
+                return self._lookahead[i]
             except StopIteration:
                 pass
         return None
