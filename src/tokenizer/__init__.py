@@ -62,7 +62,7 @@ from .abbrev import Abbreviations, ConfigError
 
 __author__ = "Miðeind ehf"
 __copyright__ = "(C) 2022 Miðeind ehf."
-__version__ = "3.4.3"  # Remember to also update in setup.py
+__version__ = "3.4.3"  # Remember to also update in pyproject.toml
 
 __all__ = (
     "__author__",
