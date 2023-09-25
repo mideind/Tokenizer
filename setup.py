@@ -48,13 +48,9 @@ def read(*names: str, **kwargs: Any) -> str:
         return ""
 
 
-# Load version string from file
-__version__ = "[missing]"
-exec(open(join("src", "tokenizer", "version.py")).read())
-
 setup(
     name="tokenizer",
-    version=__version__,
+    version="3.4.3",  # Remember to also update in tokenizer/__init__.py
     license="MIT",
     description="A tokenizer for Icelandic text",
     long_description="{0}\n{1}".format(

@@ -59,10 +59,10 @@ from .tokenizer import (
     TokenStream,
 )
 from .abbrev import Abbreviations, ConfigError
-from .version import __version__
 
 __author__ = "Miðeind ehf"
 __copyright__ = "(C) 2022 Miðeind ehf."
+__version__ = "3.4.3"  # Remember to also update in setup.py
 
 __all__ = (
     "__author__",
@@ -99,4 +99,3 @@ __all__ = (
     "TP_RIGHT",
     "TP_WORD",
 )
-
