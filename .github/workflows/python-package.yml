@@ -5,9 +5,11 @@ name: tests
 
 on:
   push:
-    branches: [ master ]
+    branches:
+      - '*' # Run on all branches
   pull_request:
-    branches: [ master ]
+    branches:
+      - '*' # Run on all branches
 
 jobs:
   build:
@@ -19,7 +21,7 @@ jobs:
         python-version: [ "3.8", "3.9", "3.10", "3.11", "pypy-3.9", "pypy-3.10"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -27,12 +29,11 @@ jobs:
     - name: Install Tokenizer
       run: |
         python -m pip install --upgrade pip wheel setuptools
-        python -m pip install -e .
+        python -m pip install -e ".[dev]"
     - name: Type check with mypy (only on Python 3.8)
       run: |
         if [ "${{ matrix.python-version }}" == "3.8" ]; then python -m pip install mypy; fi
         if [ "${{ matrix.python-version }}" == "3.8" ]; then mypy --python-version=3.8 src/tokenizer; fi
     - name: Test with pytest
       run: |
-        python -m pip install pytest
-        pytest
+        python -m pytest

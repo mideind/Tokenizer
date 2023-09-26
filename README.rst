@@ -2,7 +2,7 @@
 Tokenizer: A tokenizer for Icelandic text
 -----------------------------------------
 
-.. image:: https://github.com/mideind/Tokenizer/workflows/Python%20package/badge.svg
+.. image:: https://github.com/mideind/Tokenizer/workflows/tests/badge.svg
    :target: https://github.com/mideind/Tokenizer
 
 Overview
@@ -24,11 +24,11 @@ in the file ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/mideind/Greynir>`_), by the same authors.
-The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirPackage>`_
+The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirEngine>`_
 uses Tokenizer on its input.
 
 Note that Tokenizer is licensed under the *MIT* license
-while Greynir is licensed under *GPLv3*.
+while GreynirEngine is licensed under *GPLv3*.
 
 
 Deep vs. shallow tokenization
@@ -753,7 +753,7 @@ modify the source files (assuming you have ``git`` available):
     $ git clone https://github.com/mideind/Tokenizer
     $ cd Tokenizer
     $ # [ Activate your virtualenv here, if you have one ]
-    $ pip install -e .
+    $ pip install -e ".[dev]"
 
 
 Test suite
