@@ -26,6 +26,8 @@
 
 """
 
+import importlib.metadata
+
 from .definitions import (
     TP_LEFT,
     TP_CENTER,
@@ -60,9 +62,10 @@ from .tokenizer import (
 )
 from .abbrev import Abbreviations, ConfigError
 
-__author__ = "Miðeind ehf"
-__copyright__ = "(C) 2022 Miðeind ehf."
-__version__ = "3.4.3"  # Remember to also update in pyproject.toml
+__author__ = "Miðeind ehf."
+__copyright__ = "(C) 2023 Miðeind ehf."
+__version__ = importlib.metadata.version("tokenizer")
+
 
 __all__ = (
     "__author__",
