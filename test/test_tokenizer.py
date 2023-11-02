@@ -1132,6 +1132,12 @@ def test_correct_spaces() -> None:
     assert s == "Jón-sem var formaður—mótmælti málinu."
     s = t.correct_spaces("Það á   að geyma mjólkina við  20 ±  3 °C")
     assert s == "Það á að geyma mjólkina við 20±3° C"
+    s = t.correct_spaces("Við förum t.d. til Íslands o.s.frv.")
+    assert s == "Við förum t.d. til Íslands o.s.frv."
+    s = t.correct_spaces("M.a. lögum við bil.")
+    assert s == "M.a. lögum við bil."
+    s = t.correct_spaces("HANN BORÐAR Þ.Á.M. EPLI.")
+    assert s == "HANN BORÐAR Þ.Á.M. EPLI."
 
 
 def test_abbrev() -> None:
