@@ -3168,7 +3168,7 @@ RE_SPLIT_STR = (
     # The following regex catches English numbers with a dot only
     r"|([\+\-\$€]?\d+\.\d+(?!\,\d))"  # -1234.56
     # The following regex catches Icelandic abbreviations, e.g. a.m.k., A.M.K., þ.e.a.s.
-    r"|([a-záðéíóúýþæö]+\.(?:[a-záðéíóúýþæö]+\.)+)(?![a-záðéíóúýþæö]+\s)"
+    r"|([^\W\d_]+\.(?:[^\W\d_]+\.)+)(?![^\W\d_]+\s)"
     # The following regex catches degree characters, i.e. °C, °F
     r"|(°[CF])"
     # Finally, space and punctuation
@@ -3176,7 +3176,7 @@ RE_SPLIT_STR = (
     + "".join("\\" + c for c in PUNCTUATION)
     + r"])"
 )
-RE_SPLIT = re.compile(RE_SPLIT_STR, re.IGNORECASE)
+RE_SPLIT = re.compile(RE_SPLIT_STR)
 
 
 def correct_spaces(s: str) -> str:
