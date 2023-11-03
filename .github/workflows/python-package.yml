@@ -30,9 +30,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip wheel setuptools
         python -m pip install -e ".[dev]"
-    - name: Install regex module
-      run: |
-        python -m pip install regex
     - name: Type check with mypy (only on Python 3.8)
       run: |
         if [ "${{ matrix.python-version }}" == "3.8" ]; then python -m pip install mypy; fi
