@@ -3168,7 +3168,6 @@ RE_SPLIT_STR = (
     # The following regex catches English numbers with a dot only
     r"|([\+\-\$€]?\d+\.\d+(?!\,\d))"  # -1234.56
     # The following regex catches Icelandic abbreviations, e.g. a.m.k., A.M.K., þ.e.a.s.
-    # r"|(\p{L}+\.(?:\p{L}+\.)+)(?!\p{L}+\s)"
     r"|([a-záðéíóúýþæö]+\.(?:[a-záðéíóúýþæö]+\.)+)(?![a-záðéíóúýþæö]+\s)"
     # The following regex catches degree characters, i.e. °C, °F
     r"|(°[CF])"
