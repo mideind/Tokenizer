@@ -58,7 +58,6 @@ from typing import (
 
 import datetime
 import re
-import regex
 import unicodedata  # type: ignore
 from collections import deque
 
@@ -3169,7 +3168,8 @@ RE_SPLIT_STR = (
     # The following regex catches English numbers with a dot only
     r"|([\+\-\$€]?\d+\.\d+(?!\,\d))"  # -1234.56
     # The following regex catches Icelandic abbreviations, e.g. a.m.k., A.M.K., þ.e.a.s.
-    r"|(\p{L}+\.(?:\p{L}+\.)+)(?!\p{L}+\s)"
+    # r"|(\p{L}+\.(?:\p{L}+\.)+)(?!\p{L}+\s)"
+    r"|([a-záðéíóúýþæö]+\.(?:[a-záðéíóúýþæö]+\.)+)(?![a-záðéíóúýþæö]+\s)"
     # The following regex catches degree characters, i.e. °C, °F
     r"|(°[CF])"
     # Finally, space and punctuation
@@ -3177,9 +3177,7 @@ RE_SPLIT_STR = (
     + "".join("\\" + c for c in PUNCTUATION)
     + r"])"
 )
-# The re module doesn't support \p{L}, which matches any letter in any language,
-# but regex does.
-RE_SPLIT = regex.compile(RE_SPLIT_STR)
+RE_SPLIT = re.compile(RE_SPLIT_STR, re.IGNORECASE)
 
 
 def correct_spaces(s: str) -> str:
