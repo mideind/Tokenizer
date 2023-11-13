@@ -63,7 +63,6 @@ def get_text_and_norm(orig: str) -> Tuple[str, str]:
 
 
 def test_single_tokens() -> None:
-
     TEST_CASES = [
         (".", TOK.PUNCTUATION),
         (",", TOK.PUNCTUATION),
@@ -616,7 +615,6 @@ def test_single_tokens() -> None:
 
 
 def test_sentences() -> None:
-
     KIND = {
         "B": TOK.S_BEGIN,
         "E": TOK.S_END,
@@ -646,7 +644,6 @@ def test_sentences() -> None:
     }
 
     def test_sentence(text: str, expected: str, **options: Any) -> None:
-
         exp = expected.split()
         s = list(t.tokenize(text, **options))
         assert len(s) == len(exp)
@@ -1131,7 +1128,23 @@ def test_correct_spaces() -> None:
     s = t.correct_spaces("Jón- sem var formaður — mótmælti málinu.")
     assert s == "Jón-sem var formaður—mótmælti málinu."
     s = t.correct_spaces("Það á   að geyma mjólkina við  20 ±  3 °C")
-    assert s == "Það á að geyma mjólkina við 20±3° C"
+    assert s == "Það á að geyma mjólkina við 20±3 °C"
+    s = t.correct_spaces("Við förum t.d. til Íslands o.s.frv.")
+    assert s == "Við förum t.d. til Íslands o.s.frv."
+    s = t.correct_spaces("Við förum t. d. til Íslands o. s. frv.")
+    assert (
+        s == "Við förum t. d. til Íslands o. s. frv."
+    )  # This shouldn't be corrected here
+    s = t.correct_spaces("M.a. lögum við bil.")
+    assert s == "M.a. lögum við bil."
+    s = t.correct_spaces("HANN BORÐAR Þ.Á.M. EPLI.")
+    assert s == "HANN BORÐAR Þ.Á.M. EPLI."
+    s = t.correct_spaces("Ég fór til Írlands 6.júní og þar var 17.4°C hiti eða 230.3K.")
+    assert s == "Ég fór til Írlands 6. júní og þar var 17.4 °C hiti eða 230.3 K."
+    s = t.correct_spaces(
+        "Þetta er setning.Þetta er önnur setning.Líka.En hvað með þetta?"
+    )
+    assert s == "Þetta er setning. Þetta er önnur setning. Líka. En hvað með þetta?"
 
 
 def test_abbrev() -> None:
@@ -2556,7 +2569,6 @@ def test_one_sent_per_line() -> None:
 
 
 if __name__ == "__main__":
-
     test_single_tokens()
     test_sentences()
     test_correct_spaces()

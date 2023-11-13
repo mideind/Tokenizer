@@ -1453,7 +1453,6 @@ def generate_raw_tokens(
     big_text: str
 
     for big_text in text_or_gen:
-
         if not one_sent_per_line and not big_text:
             # An explicit empty string in the input always
             # causes a sentence split
@@ -1831,7 +1830,6 @@ def parse_mixed(
     pp = PunctuationParser()
 
     while rt.txt:
-
         # Handle punctuation
         yield from pp.parse(rt)
         rt, ate = pp.rt, pp.ate
@@ -2350,7 +2348,6 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             if (
                 token.kind == TOK.NUMBER or token.kind == TOK.YEAR
             ) and next_token.txt in SI_UNITS:
-
                 value = token.number
                 orig_unit = next_token.txt
                 unit: str
@@ -2504,7 +2501,6 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
     tok_end_sentence = TOK.End_Sentence()
 
     try:
-
         # Maintain a one-token lookahead
         token = next(token_stream)
         while True:
@@ -2641,7 +2637,6 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
     token = cast(Tok, None)
     try:
-
         # Maintain a one-token lookahead
         token = next(token_stream)
         while True:
@@ -2700,7 +2695,6 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
             # Check for [date] [year]
             if token.kind == TOK.DATE and next_token.kind == TOK.YEAR:
-
                 dt = cast(DateTimeTuple, token.val)
                 if not dt[0]:
                     # No year yet: add it
@@ -2760,7 +2754,6 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
     token = cast(Tok, None)
     try:
-
         # Maintain a one-token lookahead
         token = next(token_stream)
 
@@ -2920,12 +2913,10 @@ def parse_phrases_2(
 
     token = cast(Tok, None)
     try:
-
         # Maintain a one-token lookahead
         token = next(token_stream)
 
         while True:
-
             next_token = next(token_stream)
 
             # Logic for numbers and fractions that are partially or entirely
@@ -2945,7 +2936,6 @@ def parse_phrases_2(
 
             # Check for [number] [ISK_AMOUNT|CURRENCY|PERCENTAGE]
             elif token.kind == TOK.NUMBER and next_token.kind == TOK.WORD:
-
                 if next_token.txt in AMOUNT_ABBREV:
                     # Abbreviations for ISK amounts
                     # For abbreviations, we do not know the case,
@@ -3122,7 +3112,6 @@ def mark_paragraphs(txt: str) -> str:
 
 
 def paragraphs(tokens: Iterable[Tok]) -> Iterator[List[Tuple[int, List[Tok]]]]:
-
     """Generator yielding paragraphs from token iterable. Each paragraph is a list
     of sentence tuples. Sentence tuples consist of the index of the first token
     of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
@@ -3178,6 +3167,10 @@ RE_SPLIT_STR = (
     r"|([\+\-\$€]?\d+\,\d+(?!\.\d))"  # -1234,56
     # The following regex catches English numbers with a dot only
     r"|([\+\-\$€]?\d+\.\d+(?!\,\d))"  # -1234.56
+    # The following regex catches Icelandic abbreviations, e.g. a.m.k., A.M.K., þ.e.a.s.
+    r"|([^\W\d_]+\.(?:[^\W\d_]+\.)+)(?![^\W\d_]+\s)"
+    # The following regex catches degree characters, i.e. °C, °F
+    r"|(°[CF])"
     # Finally, space and punctuation
     r"|([~\s"
     + "".join("\\" + c for c in PUNCTUATION)
