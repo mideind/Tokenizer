@@ -2,7 +2,7 @@
 Tokenizer: A tokenizer for Icelandic text
 -----------------------------------------
 
-.. image:: https://github.com/mideind/Tokenizer/workflows/Python%20package/badge.svg
+.. image:: https://github.com/mideind/Tokenizer/workflows/tests/badge.svg
    :target: https://github.com/mideind/Tokenizer
 
 Overview
@@ -12,7 +12,7 @@ Tokenization is a necessary first step in many natural language processing
 tasks, such as word counting, parsing, spell checking, corpus generation, and
 statistical analysis of text.
 
-**Tokenizer** is a compact pure-Python (>= 3.7) executable
+**Tokenizer** is a compact pure-Python (>= 3.8) executable
 program and module for tokenizing Icelandic text. It converts input text to
 streams of *tokens*, where each token is a separate word, punctuation sign,
 number/amount, date, e-mail, URL/URI, etc. It also segments the token stream
@@ -24,11 +24,11 @@ in the file ``src/tokenizer/Abbrev.conf``.
 
 Tokenizer is an independent spinoff from the `Greynir project <https://greynir.is>`_
 (GitHub repository `here <https://github.com/mideind/Greynir>`_), by the same authors.
-The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirPackage>`_
+The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirEngine>`_
 uses Tokenizer on its input.
 
 Note that Tokenizer is licensed under the *MIT* license
-while Greynir is licensed under *GPLv3*.
+while GreynirEngine is licensed under *GPLv3*.
 
 
 Deep vs. shallow tokenization
@@ -753,7 +753,7 @@ modify the source files (assuming you have ``git`` available):
     $ git clone https://github.com/mideind/Tokenizer
     $ cd Tokenizer
     $ # [ Activate your virtualenv here, if you have one ]
-    $ pip install -e .
+    $ pip install -e ".[dev]"
 
 
 Test suite
@@ -809,6 +809,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.4.3: Various minor fixes. Now requires Python 3.8 or later.
 * Version 3.4.2: Abbreviations and phrases added, ``META_BEGIN`` token added.
 * Version 3.4.1: Improved performance on long input chunks.
 * Version 3.4.0: Improved handling and normalization of punctuation.

@@ -71,12 +71,8 @@ parser.add_argument(
 
 group = parser.add_mutually_exclusive_group()
 
-group.add_argument(
-    "--csv", help="Output one token per line in CSV format", action="store_true"
-)
-group.add_argument(
-    "--json", help="Output one token per line in JSON format", action="store_true"
-)
+group.add_argument("--csv", help="Output one token per line in CSV format", action="store_true")
+group.add_argument("--json", help="Output one token per line in JSON format", action="store_true")
 
 parser.add_argument(
     "-s",
@@ -96,10 +92,7 @@ parser.add_argument(
     "-p",
     "--coalesce_percent",
     action="store_true",
-    help=(
-        "Numbers combined into one token with percentage word forms "
-        "(prósent/prósentustig/hundraðshlutar)"
-    ),
+    help=("Numbers combined into one token with percentage word forms " "(prósent/prósentustig/hundraðshlutar)"),
 )
 
 parser.add_argument(
@@ -134,10 +127,7 @@ parser.add_argument(
     "-c",
     "--convert_numbers",
     action="store_true",
-    help=(
-        "English-style decimal points and thousands separators "
-        "in numbers changed to Icelandic style"
-    ),
+    help=("English-style decimal points and thousands separators " "in numbers changed to Icelandic style"),
 )
 
 parser.add_argument(

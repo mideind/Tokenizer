@@ -26,6 +26,8 @@
 
 """
 
+import importlib.metadata
+
 from .definitions import (
     TP_LEFT,
     TP_CENTER,
@@ -59,10 +61,11 @@ from .tokenizer import (
     TokenStream,
 )
 from .abbrev import Abbreviations, ConfigError
-from .version import __version__
 
-__author__ = "Miðeind ehf"
-__copyright__ = "(C) 2022 Miðeind ehf."
+__author__ = "Miðeind ehf."
+__copyright__ = "(C) 2023 Miðeind ehf."
+__version__ = importlib.metadata.version("tokenizer")
+
 
 __all__ = (
     "__author__",
@@ -99,4 +102,3 @@ __all__ = (
     "TP_RIGHT",
     "TP_WORD",
 )
-
