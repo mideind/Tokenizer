@@ -2496,7 +2496,7 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
     exclamation marks, etc.)"""
 
     in_sentence = False
-    token = cast(Tok, None)
+    token: Optional[Tok] = None
     tok_begin_sentence = TOK.Begin_Sentence()
     tok_end_sentence = TOK.End_Sentence()
 
