@@ -809,6 +809,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.4.4: Better handling of abbreviations
 * Version 3.4.3: Various minor fixes. Now requires Python 3.8 or later.
 * Version 3.4.2: Abbreviations and phrases added, ``META_BEGIN`` token added.
 * Version 3.4.1: Improved performance on long input chunks.
