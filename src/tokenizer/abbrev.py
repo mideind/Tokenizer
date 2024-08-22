@@ -43,7 +43,6 @@ from .definitions import BIN_Tuple
 
 
 class ConfigError(Exception):
-
     pass
 
 
@@ -51,17 +50,16 @@ _T = TypeVar("_T")
 
 
 class OrderedSet(Generic[_T]):
-
-    """ Shim class to provide an ordered set API on top
-        of an OrderedDict. This is necessary to make abbreviation
-        lookups predictable and repeatable, which they would not be
-        if a standard Python set() was used. """
+    """Shim class to provide an ordered set API on top
+    of an OrderedDict. This is necessary to make abbreviation
+    lookups predictable and repeatable, which they would not be
+    if a standard Python set() was used."""
 
     def __init__(self) -> None:
         self._dict: Dict[_T, None] = OrderedDict()
 
     def add(self, item: _T) -> None:
-        """ Add an item at the end of the ordered set """
+        """Add an item at the end of the ordered set"""
         if item not in self._dict:
             self._dict[item] = None
 
@@ -73,9 +71,8 @@ class OrderedSet(Generic[_T]):
 
 
 class Abbreviations:
-
-    """ Wrapper around dictionary of abbreviations,
-        initialized from the config file """
+    """Wrapper around dictionary of abbreviations,
+    initialized from the config file"""
 
     # Dictionary of abbreviations and their meanings
     DICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
@@ -107,8 +104,8 @@ class Abbreviations:
 
     @staticmethod
     def add(abbrev: str, meaning: str, gender: str, fl: Optional[str] = None) -> None:
-        """ Add an abbreviation to the dictionary.
-            Called from the config file handler. """
+        """Add an abbreviation to the dictionary.
+        Called from the config file handler."""
         # Check for sentence finishers
         finisher = False
         not_finisher = False
@@ -152,7 +149,14 @@ class Abbreviations:
         # Append the abbreviation and its meaning in tuple form
         # Multiple meanings are supported for each abbreviation
         Abbreviations.DICT[abbrev].add(
-            BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
+            BIN_Tuple(
+                meaning,
+                0,
+                gender,
+                "skst" if fl is None else fl,
+                abbrev,
+                "-",
+            )
         )
         Abbreviations.MEANINGS.add(meaning)
         # Adding wrong versions of abbreviations
@@ -169,7 +173,14 @@ class Abbreviations:
                 # as abbreviations, even though they are listed as such
                 # in the form 'Í.' and 'Á.' for use within person names
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BIN_Tuple(
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
                 )
 
         elif "." in abbrev:
@@ -182,7 +193,14 @@ class Abbreviations:
                 wabbrev = abbrev[:i] + abbrev[i + 1 :]
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BIN_Tuple(
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
                 )
             if len(indices) > 2:
                 # 3 or 4 dots currently in vocabulary
@@ -214,7 +232,14 @@ class Abbreviations:
             Abbreviations.WRONGSINGLES.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
-                BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                BIN_Tuple(
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,
+                    "-",
+                )
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
@@ -233,7 +258,7 @@ class Abbreviations:
 
     @staticmethod
     def get_meaning(abbrev: str) -> Optional[List[BIN_Tuple]]:
-        """ Lookup meaning(s) of abbreviation, if available. """
+        """Look up meaning(s) of abbreviation, if available."""
         m = Abbreviations.DICT.get(abbrev)
         if not m:
             m = Abbreviations.WRONGDICT.get(abbrev)
@@ -241,7 +266,7 @@ class Abbreviations:
 
     @staticmethod
     def _handle_abbreviations(s: str) -> None:
-        """ Handle abbreviations in the settings section """
+        """Handle abbreviations in the settings section"""
         # Format: abbrev[*] = "meaning" gender (kk|kvk|hk)
         # An asterisk after an abbreviation ending with a period
         # indicates that the abbreviation may finish a sentence
@@ -272,21 +297,23 @@ class Abbreviations:
 
     @staticmethod
     def _handle_not_abbreviations(s: str) -> None:
-        """ Handle not_abbreviations in the settings section """
+        """Handle not_abbreviations in the settings section"""
         if len(s) < 3 or s[0] != '"' or s[-1] != '"':
             raise ConfigError("not_abbreviations should be enclosed in double quotes")
         Abbreviations.NOT_ABBREVIATIONS.add(s[1:-1])
 
     @staticmethod
     def initialize():
-        """ Read the abbreviations config file """
+        """Read the abbreviations config file"""
         with Abbreviations._lock:
             if len(Abbreviations.DICT):
                 # Already initialized
                 return
 
             section = None
-            config = open_text(package="tokenizer", resource="Abbrev.conf", encoding="utf-8")
+            config = open_text(
+                package="tokenizer", resource="Abbrev.conf", encoding="utf-8"
+            )  # TODO: Deprecated in Python 3.13
             for s in config:
                 # Ignore comments
                 ix = s.find("#")

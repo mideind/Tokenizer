@@ -534,8 +534,8 @@ DIRECTIONS = {
     "N": "Norður",
 }
 
-_unit_lambda: Callable[[str], str] = (
-    lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit
+_unit_lambda: Callable[[str], str] = lambda unit: (
+    unit + r"(?!\w)" if unit[-1].isalpha() else unit
 )
 
 SI_UNITS_SET: FrozenSet[str] = frozenset(SI_UNITS.keys())

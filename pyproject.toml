@@ -1,11 +1,10 @@
 [project]
 name = "tokenizer"
-version = "3.4.4"
+version = "3.4.5"
 description = "A tokenizer for Icelandic text"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.rst", content-type = "text/x-rst" }
-license = { file = "LICENSE.txt" }
-# For classifier list see: https://pypi.org/pypi?%3Aaction=list_classifiers
+license = "MIT"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -16,7 +15,6 @@ classifiers = [
     "Natural Language :: Icelandic",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -27,7 +25,7 @@ classifiers = [
     "Topic :: Utilities",
     "Topic :: Text Processing :: Linguistic",
 ]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 
 [project.urls]
 Repository = "https://github.com/mideind/Tokenizer"
@@ -51,17 +49,17 @@ where = ["src"]
 [tool.pytest.ini_options]
 filterwarnings = [
     # Ignore deprecation warnings in libraries, their problem not ours
-    "ignore::DeprecationWarning",
+    # "ignore::DeprecationWarning",
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 88
 
 [tool.black]
-line-length = 120
+line-length = 88
 
 [tool.isort]
 # This forces these imports to placed at the top
 known_future_library = ["__future__", "typing", "typing_extensions"]
 profile = "black"
-line_length = 120
+line_length = 88

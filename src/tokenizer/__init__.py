@@ -63,7 +63,7 @@ from .tokenizer import (
 from .abbrev import Abbreviations, ConfigError
 
 __author__ = "Miðeind ehf."
-__copyright__ = "(C) 2023 Miðeind ehf."
+__copyright__ = "(C) 2016-2024 Miðeind ehf."
 __version__ = importlib.metadata.version("tokenizer")
 
 
