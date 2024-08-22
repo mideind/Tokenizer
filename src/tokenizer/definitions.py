@@ -29,13 +29,10 @@
 """
 
 from typing import (
-    Dict,
-    FrozenSet,
     Mapping,
     Tuple,
     Union,
     Callable,
-    List,
     Sequence,
     Optional,
     NamedTuple,
@@ -47,13 +44,13 @@ import re
 
 BeginTuple = Tuple[int, Optional[int]]
 PunctuationTuple = Tuple[int, str]
-NumberTuple = Tuple[float, Optional[List[str]], Optional[List[str]]]
+NumberTuple = Tuple[float, Optional[list[str]], Optional[list[str]]]
 DateTimeTuple = Tuple[int, int, int]
 MeasurementTuple = Tuple[str, float]
 TimeStampTuple = Tuple[int, int, int, int, int, int]
-AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
+AmountTuple = Tuple[float, str, Optional[list[str]], Optional[list[str]]]
 TelnoTuple = Tuple[str, str]
-CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
+CurrencyTuple = Tuple[str, Optional[list[str]], Optional[list[str]]]
 
 
 class BIN_Tuple(NamedTuple):
@@ -434,7 +431,7 @@ CURRENCY_SYMBOLS = {
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
+SI_UNITS: dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
     # Distance
     "m": ("m", 1.0),
     "mm": ("m", 1.0e-3),
@@ -538,7 +535,7 @@ _unit_lambda: Callable[[str], str] = lambda unit: (
     unit + r"(?!\w)" if unit[-1].isalpha() else unit
 )
 
-SI_UNITS_SET: FrozenSet[str] = frozenset(SI_UNITS.keys())
+SI_UNITS_SET: frozenset[str] = frozenset(SI_UNITS.keys())
 SI_UNITS_REGEX_STRING = r"|".join(
     map(
         # If the unit ends with a letter, don't allow the next character

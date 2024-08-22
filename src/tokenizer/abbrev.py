@@ -33,7 +33,7 @@
 
 """
 
-from typing import Generic, Iterator, Optional, Set, List, Dict, TypeVar
+from typing import Generic, Iterator, Optional, TypeVar
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
@@ -56,7 +56,7 @@ class OrderedSet(Generic[_T]):
     if a standard Python set() was used."""
 
     def __init__(self) -> None:
-        self._dict: Dict[_T, None] = OrderedDict()
+        self._dict: dict[_T, None] = OrderedDict()
 
     def add(self, item: _T) -> None:
         """Add an item at the end of the ordered set"""
@@ -75,29 +75,29 @@ class Abbreviations:
     initialized from the config file"""
 
     # Dictionary of abbreviations and their meanings
-    DICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    DICT: dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # Wrong versions of abbreviations
-    WRONGDICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    WRONGDICT: dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # All abbreviation meanings
-    MEANINGS: Set[str] = set()
+    MEANINGS: set[str] = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
-    SINGLES: Set[str] = set()
+    SINGLES: set[str] = set()
     # Set of abbreviations without periods, e.g. "td", "osfrv"
-    WRONGSINGLES: Set[str] = set()
+    WRONGSINGLES: set[str] = set()
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
-    FINISHERS: Set[str] = set()
+    FINISHERS: set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences,
     # marked with an exclamation mark in the config file
-    NOT_FINISHERS: Set[str] = set()
+    NOT_FINISHERS: set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
-    NAME_FINISHERS: Set[str] = set()
+    NAME_FINISHERS: set[str] = set()
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS: Dict[str, List[str]] = defaultdict(list)
+    WRONGDOTS: dict[str, list[str]] = defaultdict(list)
     # Word forms that should never be interpreted as abbreviations
-    NOT_ABBREVIATIONS: Set[str] = set()
+    NOT_ABBREVIATIONS: set[str] = set()
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
@@ -208,7 +208,7 @@ class Abbreviations:
                 i1 = indices[0]
                 i2 = indices[1]
                 i3 = indices[2]
-                wabbrevs: List[str] = []
+                wabbrevs: list[str] = []
                 # 1 and 2 removed
                 wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i2] + abbrev[i2 + 1 :])
                 # 1 and 3 removed
@@ -257,7 +257,7 @@ class Abbreviations:
         return meaning in Abbreviations.MEANINGS
 
     @staticmethod
-    def get_meaning(abbrev: str) -> Optional[List[BIN_Tuple]]:
+    def get_meaning(abbrev: str) -> Optional[list[BIN_Tuple]]:
         """Look up meaning(s) of abbreviation, if available."""
         m = Abbreviations.DICT.get(abbrev)
         if not m:

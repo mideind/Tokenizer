@@ -35,7 +35,7 @@
 
 """
 
-from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, Union, cast
+from typing import TextIO, Iterator, Callable, Any, Tuple, Union, cast
 
 import sys
 import argparse
@@ -158,14 +158,14 @@ def main() -> None:
     """Main function, called when the tokenize command is invoked"""
 
     args = parser.parse_args()
-    options: Dict[str, bool] = dict()
+    options: dict[str, bool] = dict()
 
     def quote(s: str) -> str:
         """Return the string s within double quotes, and with any contained
         backslashes and double quotes escaped with a backslash"""
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    def spanquote(l: List[int]) -> str:
+    def spanquote(l: list[int]) -> str:
         """Return the list l as a string within double quotes"""
         return '"' + "-".join(str(x) for x in l) + '"'
 
@@ -180,7 +180,7 @@ def main() -> None:
             return None
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
-            mm = cast(List[BIN_Tuple], t.val)
+            mm = cast(list[BIN_Tuple], t.val)
             if quote_word:
                 # Return a |-delimited list of possible meanings,
                 # joined into a single string
@@ -254,7 +254,7 @@ def main() -> None:
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
-    curr_sent: List[str] = []
+    curr_sent: list[str] = []
     tsep = "" if args.original else " "  # token separator
     for t in tokenize(gen(args.infile), **options):
         if args.csv:
@@ -275,7 +275,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: Dict[str, Union[str, List[int]]] = dict(k=TOK.descr[t.kind])
+            d: dict[str, Union[str, list[int]]] = dict(k=TOK.descr[t.kind])
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)

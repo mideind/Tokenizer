@@ -42,10 +42,8 @@ from typing import (
     Any,
     Callable,
     Deque,
-    FrozenSet,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Match,
     Optional,
@@ -77,7 +75,6 @@ SPAN_END = 1
 
 
 class Tok:
-
     """Information about a single token"""
 
     def __init__(
@@ -86,7 +83,7 @@ class Tok:
         txt: Optional[str],
         val: ValType,
         original: Optional[str] = None,
-        origin_spans: Optional[List[int]] = None,
+        origin_spans: Optional[list[int]] = None,
     ) -> None:
         # Type of token
         self.kind: int = kind
@@ -101,7 +98,7 @@ class Tok:
         # Each such integer index maps the corresponding character
         # (which may have substitutions) to its index in 'original'.
         # This is required to preserve 'original' correctly when splitting.
-        self.origin_spans: Optional[List[int]] = origin_spans
+        self.origin_spans: Optional[list[int]] = origin_spans
 
     @classmethod
     def from_txt(cls: Type[_T], txt: str) -> _T:
@@ -312,7 +309,7 @@ class Tok:
 
         self_origin_spans = self.origin_spans or []
         other_origin_spans = other.origin_spans or []
-        separator_origin_spans: List[int] = (
+        separator_origin_spans: list[int] = (
             [len(self_original)] * len(separator) if len(other_origin_spans) > 0 else []
         )
         new_origin_spans = (
@@ -373,7 +370,6 @@ class Tok:
 
 
 class TOK:
-
     """
     The TOK class contains constants that define token types and
     constructors for creating token instances.
@@ -647,8 +643,8 @@ class TOK:
     def Number(
         t: Union[Tok, str],
         n: float,
-        cases: Optional[List[str]] = None,
-        genders: Optional[List[str]] = None,
+        cases: Optional[list[str]] = None,
+        genders: Optional[list[str]] = None,
     ) -> Tok:
         # The cases parameter is a list of possible cases for this number
         # (if it was originally stated in words)
@@ -670,8 +666,8 @@ class TOK:
     def Currency(
         t: Union[Tok, str],
         iso: str,
-        cases: Optional[List[str]] = None,
-        genders: Optional[List[str]] = None,
+        cases: Optional[list[str]] = None,
+        genders: Optional[list[str]] = None,
     ) -> Tok:
         # The cases parameter is a list of possible cases for this currency name
         # (if it was originally stated in words, i.e. not abbreviated)
@@ -686,8 +682,8 @@ class TOK:
         t: Union[Tok, str],
         iso: str,
         n: float,
-        cases: Optional[List[str]] = None,
-        genders: Optional[List[str]] = None,
+        cases: Optional[list[str]] = None,
+        genders: Optional[list[str]] = None,
     ) -> Tok:
         # The cases parameter is a list of possible cases for this amount
         # (if it was originally stated in words)
@@ -701,8 +697,8 @@ class TOK:
     def Percent(
         t: Union[Tok, str],
         n: float,
-        cases: Optional[List[str]] = None,
-        genders: Optional[List[str]] = None,
+        cases: Optional[list[str]] = None,
+        genders: Optional[list[str]] = None,
     ) -> Tok:
         if isinstance(t, str):
             return Tok(TOK.PERCENT, t, (n, cases, genders))
@@ -1559,7 +1555,7 @@ def generate_raw_tokens(
 
 def could_be_end_of_sentence(
     next_token: Tok,
-    test_set: FrozenSet[int] = TOK.TEXT,
+    test_set: frozenset[int] = TOK.TEXT,
     multiplier: bool = False,
 ) -> bool:
     """Return True if next_token could be ending the current sentence or
@@ -1578,7 +1574,6 @@ def could_be_end_of_sentence(
 
 
 class LetterParser:
-
     """Parses a sequence of alphabetic characters
     off the front of a raw token"""
 
@@ -1663,7 +1658,6 @@ class LetterParser:
 
 
 class NumberParser:
-
     """Parses a sequence of digits off the front of a raw token"""
 
     def __init__(
@@ -1724,7 +1718,6 @@ class NumberParser:
 
 
 class PunctuationParser:
-
     """Parses a sequence of punctuation off the front of a raw token"""
 
     def __init__(self) -> None:
@@ -2108,7 +2101,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             return txt not in Abbreviations.DICT
         return False
 
-    def lookup(abbrev: str) -> Optional[List[BIN_Tuple]]:
+    def lookup(abbrev: str) -> Optional[list[BIN_Tuple]]:
         """Look up an abbreviation, both in original case and in lower case,
         and return either None if not found or a meaning list having one entry"""
         m = Abbreviations.DICT.get(abbrev)
@@ -2647,7 +2640,7 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                 if abbrev in Abbreviations.FINISHERS:
                     token = TOK.Word(
                         token.concatenate(next_token),
-                        cast(Optional[List[BIN_Tuple]], token.val),
+                        cast(Optional[list[BIN_Tuple]], token.val),
                     )
                     next_token = next(token_stream)
 
@@ -2975,7 +2968,7 @@ def parse_phrases_2(
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
-            tq: List[Tok] = []
+            tq: list[Tok] = []
             while token.kind == TOK.WORD and next_token.punctuation == COMPOSITE_HYPHEN:
                 # Accumulate the prefix in tq
                 tq.append(token)
@@ -3081,7 +3074,7 @@ def split_into_sentences(
         to_text = lambda t: t.original or t.txt
     else:
         to_text = lambda t: t.txt
-    curr_sent: List[str] = []
+    curr_sent: list[str] = []
     for t in tokenize_without_annotation(text_or_gen, **options):
         if t.kind in TOK.END:
             # End of sentence/paragraph
@@ -3111,14 +3104,14 @@ def mark_paragraphs(txt: str) -> str:
     return "[[" + "]][[".join(t for t in txt.split("\n") if t) + "]]"
 
 
-def paragraphs(tokens: Iterable[Tok]) -> Iterator[List[Tuple[int, List[Tok]]]]:
+def paragraphs(tokens: Iterable[Tok]) -> Iterator[list[Tuple[int, list[Tok]]]]:
     """Generator yielding paragraphs from token iterable. Each paragraph is a list
     of sentence tuples. Sentence tuples consist of the index of the first token
     of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
     sentence, not including the starting TOK.S_BEGIN or the terminating TOK.S_END
     tokens."""
 
-    def valid_sent(sent: Optional[List[Tok]]) -> bool:
+    def valid_sent(sent: Optional[list[Tok]]) -> bool:
         """Return True if the token list in sent is a proper
         sentence that we want to process further"""
         if not sent:
@@ -3126,9 +3119,9 @@ def paragraphs(tokens: Iterable[Tok]) -> Iterator[List[Tuple[int, List[Tok]]]]:
         # A sentence with only punctuation is not valid
         return any(t[0] != TOK.PUNCTUATION for t in sent)
 
-    sent: List[Tok] = []  # Current sentence
+    sent: list[Tok] = []  # Current sentence
     sent_begin = 0
-    current_p: List[Tuple[int, List[Tok]]] = []  # Current paragraph
+    current_p: list[Tuple[int, list[Tok]]] = []  # Current paragraph
 
     for ix, t in enumerate(tokens):
         t0 = t[0]
@@ -3184,7 +3177,7 @@ def correct_spaces(s: str) -> str:
     with correct spacing between tokens.
     NOTE that this function uses a quick-and-dirty approach
     which may not handle all edge cases!"""
-    r: List[str] = []
+    r: list[str] = []
     last = TP_NONE
     double_quote_count = 0
     for w in RE_SPLIT.split(s):
@@ -3244,7 +3237,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
     to a correctly spaced string. If normalize is True,
     punctuation is normalized before assembling the string."""
     to_text: Callable[[Tok], str] = normalized_text if normalize else lambda t: t.txt
-    r: List[str] = []
+    r: list[str] = []
     last = TP_NONE
     double_quote_count = 0
     for t in tokens:
@@ -3278,7 +3271,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
 
 def calculate_indexes(
     tokens: Iterable[Tok], last_is_end: bool = False
-) -> Tuple[List[int], List[int]]:
+) -> Tuple[list[int], list[int]]:
     """Calculate character and byte indexes for a token stream.
     The indexes are the start positions of each token in the original
     text that was tokenized.
