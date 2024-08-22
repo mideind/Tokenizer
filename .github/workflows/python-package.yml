@@ -30,7 +30,7 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools
         python -m pip install -e ".[dev]"
 
-    - name: Type check with mypy (only on Python 3.9)
+    - name: Type check with mypy (only on oldest supported Python version)
       run: |
         if [ "${{ matrix.python-version }}" == "3.9" ]; then python -m pip install mypy; fi
         if [ "${{ matrix.python-version }}" == "3.9" ]; then mypy --python-version=3.9 src/tokenizer; fi
