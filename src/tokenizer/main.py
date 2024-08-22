@@ -3,7 +3,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2022 Miðeind ehf.
+    Copyright (C) 2016-2024 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:

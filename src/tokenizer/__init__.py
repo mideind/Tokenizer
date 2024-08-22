@@ -1,6 +1,6 @@
 """
 
-    Copyright(C) 2022 Miðeind ehf.
+    Copyright(C) 2016-2024 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -64,8 +64,7 @@ from .abbrev import Abbreviations, ConfigError
 
 __author__ = "Miðeind ehf."
 __copyright__ = "(C) 2016-2024 Miðeind ehf."
-__version__ = importlib.metadata.version("tokenizer")
-
+__version__ = importlib.metadata.version(__name__)
 
 __all__ = (
     "__author__",
