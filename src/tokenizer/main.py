@@ -35,7 +35,7 @@
 
 """
 
-from typing import TextIO, Iterator, Callable, Any, Tuple, Union, cast
+from typing import TextIO, Iterator, Callable, Any, Union, cast
 
 import sys
 import argparse
@@ -213,7 +213,7 @@ def main() -> None:
             TOK.MEASUREMENT,
         }:
             # Return a |-delimited list of numbers
-            vv = cast(Tuple[Any, ...], t.val)
+            vv = cast(tuple[Any, ...], t.val)
             return quote("|".join(str(v) for v in vv))
         if quote_word and isinstance(t.val, str):
             return quote(t.val)

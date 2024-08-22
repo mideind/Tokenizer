@@ -47,7 +47,6 @@ from typing import (
     Mapping,
     Match,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -181,7 +180,7 @@ class Tok:
             return []
         return cast(PersonNameList, self.val) or []
 
-    def split(self, pos: int) -> Tuple["Tok", "Tok"]:
+    def split(self, pos: int) -> tuple["Tok", "Tok"]:
         """Split this token into two at 'pos'.
         The first token returned will have 'pos'
         characters and the second one will have the rest.
@@ -224,7 +223,7 @@ class Tok:
 
         return l, r
 
-    def substitute(self, span: Tuple[int, int], new: str) -> None:
+    def substitute(self, span: tuple[int, int], new: str) -> None:
         """Substitute a span with a single or empty character 'new'."""
         self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
         if self.origin_spans is not None:
@@ -233,7 +232,7 @@ class Tok:
                 self.origin_spans[: span[0] + len(new)] + self.origin_spans[span[1] :]
             )
 
-    def substitute_longer(self, span: Tuple[int, int], new: str) -> None:
+    def substitute_longer(self, span: tuple[int, int], new: str) -> None:
         """Substitute a span with a potentially longer string"""
 
         # This tracks origin differently from the regular
@@ -321,7 +320,7 @@ class Tok:
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
 
     @property
-    def as_tuple(self) -> Tuple[Any, ...]:
+    def as_tuple(self) -> tuple[Any, ...]:
         """Return the contents of this token as a generic tuple,
         suitable e.g. for serialization"""
         return (self.kind, self.txt, self.val)
@@ -950,7 +949,7 @@ class TokenStream:
         t = self[i]
         return t.person_names if t else None
 
-    def as_tuple(self, i: int = 0) -> Optional[Tuple[Any, ...]]:
+    def as_tuple(self, i: int = 0) -> Optional[tuple[Any, ...]]:
         """Return token.as_tuple for token at index i."""
         t = self[i]
         return t.as_tuple if t else None
@@ -964,7 +963,7 @@ class TokenStream:
 def normalized_text(token: Tok) -> str:
     """Returns token text after normalizing punctuation"""
     return (
-        cast(Tuple[int, str], token.val)[1]
+        cast(tuple[int, str], token.val)[1]
         if token.kind == TOK.PUNCTUATION
         else token.txt
     )
@@ -991,7 +990,7 @@ def is_valid_date(y: int, m: int, d: int) -> bool:
     return False
 
 
-def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
+def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
     """Parse a raw token starting with a digit"""
     w = tok.txt
     s: Optional[Match[str]] = re.match(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)", w)
@@ -1334,7 +1333,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
     )
 
 
-def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
+def html_escape(match: Match[str]) -> tuple[tuple[int, int], str]:
     """Regex substitution function for HTML escape codes"""
     g = match.group(4)
     if g is not None:
@@ -1397,7 +1396,7 @@ def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
     # This function further splits those tokens into multiple tokens.
     # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
 
-    def shift_span(span: Tuple[int, int], pos: int):
+    def shift_span(span: tuple[int, int], pos: int):
         """Shift a span by a given amount"""
         return (span[SPAN_START] + pos, span[SPAN_END] + pos)
 
@@ -2138,7 +2137,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     and not token_stream.could_be_end_of_sentence()
                 ):
                     # This is something like 'Ég fæddist 25.9. í Svarfaðardal.'
-                    y, m, d = cast(Tuple[int, int, int], token.val)
+                    y, m, d = cast(tuple[int, int, int], token.val)
                     token = TOK.Daterel(token.concatenate(next_token), y, m, d)
                     next_token = next(token_stream)
 
