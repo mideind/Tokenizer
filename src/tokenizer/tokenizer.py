@@ -3104,7 +3104,7 @@ def mark_paragraphs(txt: str) -> str:
     return "[[" + "]][[".join(t for t in txt.split("\n") if t) + "]]"
 
 
-def paragraphs(tokens: Iterable[Tok]) -> Iterator[list[Tuple[int, list[Tok]]]]:
+def paragraphs(tokens: Iterable[Tok]) -> Iterator[list[tuple[int, list[Tok]]]]:
     """Generator yielding paragraphs from token iterable. Each paragraph is a list
     of sentence tuples. Sentence tuples consist of the index of the first token
     of the sentence (the TOK.S_BEGIN token) and a list of the tokens within the
@@ -3121,7 +3121,7 @@ def paragraphs(tokens: Iterable[Tok]) -> Iterator[list[Tuple[int, list[Tok]]]]:
 
     sent: list[Tok] = []  # Current sentence
     sent_begin = 0
-    current_p: list[Tuple[int, list[Tok]]] = []  # Current paragraph
+    current_p: list[tuple[int, list[Tok]]] = []  # Current paragraph
 
     for ix, t in enumerate(tokens):
         t0 = t[0]
@@ -3271,7 +3271,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
 
 def calculate_indexes(
     tokens: Iterable[Tok], last_is_end: bool = False
-) -> Tuple[list[int], list[int]]:
+) -> tuple[list[int], list[int]]:
     """Calculate character and byte indexes for a token stream.
     The indexes are the start positions of each token in the original
     text that was tokenized.

@@ -30,7 +30,6 @@
 
 from typing import (
     Mapping,
-    Tuple,
     Union,
     Callable,
     Sequence,
@@ -42,15 +41,15 @@ from typing import (
 import re
 
 
-BeginTuple = Tuple[int, Optional[int]]
-PunctuationTuple = Tuple[int, str]
-NumberTuple = Tuple[float, Optional[list[str]], Optional[list[str]]]
-DateTimeTuple = Tuple[int, int, int]
-MeasurementTuple = Tuple[str, float]
-TimeStampTuple = Tuple[int, int, int, int, int, int]
-AmountTuple = Tuple[float, str, Optional[list[str]], Optional[list[str]]]
-TelnoTuple = Tuple[str, str]
-CurrencyTuple = Tuple[str, Optional[list[str]], Optional[list[str]]]
+BeginTuple = tuple[int, Optional[int]]
+PunctuationTuple = tuple[int, str]
+NumberTuple = tuple[float, Optional[list[str]], Optional[list[str]]]
+DateTimeTuple = tuple[int, int, int]
+MeasurementTuple = tuple[str, float]
+TimeStampTuple = tuple[int, int, int, int, int, int]
+AmountTuple = tuple[float, str, Optional[list[str]], Optional[list[str]]]
+TelnoTuple = tuple[str, str]
+CurrencyTuple = tuple[str, Optional[list[str]], Optional[list[str]]]
 
 
 class BIN_Tuple(NamedTuple):
@@ -339,7 +338,7 @@ DAYS_IN_MONTH = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 # }
 
 # Time of day expressions spelled out
-CLOCK_NUMBERS: Mapping[str, Tuple[int, int, int]] = {
+CLOCK_NUMBERS: Mapping[str, tuple[int, int, int]] = {
     "eitt": (1, 0, 0),
     "tvö": (2, 0, 0),
     "þrjú": (3, 0, 0),
@@ -431,7 +430,7 @@ CURRENCY_SYMBOLS = {
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS: dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
+SI_UNITS: dict[str, tuple[str, Union[float, Callable[[float], float]]]] = {
     # Distance
     "m": ("m", 1.0),
     "mm": ("m", 1.0e-3),

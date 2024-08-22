@@ -31,7 +31,7 @@
 
 """
 
-from typing import Any, Iterable, Iterator, List, Tuple, Union, cast
+from typing import Any, Iterable, Iterator, Union, cast
 
 import tokenizer as t
 from tokenizer.definitions import BIN_Tuple, ValType
@@ -39,10 +39,10 @@ from tokenizer.definitions import BIN_Tuple, ValType
 TOK = t.TOK
 Tok = t.Tok
 
-TestCase = Union[Tuple[str, int], Tuple[str, int, ValType], Tuple[str, List[Tok]]]
+TestCase = Union[tuple[str, int], tuple[str, int, ValType], tuple[str, list[Tok]]]
 
 
-def strip_originals(tokens: List[Tok]) -> List[Tok]:
+def strip_originals(tokens: list[Tok]) -> list[Tok]:
     """Remove origin tracking info from a list of tokens.
     This is useful for simplifying tests where we don't care about tracking
     origins.
@@ -57,7 +57,7 @@ def strip_originals(tokens: List[Tok]) -> List[Tok]:
     return tokens
 
 
-def get_text_and_norm(orig: str) -> Tuple[str, str]:
+def get_text_and_norm(orig: str) -> tuple[str, str]:
     toklist = list(t.tokenize(orig))
     return t.text_from_tokens(toklist), t.normalized_text_from_tokens(toklist)
 
@@ -563,12 +563,12 @@ def test_single_tokens() -> None:
     def run_test(test_cases: Iterable[TestCase], **options: Any) -> None:
         for test_case in test_cases:
             if len(test_case) == 3:
-                txt, kind, val = cast(Tuple[str, int, ValType], test_case)
+                txt, kind, val = cast(tuple[str, int, ValType], test_case)
                 c = [Tok(kind, txt, val)]
             elif isinstance(test_case[1], list):
-                txt, c = cast(Tuple[str, List[Tok]], test_case)
+                txt, c = cast(tuple[str, list[Tok]], test_case)
             else:
-                txt, kind = cast(Tuple[str, int], test_case)
+                txt, kind = cast(tuple[str, int], test_case)
                 c = [Tok(kind, txt, None)]
             l = list(t.tokenize(txt, **options))
             assert len(l) == len(c) + 2, repr(l)
@@ -593,8 +593,8 @@ def test_single_tokens() -> None:
                     if check.kind == TOK.WORD:
                         # Test set equivalence, since the order of word meanings
                         # is not deterministic
-                        assert set(cast(List[BIN_Tuple], tok.val) or []) == set(
-                            cast(List[BIN_Tuple], check.val) or []
+                        assert set(cast(list[BIN_Tuple], tok.val) or []) == set(
+                            cast(list[BIN_Tuple], check.val) or []
                         ), (repr(tok.val) + " != " + repr(check.val))
                     else:
                         assert tok.val == check.val, (
