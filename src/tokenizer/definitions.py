@@ -727,10 +727,12 @@ URI_PREFIXES = (
     "sftp://",
     "smb://",
     "git://",
+    "git+ssh://",
     "svn://",
     "svn+ssh://",
     "imap://",
     "rtmp://",
+    "rtsp://",
     "telnet://",
     "udp://",
     "vnc://",
@@ -740,6 +742,11 @@ URI_PREFIXES = (
     "ws://",
     "xmpp://",
     "mtqp://",
+    "afp://",
+    "nfs://",
+    "mms://",
+    "tftp://",
+    "ldap://",
 )
 
 TOP_LEVEL_DOMAINS = frozenset(
