@@ -1923,7 +1923,7 @@ def parse_mixed(
 
         # Check for currency abbreviations immediately followed by a number
         if len(rt.txt) > 3 and rt.txt[0:3] in CURRENCY_ABBREV and rt.txt[3].isdigit():
-            # XXX: This feels a little hacky
+            # TODO: This feels a little hacky
             temp_tok = Tok(TOK.RAW, rt.txt[3:], None)
             digit_tok, _ = parse_digits(temp_tok, convert_numbers)
             if digit_tok.kind == TOK.NUMBER:

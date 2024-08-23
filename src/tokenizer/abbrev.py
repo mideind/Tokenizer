@@ -37,7 +37,7 @@ from typing import Generic, Iterator, Optional, TypeVar
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
-from importlib.resources import open_text
+import importlib.resources as importlib_resources
 
 from .definitions import BIN_Tuple
 
@@ -311,10 +311,11 @@ class Abbreviations:
                 return
 
             section = None
-            config = open_text(
-                package="tokenizer", resource="Abbrev.conf", encoding="utf-8"
-            )  # TODO: Deprecated in Python 3.13
-            for s in config:
+
+            p = importlib_resources.files("tokenizer").joinpath("Abbrev.conf")
+            config = p.read_text(encoding="utf-8")
+
+            for s in config.split("\n"):
                 # Ignore comments
                 ix = s.find("#")
                 if ix >= 0:
