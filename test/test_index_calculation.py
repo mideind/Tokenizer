@@ -6,7 +6,7 @@
 
     Tests for Tokenizer module
 
-    Copyright (C) 2022 by Miðeind ehf.
+    Copyright (C) 2016-2024 by Miðeind ehf.
 
     This software is licensed under the MIT License:
 
@@ -169,7 +169,6 @@ def test_small_difficult_cases() -> None:
         assert char_indexes == [0, 2, 4]
         assert byte_indexes == [0, 2, 4]
 
-
     # Two byte characters
     for x in ["þ", "æ", "á"]:
         s = x
@@ -230,12 +229,11 @@ def test_small_difficult_cases() -> None:
         assert char_indexes == [0, 2, 4]
         assert byte_indexes == [0, 3, 6]
 
-
     # Two character characters
     # These strings contain two unicode code points that are rendered as one letter.
     # They are counted as two characters in python.
     # In addition the accent and umlaut characters are two bytes.
-    for x in ["a"+ACCENT, "o"+UMLAUT]:
+    for x in ["a" + ACCENT, "o" + UMLAUT]:
         s = x
         toks = tokenizer.parse_tokens([s])
         char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
@@ -288,11 +286,11 @@ def test_small_difficult_cases() -> None:
         # example chars:
         #   " a´ a´"
         #    012345
-        #    ^  ^    
+        #    ^  ^
         # example bytes:
         #   " a´_ a´_"
         #    01234567
-        #    ^   ^  
+        #    ^   ^
         toks = tokenizer.parse_tokens([s])
         char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
         assert char_indexes == [0, 3]
@@ -301,7 +299,6 @@ def test_small_difficult_cases() -> None:
         char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
         assert char_indexes == [0, 3, 6]
         assert byte_indexes == [0, 4, 8]
-
 
     # The em-dash is 3 bytes
     for x in [EM_DASH]:
@@ -361,7 +358,7 @@ def test_small_difficult_cases() -> None:
         # example bytes:
         #   " a__ a__"
         #    01234567
-        #    ^   ^  
+        #    ^   ^
         toks = tokenizer.parse_tokens([s])
         char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
         assert char_indexes == [0, 2]
@@ -379,25 +376,181 @@ def test_larger_case() -> None:
     #    x                x                     x  xx                   x
     toks = tokenizer.parse_tokens([s])
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
-    assert char_indexes == [0, 5, 13, 16, 18, 25, 30, 33, 36, 40, 45, 50, 53, 61, 66, 72]
-    assert byte_indexes == [0, 6, 14, 17, 20, 27, 32, 35, 38, 43, 50, 55, 58, 66, 72, 78]
+    assert char_indexes == [
+        0,
+        5,
+        13,
+        16,
+        18,
+        25,
+        30,
+        33,
+        36,
+        40,
+        45,
+        50,
+        53,
+        61,
+        66,
+        72,
+    ]
+    assert byte_indexes == [
+        0,
+        6,
+        14,
+        17,
+        20,
+        27,
+        32,
+        35,
+        38,
+        43,
+        50,
+        55,
+        58,
+        66,
+        72,
+        78,
+    ]
     toks = tokenizer.parse_tokens([s])
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
-    assert char_indexes == [0, 5, 13, 16, 18, 25, 30, 33, 36, 40, 45, 50, 53, 61, 66, 72, 73]
-    assert byte_indexes == [0, 6, 14, 17, 20, 27, 32, 35, 38, 43, 50, 55, 58, 66, 72, 78, 79]
+    assert char_indexes == [
+        0,
+        5,
+        13,
+        16,
+        18,
+        25,
+        30,
+        33,
+        36,
+        40,
+        45,
+        50,
+        53,
+        61,
+        66,
+        72,
+        73,
+    ]
+    assert byte_indexes == [
+        0,
+        6,
+        14,
+        17,
+        20,
+        27,
+        32,
+        35,
+        38,
+        43,
+        50,
+        55,
+        58,
+        66,
+        72,
+        78,
+        79,
+    ]
 
 
 def test_iterator_cases() -> None:
-    s = ["Þessi ", "setning ", "er ", "í ", "lengra ", "lagi ", "og ", "er ", "með ", "bæði ", "eins ", "og ", "tveggja ", "bæta ", "stafi."]
+    s = [
+        "Þessi ",
+        "setning ",
+        "er ",
+        "í ",
+        "lengra ",
+        "lagi ",
+        "og ",
+        "er ",
+        "með ",
+        "bæði ",
+        "eins ",
+        "og ",
+        "tveggja ",
+        "bæta ",
+        "stafi.",
+    ]
     # (char and byte indexes in a similar test above)
     toks = tokenizer.parse_tokens(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
-    assert char_indexes == [0, 5, 13, 16, 18, 25, 30, 33, 36, 40, 45, 50, 53, 61, 66, 72]
-    assert byte_indexes == [0, 6, 14, 17, 20, 27, 32, 35, 38, 43, 50, 55, 58, 66, 72, 78]
+    assert char_indexes == [
+        0,
+        5,
+        13,
+        16,
+        18,
+        25,
+        30,
+        33,
+        36,
+        40,
+        45,
+        50,
+        53,
+        61,
+        66,
+        72,
+    ]
+    assert byte_indexes == [
+        0,
+        6,
+        14,
+        17,
+        20,
+        27,
+        32,
+        35,
+        38,
+        43,
+        50,
+        55,
+        58,
+        66,
+        72,
+        78,
+    ]
     toks = tokenizer.parse_tokens(s)
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
-    assert char_indexes == [0, 5, 13, 16, 18, 25, 30, 33, 36, 40, 45, 50, 53, 61, 66, 72, 73]
-    assert byte_indexes == [0, 6, 14, 17, 20, 27, 32, 35, 38, 43, 50, 55, 58, 66, 72, 78, 79]
+    assert char_indexes == [
+        0,
+        5,
+        13,
+        16,
+        18,
+        25,
+        30,
+        33,
+        36,
+        40,
+        45,
+        50,
+        53,
+        61,
+        66,
+        72,
+        73,
+    ]
+    assert byte_indexes == [
+        0,
+        6,
+        14,
+        17,
+        20,
+        27,
+        32,
+        35,
+        38,
+        43,
+        50,
+        55,
+        58,
+        66,
+        72,
+        78,
+        79,
+    ]
 
     s = ["Stutt setning.", "", "Önnur setning."]
     #     01234567890123        45678901234567
@@ -493,11 +646,15 @@ def test_lengthening_substitutions() -> None:
     #    ^    ^  ^   ^        ^
     #    x             x
     #             !             lengthening happens here (3ji->þriðji)
-    toks = tokenizer.parse_tokens(s, handle_kludgy_ordinals=tokenizer.KLUDGY_ORDINALS_MODIFY)
+    toks = tokenizer.parse_tokens(
+        s, handle_kludgy_ordinals=tokenizer.KLUDGY_ORDINALS_MODIFY
+    )
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks)
     assert char_indexes == [0, 5, 8, 12, 21]
     assert byte_indexes == [0, 6, 9, 13, 23]
-    toks = tokenizer.parse_tokens(s, handle_kludgy_ordinals=tokenizer.KLUDGY_ORDINALS_MODIFY)
+    toks = tokenizer.parse_tokens(
+        s, handle_kludgy_ordinals=tokenizer.KLUDGY_ORDINALS_MODIFY
+    )
     char_indexes, byte_indexes = tokenizer.calculate_indexes(toks, last_is_end=True)
     assert char_indexes == [0, 5, 8, 12, 21, 22]
     assert byte_indexes == [0, 6, 9, 13, 23, 24]

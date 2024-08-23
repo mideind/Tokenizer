@@ -6,7 +6,7 @@
 
     Tests for Tokenizer module
 
-    Copyright (C) 2022 by Miðeind ehf.
+    Copyright (C) 2016-2024 by Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -37,7 +37,7 @@ import tokenizer as t
 
 def test_detokenize() -> None:
 
-    options = { "normalize": True }
+    options = {"normalize": True}
 
     def should_be_equal(s: str) -> None:
         toklist = t.tokenize(s, **options)
@@ -58,19 +58,18 @@ def test_detokenize() -> None:
     should_be_equal("Páll veiddi 74 cm. lax í Norðurá þann 1.3.")
 
     should_be(
-        "Páll var með \"netfangið\" palli@einn.i.heiminum.is.",
-        "Páll var með „netfangið“ palli@einn.i.heiminum.is."
+        'Páll var með "netfangið" palli@einn.i.heiminum.is.',
+        "Páll var með „netfangið“ palli@einn.i.heiminum.is.",
     )
 
     # !!! BUG
-    #should_be(
+    # should_be(
     #    "Páll var með \"netfangið\", þ.e.a.s. (\"þetta\").",
     #    "Páll var með „netfangið“, þ.e.a.s. („þetta“).",
-    #)
+    # )
 
-    options = { "normalize": False }
+    options = {"normalize": False}
 
     should_be_equal("Páll var með „netfangið“, þ.e.a.s. („þetta“).")
-    should_be_equal("Páll var með \"netfangið\" palli@einn.i.heiminum.is.")
-    should_be_equal("Páll var með \"netfangið\", þ.e.a.s. (\"þetta\").")
-
+    should_be_equal('Páll var með "netfangið" palli@einn.i.heiminum.is.')
+    should_be_equal('Páll var með "netfangið", þ.e.a.s. ("þetta").')

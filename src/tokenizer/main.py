@@ -3,7 +3,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2022 Miðeind ehf.
+    Copyright (C) 2016-2024 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -35,7 +35,7 @@
 
 """
 
-from typing import TextIO, Dict, Iterator, List, Callable, Any, Tuple, Union, cast
+from typing import TextIO, Iterator, Callable, Any, Union, cast
 
 import sys
 import argparse
@@ -71,8 +71,12 @@ parser.add_argument(
 
 group = parser.add_mutually_exclusive_group()
 
-group.add_argument("--csv", help="Output one token per line in CSV format", action="store_true")
-group.add_argument("--json", help="Output one token per line in JSON format", action="store_true")
+group.add_argument(
+    "--csv", help="Output one token per line in CSV format", action="store_true"
+)
+group.add_argument(
+    "--json", help="Output one token per line in JSON format", action="store_true"
+)
 
 parser.add_argument(
     "-s",
@@ -92,7 +96,10 @@ parser.add_argument(
     "-p",
     "--coalesce_percent",
     action="store_true",
-    help=("Numbers combined into one token with percentage word forms " "(prósent/prósentustig/hundraðshlutar)"),
+    help=(
+        "Numbers combined into one token with percentage word forms "
+        "(prósent/prósentustig/hundraðshlutar)"
+    ),
 )
 
 parser.add_argument(
@@ -127,7 +134,10 @@ parser.add_argument(
     "-c",
     "--convert_numbers",
     action="store_true",
-    help=("English-style decimal points and thousands separators " "in numbers changed to Icelandic style"),
+    help=(
+        "English-style decimal points and thousands separators "
+        "in numbers changed to Icelandic style"
+    ),
 )
 
 parser.add_argument(
@@ -148,14 +158,14 @@ def main() -> None:
     """Main function, called when the tokenize command is invoked"""
 
     args = parser.parse_args()
-    options: Dict[str, bool] = dict()
+    options: dict[str, bool] = dict()
 
     def quote(s: str) -> str:
         """Return the string s within double quotes, and with any contained
         backslashes and double quotes escaped with a backslash"""
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    def spanquote(l: List[int]) -> str:
+    def spanquote(l: list[int]) -> str:
         """Return the list l as a string within double quotes"""
         return '"' + "-".join(str(x) for x in l) + '"'
 
@@ -170,7 +180,7 @@ def main() -> None:
             return None
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
-            mm = cast(List[BIN_Tuple], t.val)
+            mm = cast(list[BIN_Tuple], t.val)
             if quote_word:
                 # Return a |-delimited list of possible meanings,
                 # joined into a single string
@@ -203,7 +213,7 @@ def main() -> None:
             TOK.MEASUREMENT,
         }:
             # Return a |-delimited list of numbers
-            vv = cast(Tuple[Any, ...], t.val)
+            vv = cast(tuple[Any, ...], t.val)
             return quote("|".join(str(v) for v in vv))
         if quote_word and isinstance(t.val, str):
             return quote(t.val)
@@ -244,7 +254,7 @@ def main() -> None:
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
-    curr_sent: List[str] = []
+    curr_sent: list[str] = []
     tsep = "" if args.original else " "  # token separator
     for t in tokenize(gen(args.infile), **options):
         if args.csv:
@@ -265,7 +275,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: Dict[str, Union[str, List[int]]] = dict(k=TOK.descr[t.kind])
+            d: dict[str, Union[str, list[int]]] = dict(k=TOK.descr[t.kind])
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)

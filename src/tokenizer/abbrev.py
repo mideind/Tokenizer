@@ -2,7 +2,7 @@
 
     Abbreviations module for tokenization of Icelandic text
 
-    Copyright (C) 2022 Miðeind ehf.
+    Copyright (C) 2016-2024 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -33,17 +33,16 @@
 
 """
 
-from typing import Generic, Iterator, Optional, Set, List, Dict, TypeVar
+from typing import Generic, Iterator, Optional, TypeVar
 
 from threading import Lock
 from collections import defaultdict, OrderedDict
-from importlib.resources import open_text
+import importlib.resources as importlib_resources
 
 from .definitions import BIN_Tuple
 
 
 class ConfigError(Exception):
-
     pass
 
 
@@ -51,17 +50,16 @@ _T = TypeVar("_T")
 
 
 class OrderedSet(Generic[_T]):
-
-    """ Shim class to provide an ordered set API on top
-        of an OrderedDict. This is necessary to make abbreviation
-        lookups predictable and repeatable, which they would not be
-        if a standard Python set() was used. """
+    """Shim class to provide an ordered set API on top
+    of an OrderedDict. This is necessary to make abbreviation
+    lookups predictable and repeatable, which they would not be
+    if a standard Python set() was used."""
 
     def __init__(self) -> None:
-        self._dict: Dict[_T, None] = OrderedDict()
+        self._dict: dict[_T, None] = OrderedDict()
 
     def add(self, item: _T) -> None:
-        """ Add an item at the end of the ordered set """
+        """Add an item at the end of the ordered set"""
         if item not in self._dict:
             self._dict[item] = None
 
@@ -73,42 +71,41 @@ class OrderedSet(Generic[_T]):
 
 
 class Abbreviations:
-
-    """ Wrapper around dictionary of abbreviations,
-        initialized from the config file """
+    """Wrapper around dictionary of abbreviations,
+    initialized from the config file"""
 
     # Dictionary of abbreviations and their meanings
-    DICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    DICT: dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # Wrong versions of abbreviations
-    WRONGDICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    WRONGDICT: dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # All abbreviation meanings
-    MEANINGS: Set[str] = set()
+    MEANINGS: set[str] = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
-    SINGLES: Set[str] = set()
+    SINGLES: set[str] = set()
     # Set of abbreviations without periods, e.g. "td", "osfrv"
-    WRONGSINGLES: Set[str] = set()
+    WRONGSINGLES: set[str] = set()
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
-    FINISHERS: Set[str] = set()
+    FINISHERS: set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences,
     # marked with an exclamation mark in the config file
-    NOT_FINISHERS: Set[str] = set()
+    NOT_FINISHERS: set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
-    NAME_FINISHERS: Set[str] = set()
+    NAME_FINISHERS: set[str] = set()
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS: Dict[str, List[str]] = defaultdict(list)
+    WRONGDOTS: dict[str, list[str]] = defaultdict(list)
     # Word forms that should never be interpreted as abbreviations
-    NOT_ABBREVIATIONS: Set[str] = set()
+    NOT_ABBREVIATIONS: set[str] = set()
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
 
     @staticmethod
     def add(abbrev: str, meaning: str, gender: str, fl: Optional[str] = None) -> None:
-        """ Add an abbreviation to the dictionary.
-            Called from the config file handler. """
+        """Add an abbreviation to the dictionary.
+        Called from the config file handler."""
         # Check for sentence finishers
         finisher = False
         not_finisher = False
@@ -152,7 +149,14 @@ class Abbreviations:
         # Append the abbreviation and its meaning in tuple form
         # Multiple meanings are supported for each abbreviation
         Abbreviations.DICT[abbrev].add(
-            BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, abbrev, "-",)
+            BIN_Tuple(
+                meaning,
+                0,
+                gender,
+                "skst" if fl is None else fl,
+                abbrev,
+                "-",
+            )
         )
         Abbreviations.MEANINGS.add(meaning)
         # Adding wrong versions of abbreviations
@@ -169,7 +173,14 @@ class Abbreviations:
                 # as abbreviations, even though they are listed as such
                 # in the form 'Í.' and 'Á.' for use within person names
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BIN_Tuple(
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
                 )
 
         elif "." in abbrev:
@@ -182,7 +193,14 @@ class Abbreviations:
                 wabbrev = abbrev[:i] + abbrev[i + 1 :]
                 Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
                 Abbreviations.WRONGDICT[wabbrev].add(
-                    BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                    BIN_Tuple(
+                        meaning,
+                        0,
+                        gender,
+                        "skst" if fl is None else fl,
+                        wabbrev,
+                        "-",
+                    )
                 )
             if len(indices) > 2:
                 # 3 or 4 dots currently in vocabulary
@@ -190,7 +208,7 @@ class Abbreviations:
                 i1 = indices[0]
                 i2 = indices[1]
                 i3 = indices[2]
-                wabbrevs: List[str] = []
+                wabbrevs: list[str] = []
                 # 1 and 2 removed
                 wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i2] + abbrev[i2 + 1 :])
                 # 1 and 3 removed
@@ -214,7 +232,14 @@ class Abbreviations:
             Abbreviations.WRONGSINGLES.add(wabbrev)
             Abbreviations.WRONGDOTS[wabbrev].append(abbrev)
             Abbreviations.WRONGDICT[wabbrev].add(
-                BIN_Tuple(meaning, 0, gender, "skst" if fl is None else fl, wabbrev, "-",)
+                BIN_Tuple(
+                    meaning,
+                    0,
+                    gender,
+                    "skst" if fl is None else fl,
+                    wabbrev,
+                    "-",
+                )
             )
         if finisher:
             Abbreviations.FINISHERS.add(abbrev)
@@ -232,8 +257,8 @@ class Abbreviations:
         return meaning in Abbreviations.MEANINGS
 
     @staticmethod
-    def get_meaning(abbrev: str) -> Optional[List[BIN_Tuple]]:
-        """ Lookup meaning(s) of abbreviation, if available. """
+    def get_meaning(abbrev: str) -> Optional[list[BIN_Tuple]]:
+        """Look up meaning(s) of abbreviation, if available."""
         m = Abbreviations.DICT.get(abbrev)
         if not m:
             m = Abbreviations.WRONGDICT.get(abbrev)
@@ -241,7 +266,7 @@ class Abbreviations:
 
     @staticmethod
     def _handle_abbreviations(s: str) -> None:
-        """ Handle abbreviations in the settings section """
+        """Handle abbreviations in the settings section"""
         # Format: abbrev[*] = "meaning" gender (kk|kvk|hk)
         # An asterisk after an abbreviation ending with a period
         # indicates that the abbreviation may finish a sentence
@@ -272,22 +297,25 @@ class Abbreviations:
 
     @staticmethod
     def _handle_not_abbreviations(s: str) -> None:
-        """ Handle not_abbreviations in the settings section """
+        """Handle not_abbreviations in the settings section"""
         if len(s) < 3 or s[0] != '"' or s[-1] != '"':
             raise ConfigError("not_abbreviations should be enclosed in double quotes")
         Abbreviations.NOT_ABBREVIATIONS.add(s[1:-1])
 
     @staticmethod
     def initialize():
-        """ Read the abbreviations config file """
+        """Read the abbreviations config file"""
         with Abbreviations._lock:
             if len(Abbreviations.DICT):
                 # Already initialized
                 return
 
             section = None
-            config = open_text(package="tokenizer", resource="Abbrev.conf", encoding="utf-8")
-            for s in config:
+
+            p = importlib_resources.files("tokenizer").joinpath("Abbrev.conf")
+            config = p.read_text(encoding="utf-8")
+
+            for s in config.split("\n"):
                 # Ignore comments
                 ix = s.find("#")
                 if ix >= 0:

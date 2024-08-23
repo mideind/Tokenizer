@@ -2,7 +2,7 @@
 
     Definitions used for tokenization of Icelandic text
 
-    Copyright (C) 2022 Miðeind ehf.
+    Copyright (C) 2016-2024 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -29,13 +29,9 @@
 """
 
 from typing import (
-    Dict,
-    FrozenSet,
     Mapping,
-    Tuple,
     Union,
     Callable,
-    List,
     Sequence,
     Optional,
     NamedTuple,
@@ -45,15 +41,15 @@ from typing import (
 import re
 
 
-BeginTuple = Tuple[int, Optional[int]]
-PunctuationTuple = Tuple[int, str]
-NumberTuple = Tuple[float, Optional[List[str]], Optional[List[str]]]
-DateTimeTuple = Tuple[int, int, int]
-MeasurementTuple = Tuple[str, float]
-TimeStampTuple = Tuple[int, int, int, int, int, int]
-AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
-TelnoTuple = Tuple[str, str]
-CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
+BeginTuple = tuple[int, Optional[int]]
+PunctuationTuple = tuple[int, str]
+NumberTuple = tuple[float, Optional[list[str]], Optional[list[str]]]
+DateTimeTuple = tuple[int, int, int]
+MeasurementTuple = tuple[str, float]
+TimeStampTuple = tuple[int, int, int, int, int, int]
+AmountTuple = tuple[float, str, Optional[list[str]], Optional[list[str]]]
+TelnoTuple = tuple[str, str]
+CurrencyTuple = tuple[str, Optional[list[str]], Optional[list[str]]]
 
 
 class BIN_Tuple(NamedTuple):
@@ -342,7 +338,7 @@ DAYS_IN_MONTH = (0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 # }
 
 # Time of day expressions spelled out
-CLOCK_NUMBERS: Mapping[str, Tuple[int, int, int]] = {
+CLOCK_NUMBERS: Mapping[str, tuple[int, int, int]] = {
     "eitt": (1, 0, 0),
     "tvö": (2, 0, 0),
     "þrjú": (3, 0, 0),
@@ -434,7 +430,7 @@ CURRENCY_SYMBOLS = {
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS: Dict[str, Tuple[str, Union[float, Callable[[float], float]]]] = {
+SI_UNITS: dict[str, tuple[str, Union[float, Callable[[float], float]]]] = {
     # Distance
     "m": ("m", 1.0),
     "mm": ("m", 1.0e-3),
@@ -534,11 +530,11 @@ DIRECTIONS = {
     "N": "Norður",
 }
 
-_unit_lambda: Callable[[str], str] = (
-    lambda unit: unit + r"(?!\w)" if unit[-1].isalpha() else unit
+_unit_lambda: Callable[[str], str] = lambda unit: (
+    unit + r"(?!\w)" if unit[-1].isalpha() else unit
 )
 
-SI_UNITS_SET: FrozenSet[str] = frozenset(SI_UNITS.keys())
+SI_UNITS_SET: frozenset[str] = frozenset(SI_UNITS.keys())
 SI_UNITS_REGEX_STRING = r"|".join(
     map(
         # If the unit ends with a letter, don't allow the next character
@@ -721,9 +717,8 @@ AMOUNT_ABBREV = {
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
-# URL prefixes. Note that this list should not contain www since
-# www.something.com is a domain token, not a URL token.
-URL_PREFIXES = (
+# URI scheme prefixes
+URI_PREFIXES = (
     "http://",
     "https://",
     "file://",
@@ -739,6 +734,12 @@ URL_PREFIXES = (
     "telnet://",
     "udp://",
     "vnc://",
+    "irc://",
+    "nntp://",
+    "wss://",
+    "ws://",
+    "xmpp://",
+    "mtqp://",
 )
 
 TOP_LEVEL_DOMAINS = frozenset(

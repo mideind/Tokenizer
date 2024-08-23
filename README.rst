@@ -12,7 +12,7 @@ Tokenization is a necessary first step in many natural language processing
 tasks, such as word counting, parsing, spell checking, corpus generation, and
 statistical analysis of text.
 
-**Tokenizer** is a compact pure-Python (>= 3.8) executable
+**Tokenizer** is a compact pure-Python (>=3.9) executable
 program and module for tokenizing Icelandic text. It converts input text to
 streams of *tokens*, where each token is a separate word, punctuation sign,
 number/amount, date, e-mail, URL/URI, etc. It also segments the token stream
@@ -809,6 +809,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.4.5: Compatibility with Python 3.13. Now requires Python 3.9 or later.
 * Version 3.4.4: Better handling of abbreviations
 * Version 3.4.3: Various minor fixes. Now requires Python 3.8 or later.
 * Version 3.4.2: Abbreviations and phrases added, ``META_BEGIN`` token added.
