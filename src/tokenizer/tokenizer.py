@@ -1848,7 +1848,7 @@ def parse_mixed(
             ate = True
 
         rtxt = rt.txt
-        if rtxt and rtxt.startswith(URL_PREFIXES):
+        if rtxt and rtxt.startswith(URI_PREFIXES):
             # Handle URL: cut RIGHT_PUNCTUATION characters off its end,
             # even though many of them are actually allowed according to
             # the IETF RFC

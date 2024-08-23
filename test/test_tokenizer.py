@@ -46,7 +46,7 @@ def strip_originals(tokens: list[Tok]) -> list[Tok]:
     """Remove origin tracking info from a list of tokens.
     This is useful for simplifying tests where we don't care about tracking
     origins.
-    XXX: This could be removed if we get a feature to disable origin
+    TODO: This could be removed if we get a feature to disable origin
     tracking during tokenization.
     """
 

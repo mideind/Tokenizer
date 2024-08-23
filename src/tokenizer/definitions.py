@@ -717,9 +717,8 @@ AMOUNT_ABBREV = {
 # Króna amount strings allowed before a number, e.g. "kr. 9.900"
 ISK_AMOUNT_PRECEDING = frozenset(("kr.", "kr", "krónur"))
 
-# URL prefixes. Note that this list should not contain www since
-# www.something.com is a domain token, not a URL token.
-URL_PREFIXES = (
+# URI scheme prefixes
+URI_PREFIXES = (
     "http://",
     "https://",
     "file://",
@@ -735,6 +734,12 @@ URL_PREFIXES = (
     "telnet://",
     "udp://",
     "vnc://",
+    "irc://",
+    "nntp://",
+    "wss://",
+    "ws://",
+    "xmpp://",
+    "mtqp://",
 )
 
 TOP_LEVEL_DOMAINS = frozenset(
