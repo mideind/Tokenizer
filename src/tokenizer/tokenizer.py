@@ -3054,7 +3054,7 @@ def tokenize_without_annotation(
     text_or_gen: Union[str, Iterable[str]], **options: Any
 ) -> Iterator[Tok]:
     """Tokenize without the last pass which can be done more thoroughly if BÍN
-    annotation is available, for instance in GreynirPackage."""
+    annotation is available, for instance in GreynirEngine."""
     return tokenize(text_or_gen, with_annotation=False, **options)
 
 

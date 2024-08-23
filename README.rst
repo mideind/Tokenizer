@@ -27,8 +27,7 @@ Tokenizer is an independent spinoff from the `Greynir project <https://greynir.i
 The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirEngine>`_
 uses Tokenizer on its input.
 
-Note that Tokenizer is licensed under the *MIT* license
-while GreynirEngine is licensed under *GPLv3*.
+Tokenizer is licensed under the *MIT* license.
 
 
 Deep vs. shallow tokenization
@@ -613,7 +612,7 @@ defined within the ``TOK`` class:
 | S_END         |  11002  | End of sentence     |                           |
 +---------------+---------+---------------------+---------------------------+
 
-(*) The token types marked with an asterisk are reserved for the Greynir package
+(*) The token types marked with an asterisk are reserved for the GreynirEngine package
 and not currently returned by the tokenizer.
 
 To obtain a descriptive text for a token kind, use

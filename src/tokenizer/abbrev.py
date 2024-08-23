@@ -134,7 +134,7 @@ class Abbreviations:
             # This logic is not fully present in Tokenizer as information
             # about person names is needed to make it work. The full implementation,
             # using the NAME_FINISHERS set, is found in bintokenizer.py in
-            # GreynirPackage.
+            # GreynirEngine.
             name_finisher = True
             abbrev = abbrev[0:-1]
             if not abbrev.endswith("."):
