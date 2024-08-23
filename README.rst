@@ -849,7 +849,7 @@ Changelog
   that should not start a new sentence even if the following word is capitalized.
 * Version 2.0.5: Fixed bug where single uppercase letters were erroneously
   being recognized as abbreviations, causing prepositions such as 'Í' and 'Á'
-  at the beginning of sentences to be misunderstood in GreynirPackage.
+  at the beginning of sentences to be misunderstood in GreynirEngine.
 * Version 2.0.4: Added imperfect abbreviations (*amk.*, *osfrv.*); recognized
   *klukkan hálf tvö* as a ``TOK.TIME``.
 * Version 2.0.3: Fixed bug in ``detokenize()`` where abbreviations, domains
