@@ -3233,8 +3233,8 @@ def correct_spaces(s: str) -> str:
                 and len(w) == 2
                 and len(r) >= 2
                 and r[-1] == ":"
-                and r[-2].strip().isnumeric()
-                and len(r[-2].strip()) in [1, 2]
+                and (p := r[-2].strip()).isnumeric()
+                and len(p) in {1, 2}
             )
         ):
             r.append(" " + w)
