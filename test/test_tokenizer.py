@@ -1145,6 +1145,15 @@ def test_correct_spaces() -> None:
         "Þetta er setning.Þetta er önnur setning.Líka.En hvað með þetta?"
     )
     assert s == "Þetta er setning. Þetta er önnur setning. Líka. En hvað með þetta?"
+    # Test that colon-separated times are not space-separated
+    s = t.correct_spaces("Klukkan er 12: 00 og ég ætla að fara út .")
+    assert s == "Klukkan er 12:00 og ég ætla að fara út."
+    s = t.correct_spaces("Tíminn byrjar kl . 4: 14 og klukkan er núna 5:00 .")
+    assert s == "Tíminn byrjar kl. 4:14 og klukkan er núna 5:00."
+    s = t.correct_spaces("Veislan verður kl . 12 : 00 - 14 : 00.")
+    assert s == "Veislan verður kl. 12:00-14:00."
+    s = t.correct_spaces("Hún kom í mark á tímanum 3 : 59 : 04 ,rétt fyrir lokin.")
+    assert s == "Hún kom í mark á tímanum 3:59:04, rétt fyrir lokin."
 
 
 def test_abbrev() -> None:

@@ -3223,7 +3223,20 @@ def correct_spaces(s: str) -> str:
             # "bensínstöðvar, -dælur og -tankar"
             r[-1] = " -"
             r.append(w)
-        elif TP_SPACE[last - 1][this - 1] and r:
+        elif (
+            TP_SPACE[last - 1][this - 1]
+            and r
+            and not (
+                # Special case for colon-separated time or duration
+                # such as "12:00", "3:15" or "37:02:29"
+                w.isnumeric()
+                and len(w) == 2
+                and len(r) >= 2
+                and r[-1] == ":"
+                and (p := r[-2].strip()).isnumeric()
+                and len(p) in {1, 2}
+            )
+        ):
             r.append(" " + w)
         else:
             r.append(w)
