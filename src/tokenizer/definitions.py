@@ -1182,7 +1182,7 @@ KT_MAGIC = [3, 2, 7, 6, 5, 4, 0, 3, 2]
 
 
 def valid_ssn(kt: str) -> bool:
-    """Validate Icelandic social security number"""
+    """Validate Icelandic social security number ("kennitala")"""
     if not kt or len(kt) != 11 or kt[6] != "-":
         return False
     m = 11 - sum((ord(kt[i]) - 48) * KT_MAGIC[i] for i in range(9)) % 11
