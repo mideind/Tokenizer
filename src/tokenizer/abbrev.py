@@ -2,7 +2,7 @@
 
     Abbreviations module for tokenization of Icelandic text
 
-    Copyright (C) 2016-2024 Miðeind ehf.
+    Copyright (C) 2016-2025 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -303,7 +303,7 @@ class Abbreviations:
         Abbreviations.NOT_ABBREVIATIONS.add(s[1:-1])
 
     @staticmethod
-    def initialize():
+    def initialize() -> None:
         """Read the abbreviations config file"""
         with Abbreviations._lock:
             if len(Abbreviations.DICT):

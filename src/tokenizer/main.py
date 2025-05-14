@@ -3,7 +3,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2016-2024 Miðeind ehf.
+    Copyright (C) 2016-2025 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -165,9 +165,9 @@ def main() -> None:
         backslashes and double quotes escaped with a backslash"""
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    def spanquote(l: list[int]) -> str:
-        """Return the list l as a string within double quotes"""
-        return '"' + "-".join(str(x) for x in l) + '"'
+    def spanquote(lst: list[int]) -> str:
+        """Return the list lst as a string within double quotes"""
+        return '"' + "-".join(str(x) for x in lst) + '"'
 
     def gen(f: TextIO) -> Iterator[str]:
         """Generate the lines of text in the input file"""
