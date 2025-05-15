@@ -1508,7 +1508,7 @@ def generate_raw_tokens(
                     if replace_html_escapes:
                         # Replace HTML escapes: '&aacute;' -> 'á'
                         tok = html_replacement(tok)
-                    # HTML escapes and unicode possibly contain whitespace characters
+                    # HTML escapes and unicode may contain whitespace characters
                     # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
                     # Here we split those tokens into multiple tokens.
                     for small_tok in generate_rough_tokens_from_tok(tok):

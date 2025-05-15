@@ -56,8 +56,8 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 88
-#lint.select = ["ALL"]
-extend-select = ["E501"]
+#lint.select = ["ALL"] # We use default rules for now
+extend-select = ["E501"] # Complain about line length
 # Ignore specific rules
 # (we should aim to have these as few as possible)
 lint.ignore = [
