@@ -44,6 +44,7 @@ from functools import partial
 
 from .definitions import AmountTuple, BIN_Tuple, NumberTuple, PunctuationTuple
 from .tokenizer import TOK, Tok, tokenize
+from . import __version__ as tokenizer_version
 
 
 ReadFile = argparse.FileType("r", encoding="utf-8")
@@ -151,6 +152,14 @@ parser.add_argument(
         "\t1: Ordinals returned as pure words.\n"
         "\t2: Ordinals returned as numbers."
     ),
+)
+
+parser.add_argument(
+    "-v",
+    "--version",
+    action="version",
+    version=f"%(prog)s {tokenizer_version}",
+    help="Show the version number and exit",
 )
 
 
