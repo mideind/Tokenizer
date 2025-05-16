@@ -5,7 +5,7 @@
 
     Tests for Tokenizer module
 
-    Copyright (C) 2016-2024 by Miðeind ehf.
+    Copyright (C) 2016-2025 by Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -50,9 +50,9 @@ def strip_originals(tokens: list[Tok]) -> list[Tok]:
     tracking during tokenization.
     """
 
-    for t in tokens:
-        t.original = None
-        t.origin_spans = None
+    for tk in tokens:
+        tk.original = None
+        tk.origin_spans = None
 
     return tokens
 
@@ -570,11 +570,11 @@ def test_single_tokens() -> None:
             else:
                 txt, kind = cast(tuple[str, int], test_case)
                 c = [Tok(kind, txt, None)]
-            l = list(t.tokenize(txt, **options))
-            assert len(l) == len(c) + 2, repr(l)
-            assert l[0].kind == TOK.S_BEGIN, repr(l[0])
-            assert l[-1].kind == TOK.S_END, repr(l[-1])
-            for tok, check in zip(l[1:-1], c):
+            lt = list(t.tokenize(txt, **options))
+            assert len(lt) == len(c) + 2, repr(lt)
+            assert lt[0].kind == TOK.S_BEGIN, repr(lt[0])
+            assert lt[-1].kind == TOK.S_END, repr(lt[-1])
+            for tok, check in zip(lt[1:-1], c):
                 assert tok.kind == check.kind, (
                     tok.txt
                     + ": "

@@ -3,7 +3,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2016-2024 Miðeind ehf.
+    Copyright (C) 2016-2025 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -44,6 +44,7 @@ from functools import partial
 
 from .definitions import AmountTuple, BIN_Tuple, NumberTuple, PunctuationTuple
 from .tokenizer import TOK, Tok, tokenize
+from . import __version__ as tokenizer_version
 
 
 ReadFile = argparse.FileType("r", encoding="utf-8")
@@ -153,21 +154,29 @@ parser.add_argument(
     ),
 )
 
+parser.add_argument(
+    "-v",
+    "--version",
+    action="version",
+    version=f"%(prog)s {tokenizer_version}",
+    help="Show the version number and exit",
+)
+
 
 def main() -> None:
     """Main function, called when the tokenize command is invoked"""
 
     args = parser.parse_args()
-    options: dict[str, bool] = dict()
+    options: dict[str, bool] = {}
 
     def quote(s: str) -> str:
         """Return the string s within double quotes, and with any contained
         backslashes and double quotes escaped with a backslash"""
         return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
-    def spanquote(l: list[int]) -> str:
-        """Return the list l as a string within double quotes"""
-        return '"' + "-".join(str(x) for x in l) + '"'
+    def spanquote(lst: list[int]) -> str:
+        """Return the list lst as a string within double quotes"""
+        return '"' + "-".join(str(x) for x in lst) + '"'
 
     def gen(f: TextIO) -> Iterator[str]:
         """Generate the lines of text in the input file"""
@@ -275,7 +284,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: dict[str, Union[str, list[int]]] = dict(k=TOK.descr[t.kind])
+            d: dict[str, Union[str, list[int]]] = { "k": TOK.descr[t.kind] }
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)

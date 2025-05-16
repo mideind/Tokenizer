@@ -56,12 +56,20 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 88
+#lint.select = ["ALL"] # We use default rules for now
+extend-select = ["E501"] # Complain about line length
+# Ignore specific rules
+# (we should aim to have these as few as possible)
+lint.ignore = [
+    "F405", # 'F405: Name may be undefined, or defined from star imports: typing'
+    "E731", # 'E731: Do not assign a lambda expression, use a def'
+]
 
 [tool.black]
 line-length = 88
 
 [tool.isort]
 # This forces these imports to placed at the top
-known_future_library = ["__future__", "typing", "typing_extensions"]
+known_future_library = ["typing"]
 profile = "black"
 line_length = 88

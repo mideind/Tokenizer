@@ -2,7 +2,7 @@
 
     Tokenizer for Icelandic text
 
-    Copyright (C) 2016-2024 Miðeind ehf.
+    Copyright (C) 2016-2025 Miðeind ehf.
     Original author: Vilhjálmur Þorsteinsson
 
     This software is licensed under the MIT License:
@@ -59,7 +59,7 @@ import unicodedata  # type: ignore
 from collections import deque
 
 from .abbrev import Abbreviations
-from .definitions import *
+from .definitions import *   # noqa: F403
 
 _T = TypeVar("_T", bound="Tok")
 
@@ -119,6 +119,7 @@ class Tok:
     def punctuation(self) -> str:
         """Return the punctuation symbol associated with the
         token, if it is in fact a punctuation token"""
+
         if self.kind != TOK.PUNCTUATION:
             # This is not a punctuation token. In that case,
             # we return the Unicode 'unrecognized character'
@@ -189,28 +190,28 @@ class Tok:
         # txt=="" and original!=""?
         # TODO: What should we do with val?
 
-        l: Tok
-        r: Tok
+        ltk: Tok
+        rtk: Tok
 
         if self.origin_spans is not None and self.original is not None:
             if pos >= len(self.origin_spans):
-                l = Tok(
+                ltk = Tok(
                     self.kind,
                     self.txt,
                     self.val,
                     self.original,
                     self.origin_spans,
                 )
-                r = Tok(self.kind, "", None, "", [])
+                rtk = Tok(self.kind, "", None, "", [])
             else:
-                l = Tok(
+                ltk = Tok(
                     self.kind,
                     self.txt[:pos],
                     self.val,
                     self.original[: self.origin_spans[pos]],
                     self.origin_spans[:pos],
                 )
-                r = Tok(
+                rtk = Tok(
                     self.kind,
                     self.txt[pos:],
                     self.val,
@@ -218,10 +219,10 @@ class Tok:
                     [x - self.origin_spans[pos] for x in self.origin_spans[pos:]],
                 )
         else:
-            l = Tok(self.kind, self.txt[:pos], self.val)
-            r = Tok(self.kind, self.txt[pos:], self.val)
+            ltk = Tok(self.kind, self.txt[:pos], self.val)
+            rtk = Tok(self.kind, self.txt[pos:], self.val)
 
-        return l, r
+        return ltk, rtk
 
     def substitute(self, span: tuple[int, int], new: str) -> None:
         """Substitute a span with a single or empty character 'new'."""
@@ -254,7 +255,8 @@ class Tok:
 
             if len(tail) == 0:
                 # We're replacing the end of the string
-                # Can't pick the next element after the removed string since it doesn't exist
+                # Can't pick the next element after the removed
+                # string since it doesn't exist
                 # Use the length instead
                 new_origin = len(self.original)
             else:
@@ -343,7 +345,7 @@ class Tok:
             self.kind == other.kind and self.txt == other.txt and self.val == other.val
         )
 
-    def __eq__(self, o: Any) -> bool:
+    def __eq__(self, o: object) -> bool:
         """Full equality between two Tok instances"""
         if not isinstance(o, Tok):
             return False
@@ -356,11 +358,10 @@ class Tok:
         )
 
     def __repr__(self) -> str:
-        def quoted_string_repr(obj: Any) -> str:
+        def quoted_string_repr(obj: object) -> str:
             if isinstance(obj, str):
                 return f'"{obj}"'
-            else:
-                return str(obj)
+            return str(obj)
 
         return (
             f"Tok({self.kind}, {quoted_string_repr(self.txt)}, "
@@ -893,12 +894,12 @@ class TokenStream:
 
     def __getitem__(self, i: int) -> Optional[Tok]:
         if 0 <= i < self._max_lookahead:
-            l = len(self._lookahead)
+            llk = len(self._lookahead)
             try:
-                while l <= i:
+                while llk <= i:
                     # Extend deque to lookahead
                     self._lookahead.append(next(self._it))
-                    l += 1
+                    llk += 1
                 return self._lookahead[i]
             except StopIteration:
                 pass
@@ -1375,7 +1376,7 @@ def html_replacement(token: Tok) -> Tok:
 
 def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
     """Generate rough tokens from a string."""
-    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
+    # Rough tokens are tokens that are separated by whitespace, i.e. the regex (\\s*).
     # pos tracks the index in the text we have covered so far.
     # We want to track pos, instead of treating text as a buffer,
     # since that would lead to a lot of unnecessary copying.
@@ -1391,12 +1392,12 @@ def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
 
 def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
     """Generate rough tokens from a token."""
-    # Some tokens might have whitespace characters after we replace composite unicode glyphs
-    # and replace HTML escapes.
+    # Some tokens might have whitespace characters after we replace
+    # composite unicode glyphs and replace HTML escapes.
     # This function further splits those tokens into multiple tokens.
-    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*)."""
+    # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*).
 
-    def shift_span(span: tuple[int, int], pos: int):
+    def shift_span(span: tuple[int, int], pos: int) -> tuple[int, int]:
         """Shift a span by a given amount"""
         return (span[SPAN_START] + pos, span[SPAN_END] + pos)
 
@@ -1462,13 +1463,14 @@ def generate_raw_tokens(
             saved = None
 
         # Force sentence splits
-        # Case 1: Two newlines with only whitespace between appear anywhere in 'big_text'.
-        #         I.e. force sentence split when we see an empty line.
+        # Case 1: Two newlines with only whitespace between appear anywhere
+        #         in 'big_text'. I.e. force sentence split when we see an empty line.
         # Case 2: 'big_txt' contains only whitespace.
-        #         This only means "empty line" if each element in text_or_gen is assumed to
-        #         be a line (even if they don't contain any newline characters).
-        #         That does not strictly have to be true and is not a declared assumption,
-        #         except in tests, but the tokenizer has had this behavior for a long time.
+        #         This only means "empty line" if each element in text_or_gen is assumed
+        #         to be a line (even if they don't contain any newline characters).
+        #         That does not strictly have to be true and is not a declared
+        #         assumption, except in tests, but the tokenizer has had this behavior
+        #         for a long time.
 
         if one_sent_per_line:
             # We know there's a single sentence per line
@@ -1506,7 +1508,7 @@ def generate_raw_tokens(
                     if replace_html_escapes:
                         # Replace HTML escapes: '&aacute;' -> 'á'
                         tok = html_replacement(tok)
-                    # The HTML escapes and unicode possibly contain whitespace characters
+                    # HTML escapes and unicode may contain whitespace characters
                     # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
                     # Here we split those tokens into multiple tokens.
                     for small_tok in generate_rough_tokens_from_tok(tok):
@@ -1515,9 +1517,10 @@ def generate_raw_tokens(
                             # We do not want to yield a token with empty text if possible.
                             # We want to attach it in front of the next token, if there is one.
                             # If there is no next token, we attach it in front of the next 'big_text'.
-                            # This will happen when:
+                            # This will happen:
                             # 1. When 'text' has whitespace at the end
-                            # 2. When we have replaced a composite glyph or an HTML escape with whitespace.
+                            # 2. When we have replaced a composite glyph or an HTML
+                            #    escape with whitespace.
                             # See ROUGH_TOKEN_REGEX to convince yourself this is true.
                             saved = small_tok
                         else:
@@ -1831,8 +1834,8 @@ def parse_mixed(
         rtxt = rt.txt
         if rtxt and "@" in rtxt:
             # Check for valid e-mail
-            # Note: we don't allow double quotes (simple or closing ones) in e-mails here
-            # even though they're technically allowed according to the RFCs
+            # Note: we don't allow double quotes (simple or closing ones) in e-mails
+            # here even though they're technically allowed according to the RFCs
             s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rtxt)
             if s:
                 email, rt = rt.split(s.end())
@@ -2161,8 +2164,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                     if abbrev in Abbreviations.NAME_FINISHERS:
                         # For name finishers (such as 'próf.') we don't consider a
                         # following person name as an indicator of an end-of-sentence
-                        # !!! TODO: This does not work as intended because person names
-                        # !!! have not been recognized at this phase in the token pipeline.
+                        # TODO: This does not work as intended because person names
+                        # have not been recognized at this phase in the token pipeline.
                         test_set = TOK.TEXT_EXCL_PERSON
                     else:
                         test_set = TOK.TEXT
@@ -2179,8 +2182,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                         if abbrev in Abbreviations.FINISHERS:
                             # We see this as an abbreviation even if the next sentence
                             # seems to be starting just after it.
-                            # Yield the abbreviation without a trailing dot,
-                            # and then an 'extra' period token to end the current sentence.
+                            # Yield the abbreviation without a trailing dot, and then
+                            # an 'extra' period token to end the current sentence.
                             token = TOK.Word(token, lookup(abbrev))
                             yield token
                             # Set token to the period
@@ -2306,7 +2309,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
 
             # Coalesce ordinals (1. = first, 2. = second...) into a single token
             if next_token.punctuation == ".":
-                if (token.kind == TOK.NUMBER and not "," in token.txt) or (
+                if (token.kind == TOK.NUMBER and "," not in token.txt) or (
                     token.kind == TOK.WORD
                     and RE_ROMAN_NUMERAL.match(token.txt)
                     # Don't interpret a known abbreviation as a Roman numeral,
@@ -2567,14 +2570,14 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                         token.punctuation in PUNCT_COMBINATIONS
                         and next_token.punctuation in PUNCT_COMBINATIONS
                     ):
-                        # The normalized form comes from the first token except with "…?"
+                        # Normalized form comes from the first token except with "…?"
                         v = token.punctuation
                         if v == "…" and next_token.punctuation == "?":
                             v = next_token.punctuation
                         token = TOK.Punctuation(token.concatenate(next_token), v)
                         next_token = next(token_stream)
-                    # We may be finishing a sentence with not only a period but also
-                    # right parenthesis and quotation marks
+                    # We may be finishing a sentence with not only a period
+                    # but also right parenthesis and quotation marks
                     while next_token.punctuation in SENTENCE_FINISHERS:
                         yield token
                         token = next_token
@@ -2673,7 +2676,7 @@ def parse_phrases_1(token_stream: Iterator[Tok]) -> Iterator[Tok]:
 
                 month = month_for_token(next_token, True)
                 if month is not None:
-                    if token.kind == TOK.NUMBER and not "." in token.txt:
+                    if token.kind == TOK.NUMBER and "." not in token.txt:
                         # Cases such as "5 mars"
                         token.txt = token.txt + "."
                     token = TOK.Date(
@@ -3053,8 +3056,8 @@ def tokenize(text_or_gen: Union[str, Iterable[str]], **options: Any) -> Iterator
 def tokenize_without_annotation(
     text_or_gen: Union[str, Iterable[str]], **options: Any
 ) -> Iterator[Tok]:
-    """Tokenize without the last pass which can be done more thoroughly if BÍN
-    annotation is available, for instance in GreynirEngine."""
+    """Tokenize without the last pass which can be done more thoroughly
+    if BÍN annotation is available, for instance in GreynirEngine."""
     return tokenize(text_or_gen, with_annotation=False, **options)
 
 
@@ -3304,7 +3307,8 @@ def calculate_indexes(
         else:
             if t.txt:
                 # Origin tracking failed for this token.
-                # TODO: Can we do something better here? Or guarantee that it doesn't happen?
+                # TODO: Can we do something better here?
+                # Or guarantee that it doesn't happen?
                 raise ValueError(
                     f"Origin tracking failed at {t.txt} near index {char_indexes[-1]}"
                 )
