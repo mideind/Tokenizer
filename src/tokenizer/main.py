@@ -167,7 +167,7 @@ def main() -> None:
     """Main function, called when the tokenize command is invoked"""
 
     args = parser.parse_args()
-    options: dict[str, bool] = dict()
+    options: dict[str, bool] = {}
 
     def quote(s: str) -> str:
         """Return the string s within double quotes, and with any contained
@@ -284,7 +284,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: dict[str, Union[str, list[int]]] = dict(k=TOK.descr[t.kind])
+            d: dict[str, Union[str, list[int]]] = { "k": TOK.descr[t.kind] }
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)

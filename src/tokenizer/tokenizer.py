@@ -358,7 +358,7 @@ class Tok:
         )
 
     def __repr__(self) -> str:
-        def quoted_string_repr(obj: Any) -> str:
+        def quoted_string_repr(obj: object) -> str:
             if isinstance(obj, str):
                 return f'"{obj}"'
             return str(obj)

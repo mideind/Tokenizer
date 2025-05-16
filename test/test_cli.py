@@ -23,8 +23,8 @@ def run_cli(c, m, args: list[str], standard_input: str = "") -> str:
 
     # Feed the provided string into standard input
     old_stdin = sys.stdin
-    input = standard_input
-    m.setattr(sys, "stdin", StringIO(input))
+    input = StringIO(standard_input)
+    m.setattr(sys, "stdin", input)
 
     # Run the main function with the provided arguments
     try:
