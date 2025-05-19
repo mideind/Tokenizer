@@ -36,7 +36,7 @@
 from typing import Generic, Iterator, Optional, TypeVar
 
 from threading import Lock
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 import importlib.resources as importlib_resources
 
 from .definitions import BIN_Tuple
@@ -51,23 +51,30 @@ _T = TypeVar("_T")
 
 class OrderedSet(Generic[_T]):
     """Shim class to provide an ordered set API on top
-    of an OrderedDict. This is necessary to make abbreviation
+    of a dictionary. This is necessary to make abbreviation
     lookups predictable and repeatable, which they would not be
     if a standard Python set() was used."""
 
     def __init__(self) -> None:
-        self._dict: dict[_T, None] = OrderedDict()
+        # Insertions are ordered in Python 3.7+ dicts
+        self._dict: dict[_T, None] = {}
 
     def add(self, item: _T) -> None:
         """Add an item at the end of the ordered set"""
-        if item not in self._dict:
-            self._dict[item] = None
+        # For plain dicts in Python 3.7+, direct assignment works:
+        # * If item is new, it is added at the end.
+        # * If item already exists, its value is updated (to None again),
+        #   and the order remains unchanged.
+        self._dict[item] = None
 
     def __contains__(self, item: _T) -> bool:
         return item in self._dict
 
     def __iter__(self) -> Iterator[_T]:
         return self._dict.__iter__()
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}({list(self._dict.keys())})"
 
 
 class Abbreviations:
