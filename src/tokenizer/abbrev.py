@@ -332,7 +332,7 @@ class Abbreviations:
                     # Blank line: ignore
                     continue
                 if s[0] == "[":
-                    # Section header (we are expecting [abbreviations]/[not_abbreviations])
+                    # Section header (we expect [abbreviations]/[not_abbreviations])
                     if s not in {"[abbreviations]", "[not_abbreviations]"}:
                         raise ConfigError("Wrong section header")
                     section = s

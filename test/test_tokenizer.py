@@ -2575,15 +2575,3 @@ def test_one_sent_per_line() -> None:
         Tok(kind=11002, txt=None, val=None),
     ]
     assert toklist == correct
-
-
-if __name__ == "__main__":
-    test_single_tokens()
-    test_sentences()
-    test_correct_spaces()
-    test_correction()
-    test_abbrev()
-    test_overlap()
-    test_split_sentences()
-    test_normalization()
-    test_html_escapes()
