@@ -899,9 +899,9 @@ Changelog
   ``TOK.MEASUREMENT``.
 
 MIT License
----------
+-----------
 
-Copyright (C) 2016-2025 Miðeind ehf.
+Copyright (C) 2016-2025 `Miðeind ehf. <https://mideind.is>`_
 Original author: Vilhjálmur Þorsteinsson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
