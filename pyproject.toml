@@ -31,7 +31,8 @@ classifiers = [
 requires-python = ">=3.9"
 
 [project.urls]
-Repository = "https://github.com/mideind/Tokenizer"
+repository = "https://github.com/mideind/Tokenizer"
+homepage = "https://mideind.is"
 
 [project.optional-dependencies]
 # dev dependencies

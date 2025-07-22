@@ -1,37 +1,37 @@
 #!/usr/bin/env python
 """
 
-    Tokenizer for Icelandic text
+Tokenizer for Icelandic text
 
-    Copyright (C) 2016-2025 Miðeind ehf.
-    Original author: Vilhjálmur Þorsteinsson
+Copyright (C) 2016-2025 Miðeind ehf.
+Original author: Vilhjálmur Þorsteinsson
 
-    This software is licensed under the MIT License:
+This software is licensed under the MIT License:
 
-        Permission is hereby granted, free of charge, to any person
-        obtaining a copy of this software and associated documentation
-        files (the "Software"), to deal in the Software without restriction,
-        including without limitation the rights to use, copy, modify, merge,
-        publish, distribute, sublicense, and/or sell copies of the Software,
-        and to permit persons to whom the Software is furnished to do so,
-        subject to the following conditions:
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell copies of the Software,
+    and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions:
 
-        The above copyright notice and this permission notice shall be
-        included in all copies or substantial portions of the Software.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-    This is an executable program wrapper (main module) for the Tokenizer
-    package. It can be used to invoke the Tokenizer from the command line,
-    or via fork() or exec(), with the command 'tokenize'. The main() function
-    of this module is registered as a console_script entry point in setup.py.
+This is an executable program wrapper (main module) for the Tokenizer
+package. It can be used to invoke the Tokenizer from the command line,
+or via fork() or exec(), with the command 'tokenize'. The main() function
+of this module is registered as a console_script entry point in setup.py.
 
 """
 
@@ -284,7 +284,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: dict[str, Union[str, list[int]]] = { "k": TOK.descr[t.kind] }
+            d: dict[str, Union[str, list[int]]] = {"k": TOK.descr[t.kind]}
             if t.txt is not None:
                 d["t"] = t.txt
             v = val(t)
