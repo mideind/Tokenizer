@@ -61,9 +61,6 @@ lint.ignore = [
     "E731", # 'E731: Do not assign a lambda expression, use a def'
 ]
 
-[tool.black]
-line-length = 88
-
 [tool.isort]
 # This forces these imports to placed at the top
 known_future_library = ["typing"]

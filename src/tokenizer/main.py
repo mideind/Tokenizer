@@ -31,7 +31,7 @@ This software is licensed under the MIT License:
 This is an executable program wrapper (main module) for the Tokenizer
 package. It can be used to invoke the Tokenizer from the command line,
 or via fork() or exec(), with the command 'tokenize'. The main() function
-of this module is registered as a console_script entry point in setup.py.
+of this module is registered as a CLI command in pyproject.toml.
 
 """
 
@@ -47,9 +47,6 @@ from .tokenizer import TOK, Tok, tokenize
 from . import __version__ as tokenizer_version
 
 
-ReadFile = argparse.FileType("r", encoding="utf-8")
-WriteFile = argparse.FileType("w", encoding="utf-8")
-
 # Define the command line arguments
 
 parser = argparse.ArgumentParser(description="Tokenizes Icelandic text")
@@ -57,7 +54,7 @@ parser = argparse.ArgumentParser(description="Tokenizes Icelandic text")
 parser.add_argument(
     "infile",
     nargs="?",
-    type=ReadFile,
+    type=argparse.FileType("r", encoding="utf-8"),
     default=sys.stdin,
     help="UTF-8 text file to tokenize",
 )
@@ -65,7 +62,7 @@ parser.add_argument(
 parser.add_argument(
     "outfile",
     nargs="?",
-    type=WriteFile,
+    type=argparse.FileType("w", encoding="utf-8"),
     default=sys.stdout,
     help="UTF-8 output text file",
 )

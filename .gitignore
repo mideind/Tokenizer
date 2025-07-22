@@ -125,7 +125,6 @@ mypy.ini
 .*.swp
 
 .DS_Store
-.claude
 
 # Sveinbjörn's temp files
 test.py
