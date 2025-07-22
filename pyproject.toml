@@ -46,13 +46,7 @@ tokenize = "tokenizer.main:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-where = ["src"]
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    # Ignore deprecation warnings in libraries, their problem not ours
-    # "ignore::DeprecationWarning",
-]
+where = ["src/tokenizer/*.conf"]
 
 [tool.ruff]
 line-length = 88

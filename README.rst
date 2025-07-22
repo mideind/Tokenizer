@@ -27,7 +27,7 @@ Tokenizer is an independent spinoff from the `Greynir project <https://greynir.i
 The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirEngine>`_
 uses Tokenizer on its input.
 
-Tokenizer is licensed under the *MIT* license.
+Tokenizer is licensed under the MIT license.
 
 
 Deep vs. shallow tokenization
