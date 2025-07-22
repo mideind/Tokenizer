@@ -1,9 +1,9 @@
-# type: ignore
-# ruff: noqa: E501 # Allow long lines in test files
 """
 Test the command line interface (CLI) of the tokenizer.
 Copyright (C) 2025 Miðeind ehf.
 """
+# type: ignore
+# ruff: noqa: E501 # Allow long lines in test files
 
 from io import StringIO
 import sys
@@ -26,9 +26,11 @@ def run_cli(c, m, args: list[str], standard_input: str = "") -> str:
     m.setattr(sys, "stdin", input)
 
     # Run the main function with the provided arguments
+    # We patch sys.argv to simulate command line arguments
     try:
         with patch.object(sys, "argv", [CLT_NAME] + args):
             main()
+    # Capture the command line script exiting
     except SystemExit as e:
         assert e.code == 0, f"Expected exit code 0 from CLT, got {e.code}"
 
@@ -38,13 +40,14 @@ def run_cli(c, m, args: list[str], standard_input: str = "") -> str:
     # Restore the original standard input
     m.setattr(sys, "stdin", old_stdin)
 
+    # Return the output string
     return output.out.strip()
 
 
 def test_cli(capsys, monkeypatch):
     """Test the command line interface (CLI) of the tokenizer."""
-    c = capsys
-    m = monkeypatch
+    c = capsys  # Capture output
+    m = monkeypatch  # Monkeypatch for testing
 
     # Version and help
     assert run_cli(c, m, ["--version"]).endswith(tokenizer_version)
