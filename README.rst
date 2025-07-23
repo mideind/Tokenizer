@@ -27,7 +27,7 @@ Tokenizer is an independent spinoff from the `Greynir project <https://greynir.i
 The `Greynir natural language parser for Icelandic <https://github.com/mideind/GreynirEngine>`_
 uses Tokenizer on its input.
 
-Tokenizer is licensed under the *MIT* license.
+Tokenizer is licensed under the MIT license.
 
 
 Deep vs. shallow tokenization
@@ -808,6 +808,7 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
+* Version 3.4.6: *
 * Version 3.4.5: Compatibility with Python 3.13. Now requires Python 3.9 or later.
 * Version 3.4.4: Better handling of abbreviations
 * Version 3.4.3: Various minor fixes. Now requires Python 3.8 or later.
@@ -898,3 +899,26 @@ Changelog
 * Version 1.0.4: Added ``TOK.DATEABS``, ``TOK.TIMESTAMPABS``,
   ``TOK.MEASUREMENT``.
 
+MIT License
+-----------
+
+Copyright (C) 2016-2025 `Miðeind ehf. <https://mideind.is>`_
+Original author: Vilhjálmur Þorsteinsson
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

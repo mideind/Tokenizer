@@ -1,40 +1,40 @@
 """
 
-    Tokenizer for Icelandic text
+Tokenizer for Icelandic text
 
-    Copyright (C) 2016-2025 Miðeind ehf.
-    Original author: Vilhjálmur Þorsteinsson
+Copyright (C) 2016-2025 Miðeind ehf.
+Original author: Vilhjálmur Þorsteinsson
 
-    This software is licensed under the MIT License:
+This software is licensed under the MIT License:
 
-        Permission is hereby granted, free of charge, to any person
-        obtaining a copy of this software and associated documentation
-        files (the "Software"), to deal in the Software without restriction,
-        including without limitation the rights to use, copy, modify, merge,
-        publish, distribute, sublicense, and/or sell copies of the Software,
-        and to permit persons to whom the Software is furnished to do so,
-        subject to the following conditions:
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell copies of the Software,
+    and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions:
 
-        The above copyright notice and this permission notice shall be
-        included in all copies or substantial portions of the Software.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-    The function tokenize() consumes a text string and
-    returns a generator of tokens. Each token is a
-    named tuple, having the form (kind, txt, val),
-    where kind is one of the constants specified in the
-    TOK class, txt is the original source text,
-    and val contains auxiliary information
-    depending on the token type (such as the meaning of
-    an abbreviation, or the day, month and year for dates).
+The function tokenize() consumes a text string and
+returns a generator of tokens. Each token is a
+named tuple, having the form (kind, txt, val),
+where kind is one of the constants specified in the
+TOK class, txt is the original source text,
+and val contains auxiliary information
+depending on the token type (such as the meaning of
+an abbreviation, or the day, month and year for dates).
 
 """
 
@@ -59,7 +59,7 @@ import unicodedata  # type: ignore
 from collections import deque
 
 from .abbrev import Abbreviations
-from .definitions import *   # noqa: F403
+from .definitions import *  # noqa: F403
 
 _T = TypeVar("_T", bound="Tok")
 
@@ -3167,9 +3167,7 @@ RE_SPLIT_STR = (
     # The following regex catches degree characters, i.e. °C, °F
     r"|(°[CF])"
     # Finally, space and punctuation
-    r"|([~\s"
-    + "".join("\\" + c for c in PUNCTUATION)
-    + r"])"
+    r"|([~\s" + "".join("\\" + c for c in PUNCTUATION) + r"])"
 )
 RE_SPLIT = re.compile(RE_SPLIT_STR)
 

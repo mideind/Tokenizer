@@ -1,6 +1,6 @@
 [project]
 name = "tokenizer"
-version = "3.4.5"
+version = "3.4.6"
 description = "A tokenizer for Icelandic text"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.rst", content-type = "text/x-rst" }
@@ -21,6 +21,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: Implementation :: CPython",
     "Programming Language :: Python :: Implementation :: PyPy",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -30,7 +31,8 @@ classifiers = [
 requires-python = ">=3.9"
 
 [project.urls]
-Repository = "https://github.com/mideind/Tokenizer"
+repository = "https://github.com/mideind/Tokenizer"
+homepage = "https://mideind.is"
 
 [project.optional-dependencies]
 # dev dependencies
@@ -46,13 +48,7 @@ tokenize = "tokenizer.main:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-where = ["src"]
-
-[tool.pytest.ini_options]
-filterwarnings = [
-    # Ignore deprecation warnings in libraries, their problem not ours
-    # "ignore::DeprecationWarning",
-]
+include = ["src/tokenizer/*.conf"]
 
 [tool.ruff]
 line-length = 88
@@ -64,9 +60,6 @@ lint.ignore = [
     "F405", # 'F405: Name may be undefined, or defined from star imports: typing'
     "E731", # 'E731: Do not assign a lambda expression, use a def'
 ]
-
-[tool.black]
-line-length = 88
 
 [tool.isort]
 # This forces these imports to placed at the top
