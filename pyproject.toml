@@ -1,6 +1,6 @@
 [project]
 name = "tokenizer"
-version = "3.4.6"
+version = "3.5.0"
 description = "A tokenizer for Icelandic text"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 readme = { file = "README.rst", content-type = "text/x-rst" }

@@ -127,5 +127,6 @@ mypy.ini
 
 .DS_Store
 
-# Sveinbjörn's temp files
+# Temp files
 test.py
+*.txt
