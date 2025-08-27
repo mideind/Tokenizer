@@ -6,7 +6,7 @@ import argparse
 from tokenizer import tokenize
 
 
-def run_tok(file_path):
+def run_tok(file_path: str) -> None:
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             deque(tokenize(f), maxlen=0)
@@ -14,7 +14,7 @@ def run_tok(file_path):
         print(f"Error: File '{file_path}' not found.")
         return
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Tokenize a file and measure execution time.")
     parser.add_argument("file", nargs="?", default="out1mb.txt", help="Path to the input file (default: out1mb.txt)")
     args = parser.parse_args()
