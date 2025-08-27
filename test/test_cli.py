@@ -2,12 +2,13 @@
 Test the command line interface (CLI) of the tokenizer.
 Copyright (C) 2025 Miðeind ehf.
 """
-# type: ignore
 # ruff: noqa: E501 # Allow long lines in test files
 
 from io import StringIO
 import sys
 from unittest.mock import patch
+
+from pytest import CaptureFixture, MonkeyPatch
 
 from tokenizer.main import main
 from tokenizer import __version__ as tokenizer_version
@@ -16,7 +17,7 @@ from tokenizer import __version__ as tokenizer_version
 CLT_NAME = "tokenize"
 
 
-def run_cli(c, m, args: list[str], standard_input: str = "") -> str:
+def run_cli(c: CaptureFixture[str], m: MonkeyPatch, args: list[str], standard_input: str = "") -> str:
     """Run the command line interface (CLI) main function with
     the given arguments and standard input."""
 
@@ -44,7 +45,7 @@ def run_cli(c, m, args: list[str], standard_input: str = "") -> str:
     return output.out.strip()
 
 
-def test_cli(capsys, monkeypatch):
+def test_cli(capsys: CaptureFixture[str], monkeypatch: MonkeyPatch) -> None:
     """Test the command line interface (CLI) of the tokenizer."""
     c = capsys  # Capture output
     m = monkeypatch  # Monkeypatch for testing

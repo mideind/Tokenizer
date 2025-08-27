@@ -33,7 +33,7 @@ resource library) as this Python source file.
 
 """
 
-from typing import Generic, Iterator, Optional, TypeVar
+from typing import Dict, Generic, Iterator, List, Optional, Set, TypeVar
 
 from threading import Lock
 from collections import defaultdict
@@ -57,7 +57,7 @@ class OrderedSet(Generic[_T]):
 
     def __init__(self) -> None:
         # Insertions are ordered in Python 3.7+ dicts
-        self._dict: dict[_T, None] = {}
+        self._dict: Dict[_T, None] = {}
 
     def add(self, item: _T) -> None:
         """Add an item at the end of the ordered set"""
@@ -82,29 +82,29 @@ class Abbreviations:
     initialized from the config file"""
 
     # Dictionary of abbreviations and their meanings
-    DICT: dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    DICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # Wrong versions of abbreviations
-    WRONGDICT: dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    WRONGDICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
     # All abbreviation meanings
-    MEANINGS: set[str] = set()
+    MEANINGS: Set[str] = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
-    SINGLES: set[str] = set()
+    SINGLES: Set[str] = set()
     # Set of abbreviations without periods, e.g. "td", "osfrv"
-    WRONGSINGLES: set[str] = set()
+    WRONGSINGLES: Set[str] = set()
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
-    FINISHERS: set[str] = set()
+    FINISHERS: Set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences,
     # marked with an exclamation mark in the config file
-    NOT_FINISHERS: set[str] = set()
+    NOT_FINISHERS: Set[str] = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
-    NAME_FINISHERS: set[str] = set()
+    NAME_FINISHERS: Set[str] = set()
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS: dict[str, list[str]] = defaultdict(list)
+    WRONGDOTS: Dict[str, List[str]] = defaultdict(list)
     # Word forms that should never be interpreted as abbreviations
-    NOT_ABBREVIATIONS: set[str] = set()
+    NOT_ABBREVIATIONS: Set[str] = set()
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
@@ -215,7 +215,7 @@ class Abbreviations:
                 i1 = indices[0]
                 i2 = indices[1]
                 i3 = indices[2]
-                wabbrevs: list[str] = []
+                wabbrevs: List[str] = []
                 # 1 and 2 removed
                 wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i2] + abbrev[i2 + 1 :])
                 # 1 and 3 removed

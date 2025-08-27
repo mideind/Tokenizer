@@ -35,21 +35,23 @@ from typing import (
     Sequence,
     Optional,
     NamedTuple,
+    Tuple,
+    List,
     cast,
 )
 
 import re
 
 
-BeginTuple = tuple[int, Optional[int]]
-PunctuationTuple = tuple[int, str]
-NumberTuple = tuple[float, Optional[list[str]], Optional[list[str]]]
-DateTimeTuple = tuple[int, int, int]
-MeasurementTuple = tuple[str, float]
-TimeStampTuple = tuple[int, int, int, int, int, int]
-AmountTuple = tuple[float, str, Optional[list[str]], Optional[list[str]]]
-TelnoTuple = tuple[str, str]
-CurrencyTuple = tuple[str, Optional[list[str]], Optional[list[str]]]
+BeginTuple = Tuple[int, Optional[int]]
+PunctuationTuple = Tuple[int, str]
+NumberTuple = Tuple[float, Optional[List[str]], Optional[List[str]]]
+DateTimeTuple = Tuple[int, int, int]
+MeasurementTuple = Tuple[str, float]
+TimeStampTuple = Tuple[int, int, int, int, int, int]
+AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
+TelnoTuple = Tuple[str, str]
+CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
 
 
 class BIN_Tuple(NamedTuple):
@@ -100,7 +102,7 @@ ZEROWIDTH_SPACE = chr(8203)
 ZEROWIDTH_NBSP = chr(65279)
 
 # Preprocessing of unicode characters before tokenization
-UNICODE_REPLACEMENTS = {
+UNICODE_REPLACEMENTS: Mapping[str, str] = {
     # Translations of separate umlauts and accents to single glyphs.
     # The strings to the left in each tuple are two Unicode code
     # points: vowel + COMBINING ACUTE ACCENT (chr(769)) or
@@ -228,7 +230,7 @@ DIGITS_PREFIX = frozenset([d for d in "0123456789"])
 SIGN_PREFIX = frozenset(("+", "-"))
 
 # Month names and numbers
-MONTHS = {
+MONTHS: Mapping[str, int] = {
     "janúar": 1,
     "janúars": 1,
     "febrúar": 2,
@@ -418,7 +420,7 @@ CURRENCY_ABBREV = frozenset(
 )
 
 # Map symbols to currency abbreviations
-CURRENCY_SYMBOLS = {
+CURRENCY_SYMBOLS: Mapping[str, str] = {
     "$": "USD",
     "€": "EUR",
     "£": "GBP",
@@ -430,7 +432,7 @@ CURRENCY_SYMBOLS = {
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS: dict[str, tuple[str, Union[float, Callable[[float], float]]]] = {
+SI_UNITS: Mapping[str, tuple[str, Union[float, Callable[[float], float]]]] = {
     # Distance
     "m": ("m", 1.0),
     "mm": ("m", 1.0e-3),
@@ -526,7 +528,7 @@ SI_UNITS: dict[str, tuple[str, Union[float, Callable[[float], float]]]] = {
     # "km/klst.": ("m/s", 1000.0/(60*60)),
 }
 
-DIRECTIONS = {
+DIRECTIONS: Mapping[str, str] = {
     "N": "Norður",
 }
 
@@ -590,7 +592,7 @@ KLUDGY_ORDINALS_MODIFY = 1
 KLUDGY_ORDINALS_TRANSLATE = 2
 
 # Incorrectly written ('kludgy') ordinals
-ORDINAL_ERRORS = {
+ORDINAL_ERRORS: Mapping[str, str] = {
     "1sti": "fyrsti",
     "1sta": "fyrsta",
     "1stu": "fyrstu",
@@ -611,7 +613,7 @@ ORDINAL_ERRORS = {
 }
 
 # Translations of kludgy ordinal words into numbers
-ORDINAL_NUMBERS = {
+ORDINAL_NUMBERS: Mapping[str, int] = {
     "1sti": 1,
     "1sta": 1,
     "1stu": 1,
@@ -652,7 +654,7 @@ def roman_to_int(s: str) -> int:
     return result
 
 
-NUMBER_ABBREV = {
+NUMBER_ABBREV: Mapping[str, int] = {
     "þús.": 1000,
     "millj.": 10**6,
     "mljó.": 10**6,
@@ -664,7 +666,7 @@ NUMBER_ABBREV = {
 }
 
 # Recognize words for percentages
-PERCENTAGES = {
+PERCENTAGES: Mapping[str, int] = {
     "prósent": 1,
     "prósenta": 1,
     "prósenti": 1,
@@ -684,7 +686,7 @@ PERCENTAGES = {
 
 # Amount abbreviations including 'kr' for the ISK
 # Corresponding abbreviations are found in Abbrev.conf
-AMOUNT_ABBREV = {
+AMOUNT_ABBREV: Mapping[str, Union[int, float]] = {
     "kr.": 1,
     "kr": 1,
     "krónur": 1,
@@ -1193,7 +1195,7 @@ def valid_ssn(kt: str) -> bool:
 # HTML escaped characters/ligatures, e.g. '&aacute;' meaning 'á'.
 # The following is a subset of HTML escape codes, roughly selected
 # by analyzing the content of the Icelandic Gigaword Corpus (Risamálheild).
-HTML_ESCAPES = {
+HTML_ESCAPES: Mapping[str, str] = {
     # Icelandic letters
     "aacute": "á",
     "eth": "ð",

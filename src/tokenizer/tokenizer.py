@@ -44,9 +44,11 @@ from typing import (
     Deque,
     Iterable,
     Iterator,
+    List,
     Mapping,
     Match,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -181,7 +183,7 @@ class Tok:
             return []
         return cast(PersonNameList, self.val) or []
 
-    def split(self, pos: int) -> tuple["Tok", "Tok"]:
+    def split(self, pos: int) -> Tuple["Tok", "Tok"]:
         """Split this token into two at 'pos'.
         The first token returned will have 'pos'
         characters and the second one will have the rest.
@@ -224,7 +226,7 @@ class Tok:
 
         return ltk, rtk
 
-    def substitute(self, span: tuple[int, int], new: str) -> None:
+    def substitute(self, span: Tuple[int, int], new: str) -> None:
         """Substitute a span with a single or empty character 'new'."""
         self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
         if self.origin_spans is not None:
@@ -233,7 +235,7 @@ class Tok:
                 self.origin_spans[: span[0] + len(new)] + self.origin_spans[span[1] :]
             )
 
-    def substitute_longer(self, span: tuple[int, int], new: str) -> None:
+    def substitute_longer(self, span: Tuple[int, int], new: str) -> None:
         """Substitute a span with a potentially longer string"""
 
         # This tracks origin differently from the regular
@@ -310,7 +312,7 @@ class Tok:
 
         self_origin_spans = self.origin_spans or []
         other_origin_spans = other.origin_spans or []
-        separator_origin_spans: list[int] = (
+        separator_origin_spans: List[int] = (
             [len(self_original)] * len(separator) if len(other_origin_spans) > 0 else []
         )
         new_origin_spans = (
@@ -322,7 +324,7 @@ class Tok:
         return Tok(new_kind, new_txt, new_val, new_original, new_origin_spans)
 
     @property
-    def as_tuple(self) -> tuple[Any, ...]:
+    def as_tuple(self) -> Tuple[Any, ...]:
         """Return the contents of this token as a generic tuple,
         suitable e.g. for serialization"""
         return (self.kind, self.txt, self.val)
@@ -991,7 +993,7 @@ def is_valid_date(y: int, m: int, d: int) -> bool:
     return False
 
 
-def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
+def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
     """Parse a raw token starting with a digit"""
     w = tok.txt
     s: Optional[Match[str]] = re.match(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)", w)
@@ -1334,7 +1336,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
     )
 
 
-def html_escape(match: Match[str]) -> tuple[tuple[int, int], str]:
+def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
     """Regex substitution function for HTML escape codes"""
     g = match.group(4)
     if g is not None:
@@ -1397,7 +1399,7 @@ def generate_rough_tokens_from_tok(tok: Tok) -> Iterator[Tok]:
     # This function further splits those tokens into multiple tokens.
     # Rough tokens are tokens that are separated by white space, i.e. the regex (\\s*).
 
-    def shift_span(span: tuple[int, int], pos: int) -> tuple[int, int]:
+    def shift_span(span: Tuple[int, int], pos: int) -> Tuple[int, int]:
         """Shift a span by a given amount"""
         return (span[SPAN_START] + pos, span[SPAN_END] + pos)
 
@@ -2970,7 +2972,7 @@ def parse_phrases_2(
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
-            tq: list[Tok] = []
+            tq: List[Tok] = []
             while token.kind == TOK.WORD and next_token.punctuation == COMPOSITE_HYPHEN:
                 # Accumulate the prefix in tq
                 tq.append(token)
@@ -3076,7 +3078,7 @@ def split_into_sentences(
         to_text = lambda t: t.original or t.txt
     else:
         to_text = lambda t: t.txt
-    curr_sent: list[str] = []
+    curr_sent: List[str] = []
     for t in tokenize_without_annotation(text_or_gen, **options):
         if t.kind in TOK.END:
             # End of sentence/paragraph
@@ -3121,9 +3123,9 @@ def paragraphs(tokens: Iterable[Tok]) -> Iterator[list[tuple[int, list[Tok]]]]:
         # A sentence with only punctuation is not valid
         return any(t[0] != TOK.PUNCTUATION for t in sent)
 
-    sent: list[Tok] = []  # Current sentence
+    sent: List[Tok] = []  # Current sentence
     sent_begin = 0
-    current_p: list[tuple[int, list[Tok]]] = []  # Current paragraph
+    current_p: List[Tuple[int, List[Tok]]] = []  # Current paragraph
 
     for ix, t in enumerate(tokens):
         t0 = t[0]
@@ -3177,7 +3179,7 @@ def correct_spaces(s: str) -> str:
     with correct spacing between tokens.
     NOTE that this function uses a quick-and-dirty approach
     which may not handle all edge cases!"""
-    r: list[str] = []
+    r: List[str] = []
     last = TP_NONE
     double_quote_count = 0
     for w in RE_SPLIT.split(s):
@@ -3250,7 +3252,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
     to a correctly spaced string. If normalize is True,
     punctuation is normalized before assembling the string."""
     to_text: Callable[[Tok], str] = normalized_text if normalize else lambda t: t.txt
-    r: list[str] = []
+    r: List[str] = []
     last = TP_NONE
     double_quote_count = 0
     for t in tokens:
@@ -3284,7 +3286,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
 
 def calculate_indexes(
     tokens: Iterable[Tok], last_is_end: bool = False
-) -> tuple[list[int], list[int]]:
+) -> Tuple[List[int], List[int]]:
     """Calculate character and byte indexes for a token stream.
     The indexes are the start positions of each token in the original
     text that was tokenized.
