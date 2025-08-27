@@ -29,6 +29,22 @@ uses Tokenizer on its input.
 
 Tokenizer is licensed under the MIT license.
 
+Performance
+-----------
+
+Tokenization of 1 MB of a wide selection of texts from the Icelandic Gigaword Corpus
+using a 64-bit 2.6 GHz Intel Core i9.
+
++---------------+--------------+
+|               |  Time (sec)  |
++===============+==============+
+| CPython 3.12  |     25.27    |
++---------------+--------------+
+| PyPy 3.11     |      8.08    |
++---------------+--------------+
+
+Running tokenization with PyPy is about 3x faster than with CPython.
+
 
 Deep vs. shallow tokenization
 -----------------------------
