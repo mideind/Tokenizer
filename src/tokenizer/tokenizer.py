@@ -1352,15 +1352,35 @@ def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
     return match.span(), chr(int(g[1:]))
 
 
-def unicode_replacement(token: Tok) -> Tok:
-    """Replace some composite glyphs with single code points"""
+def composite_replacement(token: Tok) -> Tok:
+    """Replace composite glyphs with single code points"""
     total_reduction = 0
-    for m in UNICODE_REGEX.finditer(token.txt):
-        span, new_letter = m.span(), UNICODE_REPLACEMENTS[m.group(0)]
+    for m in COMPOSITE_REGEX.finditer(token.txt):
+        span, new_letter = m.span(), COMPOSITE_REPLACEMENTS[m.group(0)]
         token.substitute(
             (span[0] - total_reduction, span[1] - total_reduction), new_letter
         )
         total_reduction += span[1] - span[0] - len(new_letter)
+    return token
+
+
+def zerowidth_replacement(token: Tok) -> Tok:
+    """Remove zero-width characters (always applied)"""
+    total_reduction = 0
+    for m in ZEROWIDTH_REGEX.finditer(token.txt):
+        span, new_letter = m.span(), ZEROWIDTH_CHARACTERS[m.group(0)]
+        token.substitute(
+            (span[0] - total_reduction, span[1] - total_reduction), new_letter
+        )
+        total_reduction += span[1] - span[0] - len(new_letter)
+    return token
+
+
+def unicode_replacement(token: Tok) -> Tok:
+    """Replace some composite glyphs with single code points (backward compatibility)"""
+    # This function maintains backward compatibility by doing both replacements
+    token = composite_replacement(token)
+    token = zerowidth_replacement(token)
     return token
 
 
@@ -1504,9 +1524,11 @@ def generate_raw_tokens(
                         # Postpone the yield until after the raw token loop
                         paragraph_end += 1
                 for tok in generate_rough_tokens_from_txt(text):
+                    # Always remove zero-width characters
+                    tok = zerowidth_replacement(tok)
                     if replace_composite_glyphs:
                         # Replace composite glyphs with single code points
-                        tok = unicode_replacement(tok)
+                        tok = composite_replacement(tok)
                     if replace_html_escapes:
                         # Replace HTML escapes: '&aacute;' -> 'á'
                         tok = html_replacement(tok)

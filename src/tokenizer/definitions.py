@@ -102,7 +102,8 @@ ZEROWIDTH_SPACE = chr(8203)
 ZEROWIDTH_NBSP = chr(65279)
 
 # Preprocessing of unicode characters before tokenization
-UNICODE_REPLACEMENTS: Mapping[str, str] = {
+# Composite glyph replacements - only combining accents and umlauts
+COMPOSITE_REPLACEMENTS: Mapping[str, str] = {
     # Translations of separate umlauts and accents to single glyphs.
     # The strings to the left in each tuple are two Unicode code
     # points: vowel + COMBINING ACUTE ACCENT (chr(769)) or
@@ -127,11 +128,29 @@ UNICODE_REPLACEMENTS: Mapping[str, str] = {
     "U" + UMLAUT: "Ü",
     "Y" + ACCENT: "Ý",
     "O" + UMLAUT: "Ö",
-    # Also remove these unwanted characters
+}
+
+# Zero-width characters that should always be removed
+ZEROWIDTH_CHARACTERS: Mapping[str, str] = {
     SOFT_HYPHEN: "",
     ZEROWIDTH_SPACE: "",
     ZEROWIDTH_NBSP: "",
 }
+
+# Combined dictionary for backward compatibility
+UNICODE_REPLACEMENTS: Mapping[str, str] = {**COMPOSITE_REPLACEMENTS, **ZEROWIDTH_CHARACTERS}
+
+# Regex for composite glyphs only
+COMPOSITE_REGEX = re.compile(
+    r"|".join(map(_escape, COMPOSITE_REPLACEMENTS.keys())), re.UNICODE
+)
+
+# Regex for zero-width characters only
+ZEROWIDTH_REGEX = re.compile(
+    r"|".join(map(_escape, ZEROWIDTH_CHARACTERS.keys())), re.UNICODE
+)
+
+# Combined regex for backward compatibility
 UNICODE_REGEX = re.compile(
     r"|".join(map(_escape, UNICODE_REPLACEMENTS.keys())), re.UNICODE
 )
