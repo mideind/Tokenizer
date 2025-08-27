@@ -35,7 +35,19 @@ of this module is registered as a CLI command in pyproject.toml.
 
 """
 
-from typing import Dict, Iterable, List, Optional, TextIO, Iterator, Callable, Any, Tuple, Union, cast
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    TextIO,
+    Iterator,
+    Callable,
+    Any,
+    Tuple,
+    Union,
+    cast,
+)
 
 import sys
 import argparse
