@@ -53,31 +53,25 @@ def test_composite_glyphs_default():
 
 
 def test_composite_glyphs_keep():
-    """Test that composite glyphs are kept separate when replace_composite_glyphs=False."""
+    """Test that composite glyphs are kept as single words when replace_composite_glyphs=False."""
     # Test combining acute accent (U+0301)
     text = "Ha\u0301kon"  # "a" + combining acute + "kon"
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     # Filter out sentence boundary tokens
-    content_tokens = [t for t in tokens if t.txt]
+    word_tokens = [t for t in tokens if t.kind == TOK.WORD]
     
-    assert len(content_tokens) == 3
-    assert content_tokens[0].txt == "Ha"
-    assert content_tokens[0].kind == TOK.WORD
-    assert content_tokens[1].txt == "\u0301"  # Combining acute accent
-    assert content_tokens[1].kind == TOK.UNKNOWN
-    assert content_tokens[2].txt == "kon"
-    assert content_tokens[2].kind == TOK.WORD
+    assert len(word_tokens) == 1
+    assert word_tokens[0].txt == "Ha\u0301kon"  # Original combining form preserved
+    assert word_tokens[0].kind == TOK.WORD
     
     # Test combining diaeresis (U+0308)
     text = "o\u0308"  # "o" + combining diaeresis
     tokens = list(tokenize(text, replace_composite_glyphs=False))
-    content_tokens = [t for t in tokens if t.txt]
+    word_tokens = [t for t in tokens if t.kind == TOK.WORD]
     
-    assert len(content_tokens) == 2
-    assert content_tokens[0].txt == "o"
-    assert content_tokens[0].kind == TOK.WORD
-    assert content_tokens[1].txt == "\u0308"  # Combining diaeresis
-    assert content_tokens[1].kind == TOK.UNKNOWN
+    assert len(word_tokens) == 1
+    assert word_tokens[0].txt == "o\u0308"  # Original combining form preserved
+    assert word_tokens[0].kind == TOK.WORD
 
 
 def test_multiple_composite_glyphs():
@@ -93,13 +87,9 @@ def test_multiple_composite_glyphs():
     
     # Test without replacement
     tokens = list(tokenize(text, replace_composite_glyphs=False))
-    content_tokens = [t for t in tokens if t.txt]
-    assert len(content_tokens) == 5
-    assert content_tokens[0].txt == "A"
-    assert content_tokens[1].txt == "\u0301"
-    assert content_tokens[2].txt == "gu"
-    assert content_tokens[3].txt == "\u0301"
-    assert content_tokens[4].txt == "st"
+    word_tokens = [t for t in tokens if t.kind == TOK.WORD]
+    assert len(word_tokens) == 1
+    assert word_tokens[0].txt == "A\u0301gu\u0301st"  # Original combining form preserved
 
 
 def test_icelandic_vowels_with_combining():
@@ -130,12 +120,10 @@ def test_icelandic_vowels_with_combining():
         
         # Test without replacement
         tokens = list(tokenize(combining_form, replace_composite_glyphs=False))
-        content_tokens = [t for t in tokens if t.txt]
-        assert len(content_tokens) == 2
-        # First token is the base character
-        assert content_tokens[0].txt == combining_form[0]
-        # Second token is the combining character
-        assert content_tokens[1].txt in ["\u0301", "\u0308"]
+        word_tokens = [t for t in tokens if t.kind == TOK.WORD]
+        assert len(word_tokens) == 1
+        # The word token should preserve the original combining form
+        assert word_tokens[0].txt == combining_form
 
 
 def test_sentence_splitting_with_composite():
@@ -150,8 +138,8 @@ def test_sentence_splitting_with_composite():
     # Test without replacement
     sentences = list(split_into_sentences(text, replace_composite_glyphs=False))
     assert len(sentences) == 1
-    # The combining characters are kept as separate tokens
-    expected = "A ́ gu ́ st er ma ́ nu ̈ dur ."
+    # The combining characters are kept as part of their words
+    expected = "A\u0301gu\u0301st er ma\u0301nu\u0308dur ."
     assert sentences[0] == expected
 
 
@@ -169,15 +157,11 @@ def test_mixed_text():
     
     # Test without replacement
     tokens = list(tokenize(text, replace_composite_glyphs=False))
-    content_tokens = [t for t in tokens if t.txt and t.kind in (TOK.WORD, TOK.UNKNOWN)]
-    assert len(content_tokens) == 7  # More tokens due to the way combining chars split
-    assert content_tokens[0].txt == "Þo"
-    assert content_tokens[1].txt == "\u0301"  # Combining acute accent
-    assert content_tokens[2].txt == "r"
-    assert content_tokens[3].txt == "og"
-    assert content_tokens[4].txt == "O"  # O as a separate token (matches abbreviation)
-    assert content_tokens[5].txt == "\u0308"  # Combining diaeresis
-    assert content_tokens[6].txt == "rn"
+    word_tokens = [t for t in tokens if t.kind == TOK.WORD]
+    assert len(word_tokens) == 3
+    assert word_tokens[0].txt == "Þo\u0301r"  # Original combining form preserved
+    assert word_tokens[1].txt == "og"
+    assert word_tokens[2].txt == "O\u0308rn"  # Original combining form preserved
 
 
 def test_zero_width_characters():
@@ -216,7 +200,6 @@ def test_original_preserved():
     
     # Without replacement
     tokens = list(tokenize(text, replace_composite_glyphs=False))
-    content_tokens = [t for t in tokens if t.txt]
-    assert content_tokens[0].original == "Ha"
-    assert content_tokens[1].original == "\u0301"
-    assert content_tokens[2].original == "kon"
+    word_tokens = [t for t in tokens if t.kind == TOK.WORD]
+    assert word_tokens[0].txt == "Ha\u0301kon"  # Original combining form preserved
+    assert word_tokens[0].original == "Ha\u0301kon"

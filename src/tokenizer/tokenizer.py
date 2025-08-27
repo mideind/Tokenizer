@@ -1600,11 +1600,15 @@ def could_be_end_of_sentence(
 
 
 class LetterParser:
-    """Parses a sequence of alphabetic characters
-    off the front of a raw token"""
+    """Parses a sequence of alphabetic characters off the front of a raw token.
+    Fast path for standard characters using isalpha()."""
 
     def __init__(self, rt: Tok) -> None:
         self.rt = rt
+        
+    def _is_letter(self, char: str) -> bool:
+        """Test if character is alphabetic - fast path."""
+        return char.isalpha()
 
     def parse(self) -> Iterable[Tok]:
         """Parse the raw token, yielding result tokens"""
@@ -1612,11 +1616,11 @@ class LetterParser:
         lw = len(rt.txt)
         i = 1
         while i < lw and (
-            rt.txt[i].isalpha()
+            self._is_letter(rt.txt[i])
             or (
                 rt.txt[i] in PUNCT_INSIDE_WORD
                 and i + 1 < lw
-                and rt.txt[i + 1].isalpha()
+                and self._is_letter(rt.txt[i + 1])
             )
         ):
             # We allow dots to occur inside words in the case of
@@ -1681,6 +1685,16 @@ class LetterParser:
             yield TOK.Punctuation(punct, normalized=COMPOSITE_HYPHEN)
 
         self.rt = rt
+
+
+class LetterParserComposite(LetterParser):
+    """Parses a sequence of alphabetic characters off the front of a raw token.
+    Handles combining characters when --keep_composite_glyphs is specified."""
+    
+    def _is_letter(self, char: str) -> bool:
+        """Test if character is alphabetic or a combining mark."""
+        cat = unicodedata.category(char)
+        return cat.startswith(('L', 'M'))
 
 
 class NumberParser:
@@ -1841,9 +1855,12 @@ class PunctuationParser:
 
 
 def parse_mixed(
-    rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool
+    rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool, replace_composite_glyphs: bool = True
 ) -> Iterable[Tok]:
     """Parse a mixed raw token string, from the token rt"""
+
+    # Select the appropriate letter parser class based on composite glyph handling
+    LetterParserClass = LetterParser if replace_composite_glyphs else LetterParserComposite
 
     # Initialize a singleton parser for punctuation
     pp = PunctuationParser()
@@ -1959,8 +1976,12 @@ def parse_mixed(
                 ate = True
 
         # Alphabetic characters
+        # Note: the initial character must be a proper letter,
+        # not a combining accent, for the letter parser to be applied.
+        # However, the letter parser allows subsequent characters to
+        # be combining accents.
         if rt.txt and rt.txt[0].isalpha():
-            lp = LetterParser(rt)
+            lp = LetterParserClass(rt)
             yield from lp.parse()
             rt = lp.rt
             ate = True
@@ -1981,6 +2002,16 @@ def parse_mixed(
             # Ensure that we eat everything, even unknown stuff
             unk, rt = rt.split(1)
             yield TOK.Unknown(unk)
+
+
+def is_word_with_composites(txt: str) -> bool:
+    """Return true if txt is an alphabetic word in the wider sense that
+    it can contain composite characters (combining accents, etc.). However,
+    the word must start with a proper alphabetic character, since combining
+    accents musth *follow* a letter - they can't *precede* it."""
+    return len(txt) > 1 and txt[0].isalpha() and all(
+        unicodedata.category(char).startswith(('L', 'M')) for char in txt[1:]
+    )
 
 
 def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok]:
@@ -2033,6 +2064,10 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
         rtxt = rt.txt
         if rtxt.isalpha() or rtxt in SI_UNITS:
             # Shortcut for most common case: pure word
+            yield TOK.Word(rt)
+            continue
+        elif not replace_composite_glyphs and is_word_with_composites(rtxt):
+            # This is a word with combining characters when --keep_composite_glyphs is specified
             yield TOK.Word(rt)
             continue
 
@@ -2094,7 +2129,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield TOK.Punctuation(punct, normalized="‚")
 
         # More complex case of mixed punctuation, letters and numbers
-        yield from parse_mixed(rt, handle_kludgy_ordinals, convert_numbers)
+        yield from parse_mixed(rt, handle_kludgy_ordinals, convert_numbers, replace_composite_glyphs)
 
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
