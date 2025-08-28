@@ -1,6 +1,10 @@
-# Tokenizer: A tokenizer for Icelandic text
-
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-3817/)
+![Release](https://shields.io/github/v/release/mideind/Tokenizer?display_name=tag)
+![PyPI](https://img.shields.io/pypi/v/tokenizer)
 [![tests](https://github.com/mideind/Tokenizer/workflows/tests/badge.svg)](https://github.com/mideind/Tokenizer)
+
+# Tokenizer: A tokenizer for Icelandic text
 
 ## Overview
 
