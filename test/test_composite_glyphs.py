@@ -39,36 +39,37 @@ def test_composite_glyphs_default():
     tokens = list(tokenize(text))
     # Filter out sentence boundary tokens
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
-    
+
     assert len(word_tokens) == 1
     assert word_tokens[0].txt == "Hákon"
-    
+
     # Test combining diaeresis (U+0308)
     text = "o\u0308"  # "o" + combining diaeresis = "ö"
     tokens = list(tokenize(text))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
-    
+
     assert len(word_tokens) == 1
     assert word_tokens[0].txt == "ö"
 
 
 def test_composite_glyphs_keep():
-    """Test that composite glyphs are kept as single words when replace_composite_glyphs=False."""
+    """Test that composite glyphs are kept as single words
+    when replace_composite_glyphs=False."""
     # Test combining acute accent (U+0301)
     text = "Ha\u0301kon"  # "a" + combining acute + "kon"
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     # Filter out sentence boundary tokens
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
-    
+
     assert len(word_tokens) == 1
     assert word_tokens[0].txt == "Ha\u0301kon"  # Original combining form preserved
     assert word_tokens[0].kind == TOK.WORD
-    
+
     # Test combining diaeresis (U+0308)
     text = "o\u0308"  # "o" + combining diaeresis
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
-    
+
     assert len(word_tokens) == 1
     assert word_tokens[0].txt == "o\u0308"  # Original combining form preserved
     assert word_tokens[0].kind == TOK.WORD
@@ -78,18 +79,20 @@ def test_multiple_composite_glyphs():
     """Test text with multiple composite glyphs."""
     # "Ágúst" with combining characters
     text = "A\u0301gu\u0301st"  # A + acute, u + acute
-    
+
     # Test with replacement (default)
     tokens = list(tokenize(text))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
     assert len(word_tokens) == 1
     assert word_tokens[0].txt == "Ágúst"
-    
+
     # Test without replacement
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
     assert len(word_tokens) == 1
-    assert word_tokens[0].txt == "A\u0301gu\u0301st"  # Original combining form preserved
+    assert (
+        word_tokens[0].txt == "A\u0301gu\u0301st"
+    )  # Original combining form preserved
 
 
 def test_icelandic_vowels_with_combining():
@@ -110,14 +113,14 @@ def test_icelandic_vowels_with_combining():
         ("Y\u0301", "Ý"),  # Y + acute (uppercase)
         ("O\u0308", "Ö"),  # O + umlaut (uppercase)
     ]
-    
+
     for combining_form, expected in test_cases:
         # Test with replacement (default)
         tokens = list(tokenize(combining_form))
         word_tokens = [t for t in tokens if t.kind == TOK.WORD]
         assert len(word_tokens) == 1
         assert word_tokens[0].txt == expected
-        
+
         # Test without replacement
         tokens = list(tokenize(combining_form, replace_composite_glyphs=False))
         word_tokens = [t for t in tokens if t.kind == TOK.WORD]
@@ -128,13 +131,14 @@ def test_icelandic_vowels_with_combining():
 
 def test_sentence_splitting_with_composite():
     """Test that sentence splitting works correctly with composite glyphs."""
-    text = "A\u0301gu\u0301st er ma\u0301nu\u0308dur."  # "Ágúst er mánüdur." (u + umlaut = ü, not ú)
-    
+    # "Ágúst er mánüdur." (u + umlaut = ü, not ú)
+    text = "A\u0301gu\u0301st er ma\u0301nu\u0308dur."
+
     # Test with replacement (default)
     sentences = list(split_into_sentences(text))
     assert len(sentences) == 1
     assert sentences[0] == "Ágúst er mánüdur ."  # u + umlaut becomes ü
-    
+
     # Test without replacement
     sentences = list(split_into_sentences(text, replace_composite_glyphs=False))
     assert len(sentences) == 1
@@ -146,7 +150,7 @@ def test_sentence_splitting_with_composite():
 def test_mixed_text():
     """Test text with both regular and composite characters."""
     text = "Þo\u0301r og O\u0308rn"  # "Þór og Örn"
-    
+
     # Test with replacement
     tokens = list(tokenize(text))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
@@ -154,7 +158,7 @@ def test_mixed_text():
     assert word_tokens[0].txt == "Þór"
     assert word_tokens[1].txt == "og"
     assert word_tokens[2].txt == "Örn"
-    
+
     # Test without replacement
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
@@ -167,10 +171,11 @@ def test_mixed_text():
 def test_zero_width_characters():
     """Test that zero-width characters are handled correctly."""
     # Test soft hyphen (U+00AD), zero-width space (U+200B), zero-width NBSP (U+FEFF)
-    text = "test\u00ADing zero\u200Bwidth BOM\uFEFFtest"
-    
-    # Zero-width characters should always be removed regardless of replace_composite_glyphs
-    
+    text = "test\u00ading zero\u200bwidth BOM\ufefftest"
+
+    # Zero-width characters should always be removed
+    # regardless of replace_composite_glyphs
+
     # With replace_composite_glyphs=True (default)
     tokens = list(tokenize(text))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
@@ -178,7 +183,7 @@ def test_zero_width_characters():
     assert word_tokens[0].txt == "testing"  # soft hyphen removed
     assert word_tokens[1].txt == "zerowidth"  # zero-width space removed
     assert word_tokens[2].txt == "BOMtest"  # zero-width NBSP removed
-    
+
     # With replace_composite_glyphs=False - zero-width chars should still be removed
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
@@ -191,13 +196,13 @@ def test_zero_width_characters():
 def test_original_preserved():
     """Test that original text is preserved in tokens."""
     text = "Ha\u0301kon"
-    
+
     # With replacement
     tokens = list(tokenize(text))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]
     assert word_tokens[0].txt == "Hákon"
     assert word_tokens[0].original == "Ha\u0301kon"
-    
+
     # Without replacement
     tokens = list(tokenize(text, replace_composite_glyphs=False))
     word_tokens = [t for t in tokens if t.kind == TOK.WORD]

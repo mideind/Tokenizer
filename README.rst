@@ -824,7 +824,8 @@ can be found in the file ``test/toktest_normal_gold_expected.txt``.
 Changelog
 ---------
 
-* Version 3.4.6: *
+* Version 3.5.1: Fixed bug in composite glyph handling
+* Version 3.5.0: Better handling of colon-separated timestamps and URI schemes, modernization, and more.
 * Version 3.4.5: Compatibility with Python 3.13. Now requires Python 3.9 or later.
 * Version 3.4.4: Better handling of abbreviations
 * Version 3.4.3: Various minor fixes. Now requires Python 3.8 or later.
