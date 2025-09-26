@@ -62,7 +62,7 @@ def test_cli(capsys: CaptureFixture[str], monkeypatch: MonkeyPatch) -> None:
 
     # JSON output
     expected_json_out = """
-{"k":"BEGIN SENT","t":""}
+{"k":"BEGIN SENT"}
 {"k":"WORD","t":"Þetta","o":"Þetta","s":[0,1,2,3,4]}
 {"k":"WORD","t":"var","o":" var","s":[1,2,3]}
 {"k":"DATEREL","t":"14. mars","v":[0,3,14],"o":" 14. mars","s":[1,2,3,4,5,6,7,8]}
@@ -71,7 +71,7 @@ def test_cli(capsys: CaptureFixture[str], monkeypatch: MonkeyPatch) -> None:
 {"k":"WORD","t":"manns","o":" manns","s":[1,2,3,4,5]}
 {"k":"WORD","t":"viðstaddir","o":" viðstaddir","s":[1,2,3,4,5,6,7,8,9,10]}
 {"k":"PUNCTUATION","t":".","v":".","o":".","s":[0]}
-{"k":"END SENT","t":""}
+{"k":"END SENT"}
 """
     r = run_cli(
         c, m, ["-", "-", "--json"], "Þetta var 14. mars og 11 manns viðstaddir."
@@ -141,7 +141,7 @@ def test_cli(capsys: CaptureFixture[str], monkeypatch: MonkeyPatch) -> None:
     # --coalesce_percent
     t = "Þetta var 70 prósent rétt hjá honum"
     expected_json_out = """
-{"k":"BEGIN SENT","t":""}
+{"k":"BEGIN SENT"}
 {"k":"WORD","t":"Þetta","o":"Þetta","s":[0,1,2,3,4]}
 {"k":"WORD","t":"var","o":" var","s":[1,2,3]}
 {"k":"NUMBER","t":"70","v":70,"o":" 70","s":[1,2]}
@@ -149,20 +149,20 @@ def test_cli(capsys: CaptureFixture[str], monkeypatch: MonkeyPatch) -> None:
 {"k":"WORD","t":"rétt","o":" rétt","s":[1,2,3,4]}
 {"k":"WORD","t":"hjá","o":" hjá","s":[1,2,3]}
 {"k":"WORD","t":"honum","o":" honum","s":[1,2,3,4,5]}
-{"k":"END SENT","t":""}
+{"k":"END SENT"}
 """
     r = run_cli(c, m, ["-", "-", "--json"], t)
     assert r.strip() == expected_json_out.strip()
 
     expected_json_out = """
-{"k":"BEGIN SENT","t":""}
+{"k":"BEGIN SENT"}
 {"k":"WORD","t":"Þetta","o":"Þetta","s":[0,1,2,3,4]}
 {"k":"WORD","t":"var","o":" var","s":[1,2,3]}
 {"k":"PERCENT","t":"70 prósent","v":70,"o":" 70 prósent","s":[1,2,3,4,5,6,7,8,9,10]}
 {"k":"WORD","t":"rétt","o":" rétt","s":[1,2,3,4]}
 {"k":"WORD","t":"hjá","o":" hjá","s":[1,2,3]}
 {"k":"WORD","t":"honum","o":" honum","s":[1,2,3,4,5]}
-{"k":"END SENT","t":""}
+{"k":"END SENT"}
 """
     t = "Þetta var 70 prósent rétt hjá honum"
     r = run_cli(c, m, ["-", "-", "--json", "--coalesce_percent"], t)

@@ -9,7 +9,7 @@ Tokenizer is a Python (>= 3.9) library for tokenizing Icelandic text. It convert
 ## Core Architecture
 
 - **`src/tokenizer/tokenizer.py`**: Main tokenization engine containing the `tokenize()` function and core logic
-- **`src/tokenizer/definitions.py`**: Token type constants, data structures, and type definitions (TOK class, tuple types)  
+- **`src/tokenizer/definitions.py`**: Token type constants, data structures, and type definitions (TOK class, tuple types)
 - **`src/tokenizer/main.py`**: Command-line interface implementation for the `tokenize` command
 - **`src/tokenizer/abbrev.py`**: Abbreviation handling and configuration parsing
 - **`src/tokenizer/Abbrev.conf`**: Dictionary of Icelandic abbreviations with their expansions
@@ -28,12 +28,13 @@ Tokenizer is a Python (>= 3.9) library for tokenizing Icelandic text. It convert
 ```bash
 python -m pytest                    # Run all tests
 python -m pytest test/test_tokenizer.py  # Run specific test file
+python -m pytest -v test/test_tokenizer.py::test_single_tokens  # Run specific test
 ```
 
 ### Linting and Type Checking
 ```bash
-ruff check                          # Code linting (configured in pyproject.toml)
-ruff format                         # Code formatting
+ruff check src/tokenizer            # Code linting (configured in pyproject.toml)
+ruff format src/tokenizer           # Code formatting
 mypy src/tokenizer                  # Type checking (config in mypy.ini)
 ```
 
@@ -60,7 +61,7 @@ diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt
 
 The tokenizer recognizes 30+ token types including:
 - `TOK.WORD`: Regular words and abbreviations
-- `TOK.NUMBER`: Numeric values  
+- `TOK.NUMBER`: Numeric values
 - `TOK.DATEABS`/`TOK.DATEREL`: Absolute and relative dates
 - `TOK.TIME`: Time expressions
 - `TOK.AMOUNT`: Currency amounts
@@ -77,12 +78,17 @@ The tokenizer recognizes 30+ token types including:
 ## Testing Structure
 
 - **test_tokenizer.py**: Main tokenization logic tests
-- **test_cli.py**: Command-line interface tests  
+- **test_cli.py**: Command-line interface tests
 - **test_abbrev.py**: Abbreviation handling tests
 - **test_detokenize.py**: Detokenization tests
 - **toktest_large.txt**: Comprehensive test dataset (13,075 lines)
 
-## Type checking
+## Type Checking
 
-* The project uses type annotations in all code and tries to avoid Any types.
-* Python 3.9 is supported so type annotations should adhere to 3.9-compatible syntax.
+- The project uses type annotations in all code and tries to avoid Any types
+- Python 3.9 is supported so type annotations should adhere to 3.9-compatible syntax
+- Note: mypy.ini currently targets Python 3.6 for PyPy compatibility
+
+## Development Environment
+
+- For running Python code in this project, activate the virtualenv via `source ~/github/Greynir/pypy/bin/activate` (from CLAUDE.local.md)

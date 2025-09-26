@@ -62,6 +62,14 @@ class BIN_Tuple(NamedTuple):
     ordmynd: str
     beyging: str
 
+    def __str__(self) -> str:
+        """Return string representation as a plain tuple (a, b, c, ...)"""
+        return str(tuple(self))
+
+    def __repr__(self) -> str:
+        """Return repr as a plain tuple for consistency with README examples"""
+        return repr(tuple(self))
+
 
 BIN_TupleList = Sequence[BIN_Tuple]
 

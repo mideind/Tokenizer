@@ -294,7 +294,7 @@ def main() -> None:
         elif args.json:
             # Output the tokens in JSON format, one line per token
             d: Dict[str, Union[str, List[int]]] = {"k": TOK.descr[t.kind]}
-            if cast(Optional[str], t.txt) is not None:
+            if t.txt:
                 d["t"] = t.txt
             v = val(t)
             if v is not None:

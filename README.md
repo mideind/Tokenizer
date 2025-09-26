@@ -104,7 +104,7 @@ on the command line:
 | Option      | Description                                               |
 |-------------|-----------------------------------------------------------|
 | `--csv`     | Deep tokenization. Output token objects in CSV format, one per line. Sentences are separated by lines containing `0,"",""`. |
-| `--json`    | Deep tokenization. Output token objects in JSON format, one per line. |
+| `--json`    | Deep tokenization. Output token objects in JSON format, one per line. Each JSON object contains: `k` (token kind), `t` (normalized text), `v` (value if applicable), `o` (original text with preserved whitespace), `s` (character span indices). |
 
 Other options can be specified on the command line:
 
@@ -146,21 +146,31 @@ $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | 
 
 $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --json
 {"k":"BEGIN SENT"}
-{"k":"DATEREL","t":"3. janúar","v":[0,1,3]}
-{"k":"WORD","t":"sl.","v":["síðastliðinn"]}
-{"k":"WORD","t":"keypti"}
-{"k":"WORD","t":"ég"}
-{"k":"MEASUREMENT","t":"64kWst","v":["J",230400000.0]}
-{"k":"WORD","t":"rafbíl"}
-{"k":"PUNCTUATION","t":".","v":"."}
+{"k":"DATEREL","t":"3. janúar","v":[0,1,3],"o":"3.janúar","s":[0,1,2,2,3,4,5,6,7]}
+{"k":"WORD","t":"sl.","v":["síðastliðinn"],"o":" sl.","s":[1,2,3]}
+{"k":"WORD","t":"keypti","o":" keypti","s":[1,2,3,4,5,6]}
+{"k":"WORD","t":"ég","o":"   ég","s":[3,4]}
+{"k":"MEASUREMENT","t":"64kWst","v":["J",230400000.0],"o":" 64kWst","s":[1,2,3,4,5,6]}
+{"k":"WORD","t":"rafbíl","o":" rafbíl","s":[1,2,3,4,5,6]}
+{"k":"PUNCTUATION","t":".","v":".","o":".","s":[0]}
 {"k":"END SENT"}
 {"k":"BEGIN SENT"}
-{"k":"WORD","t":"Hann"}
-{"k":"WORD","t":"kostaði"}
-{"k":"AMOUNT","t":"€30.000","v":[30000,"EUR"]}
-{"k":"PUNCTUATION","t":".","v":"."}
+{"k":"WORD","t":"Hann","o":" Hann","s":[1,2,3,4]}
+{"k":"WORD","t":"kostaði","o":" kostaði","s":[1,2,3,4,5,6,7]}
+{"k":"AMOUNT","t":"€30.000","v":[30000,"EUR"],"o":" € 30.000","s":[1,3,4,5,6,7,8]}
+{"k":"PUNCTUATION","t":".","v":".","o":".","s":[0]}
 {"k":"END SENT"}
 ```
+
+#### JSON Output Format
+
+When using `--json`, each token is output as a JSON object on a separate line with the following fields:
+
+- **`k`** (kind): The token type description (e.g., "WORD", "DATEREL", "PUNCTUATION")
+- **`t`** (text): The normalized/processed text of the token
+- **`v`** (value): The parsed value, if applicable (e.g., date tuples, amounts, abbreviation expansions)
+- **`o`** (original): The original text including preserved whitespace
+- **`s`** (span): Character indices mapping each character in the normalized text to its position in the original text
 
 ## Python module
 
