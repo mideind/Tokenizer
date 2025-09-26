@@ -693,6 +693,7 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
 
 ## Changelog
 
+* Version 3.5.3: Fixed PyPI package description display (README.md reference in pyproject.toml)
 * Version 3.5.2: Improved JSON output format and BIN_Tuple representation; documentation updates
 * Version 3.5.1: Fixed bug in composite glyph handling
 * Version 3.5.0: Better handling of colon-separated timestamps and URI schemes, modernization, and more.
