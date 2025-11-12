@@ -34,7 +34,7 @@
 from typing import Any, Iterable, Iterator, Union, cast
 
 import tokenizer as t
-from tokenizer.definitions import BIN_Tuple, ValType
+from tokenizer.definitions import BIN_Tuple, ValType, EN_DASH, EM_DASH
 
 TOK = t.TOK
 Tok = t.Tok
@@ -876,6 +876,21 @@ def test_sentences() -> None:
     )
 
     test_sentence(
+        f"Þingmenn og {EN_DASH}konur versluðu marg{EN_DASH}ítrekað í Tösku{EN_DASH} og hanskabúðinni.",
+        "B W      W  W      W        W            W W                      P E",
+    )
+
+    test_sentence(
+        f"Tösku{EN_DASH} og hanskabúðin, sálug, var á Lauga{EN_DASH} eða Skothúsvegi.",
+        "B W                 P W    P W   W W                    P E",
+    )
+
+    test_sentence(
+        f"Tösku{EN_DASH}og hanskabúðin, sálug, var á Lauga{EN_DASH}eða Skothúsvegi.",
+        "B W                 P W    P W   W W                    P E",
+    )
+
+    test_sentence(
         "Friðgeir fór út kl. hálf átta en var hálf slompaður.",
         "B W      W   W  T             W  W   W    W        P E",
     )
@@ -1125,8 +1140,8 @@ def test_correct_spaces() -> None:
         "\n Breytingin var   +4,10 þingmenn \t  en dollarinn er nú á €1,3455  ."
     )
     assert s == "Breytingin var +4,10 þingmenn en dollarinn er nú á €1,3455."
-    s = t.correct_spaces("Jón- sem var formaður — mótmælti málinu.")
-    assert s == "Jón-sem var formaður—mótmælti málinu."
+    s = t.correct_spaces("Jón- sem var formaður—mótmælti málinu.")
+    assert s == "Jón-sem var formaður — mótmælti málinu."
     s = t.correct_spaces("Það á   að geyma mjólkina við  20 ±  3 °C")
     assert s == "Það á að geyma mjólkina við 20±3 °C"
     s = t.correct_spaces("Við förum t.d. til Íslands o.s.frv.")
@@ -2267,12 +2282,12 @@ def test_split_sentences() -> None:
     sents = list(g)
     assert len(sents) == 2
     assert sents[0] == "Hún sagði : „ Þú ert leiðinlegur “ !"
-    assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
+    assert sents[1] == f"Hann svaraði engu {EM_DASH} en hætti við ferðina ."
     g = t.split_into_sentences(s, normalize=False)
     sents = list(g)
     assert len(sents) == 2
     assert sents[0] == 'Hún sagði : " Þú ert leiðinlegur " !'
-    assert sents[1] == "Hann svaraði engu - - en hætti við ferðina ."
+    assert sents[1] == "Hann svaraði engu -- en hætti við ferðina ."
 
     g = t.split_into_sentences(
         "Aðalsteinn Jónsson SU á leið til hafnar í "

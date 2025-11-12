@@ -184,8 +184,8 @@ COMPOSITE_HYPHEN = EN_DASH
 # Recognized punctuation
 LEFT_PUNCTUATION = "([„‚«#$€£¥₽<"
 RIGHT_PUNCTUATION = ".,:;)]!%‰?“»”’‛‘…>°"
-CENTER_PUNCTUATION = '"*•&+=@©|'
-NONE_PUNCTUATION = "^/±'´~\\" + HYPHEN + EN_DASH + EM_DASH
+CENTER_PUNCTUATION = '"*•&+=@©|' + EM_DASH
+NONE_PUNCTUATION = "^/±'´~\\" + HYPHEN + EN_DASH
 PUNCTUATION = (
     LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
 )
@@ -254,7 +254,7 @@ YEAR_WORD = frozenset(("árið", "ársins", "árinu"))
 
 # Characters that can start a numeric token
 DIGITS_PREFIX = frozenset([d for d in "0123456789"])
-SIGN_PREFIX = frozenset(("+", "-"))
+SIGN_PREFIX = frozenset(("+", HYPHEN))
 
 # Month names and numbers
 MONTHS: Mapping[str, int] = {
@@ -1212,7 +1212,7 @@ KT_MAGIC = [3, 2, 7, 6, 5, 4, 0, 3, 2]
 
 def valid_ssn(kt: str) -> bool:
     """Validate Icelandic social security number ("kennitala")"""
-    if not kt or len(kt) != 11 or kt[6] != "-":
+    if not kt or len(kt) != 11 or (kt[6] != HYPHEN and kt[6] != EN_DASH):
         return False
     m = 11 - sum((ord(kt[i]) - 48) * KT_MAGIC[i] for i in range(9)) % 11
     c = ord(kt[9]) - 48
@@ -1274,8 +1274,8 @@ HTML_ESCAPES: Mapping[str, str] = {
     "emsp": " ",
     "thinsp": " ",
     # Dashes and hyphens
-    "ndash": "–",
-    "mdash": "—",
+    "ndash": EN_DASH,
+    "mdash": EM_DASH,
     # The soft hyphen &shy; is mapped to an empty string
     "shy": "",
     # Other non-ASCII letters

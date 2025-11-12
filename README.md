@@ -29,15 +29,15 @@ uses Tokenizer on its input.
 
 Tokenizer is licensed under the MIT license.
 
-## Performance
+## Indicative performance
 
-Tokenization of 1 MB of a wide selection of texts from the Icelandic Gigaword Corpus
-using a 64-bit 2.6 GHz Intel Core i9.
+Time to tokenize 1 MB of a wide selection of texts from the Icelandic Gigaword Corpus
+using a 64-bit 2.6 GHz Intel Core i9:
 
-|               | Time (sec)   |
-|---------------|--------------|
-| CPython 3.12  | 25.27        |
-| PyPy 3.11     | 8.08         |
+|               |  Time (sec) |
+|---------------|------------:|
+| CPython 3.12  |       25.27 |
+| PyPy 3.11     |        8.08 |
 
 Running tokenization with PyPy is about 3x faster than with CPython.
 
@@ -88,8 +88,8 @@ the command line:
 $ tokenize input.txt output.txt
 ```
 
-Input and output files are in UTF-8 encoding. If the files are not
-given explicitly, `stdin` and `stdout` are used for input and output,
+Input and output files are assumed to be UTF-8 encoded. If the file names
+are not given explicitly, `stdin` and `stdout` are used for input and output,
 respectively.
 
 Empty lines in the input are treated as hard sentence boundaries.
@@ -103,14 +103,14 @@ on the command line:
 
 | Option      | Description                                               |
 |-------------|-----------------------------------------------------------|
-| `--csv`     | Deep tokenization. Output token objects in CSV format, one per line. Sentences are separated by lines containing `0,"",""`. |
+| `--csv`     | Deep tokenization. Output token objects in CSV format, one per line. Each line contains: token kind (number), normalized text, value (if applicable), original text with preserved whitespace, and character span indices. Sentences are separated by lines containing `0,"","","",""`. |
 | `--json`    | Deep tokenization. Output token objects in JSON format, one per line. Each JSON object contains: `k` (token kind), `t` (normalized text), `v` (value if applicable), `o` (original text with preserved whitespace), `s` (character span indices). |
 
 Other options can be specified on the command line:
 
 | Option                       | Description                                               |
 |------------------------------|-----------------------------------------------------------|
-| `-n`, `--normalize`          | Normalize punctuation, causing e.g. quotes to be output in Icelandic form and hyphens to be regularized. This option is only applicable to shallow tokenization. |
+| `-n`, `--normalize`          | Normalize punctuation: quotes output in Icelandic form („these“), ellipsis as single character (…), year ranges with en-dash (1914–1918), and em-dashes centered with spaces ( — ). This option is only applicable to shallow tokenization. |
 | `-s`, `--one_sent_per_line`  | Input contains strictly one sentence per line, i.e. every newline is a sentence boundary. |
 | `-o`, `--original`           | Output original token text, i.e. bypass shallow tokenization. This effectively runs the tokenizer as a sentence splitter only. |
 | `-m`, `--convert_measurements` | Degree signal in tokens denoting temperature normalized (200° C -> 200 °C). |
@@ -130,19 +130,19 @@ $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | 
 Hann kostaði €30.000 .
 
 $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --csv
-19,"3. janúar","0|1|3"
-6,"sl.","síðastliðinn"
-6,"keypti",""
-6,"ég",""
-22,"64kWst","J|230400000.0"
-6,"rafbíl",""
-1,".",".",
-0,"",""
-6,"Hann",""
-6,"kostaði",""
-13,"€30.000","30000|EUR"
-1,".",".",
-0,"",""
+19,"3. janúar","0|1|3","3.janúar","0-1-2-2-3-4-5-6-7"
+6,"sl.","síðastliðinn"," sl.","1-2-3"
+6,"keypti",""," keypti","1-2-3-4-5-6"
+6,"ég","","   ég","3-4"
+22,"64kWst","J|230400000.0"," 64kWst","1-2-3-4-5-6"
+6,"rafbíl",""," rafbíl","1-2-3-4-5-6"
+1,".",".",".","0"
+0,"","","",""
+6,"Hann",""," Hann","1-2-3-4"
+6,"kostaði",""," kostaði","1-2-3-4-5-6-7"
+13,"€30.000","30000|EUR"," € 30.000","1-3-4-5-6-7-8"
+1,".",".",".","0"
+0,"","","",""
 
 $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | tokenize --json
 {"k":"BEGIN SENT"}
@@ -161,6 +161,18 @@ $ echo "3.janúar sl. keypti   ég 64kWst rafbíl. Hann kostaði € 30.000." | 
 {"k":"PUNCTUATION","t":".","v":".","o":".","s":[0]}
 {"k":"END SENT"}
 ```
+
+#### CSV Output Format
+
+When using `--csv`, each token is output as a CSV row with the following five fields:
+
+1. **Token kind** (number): Numeric code representing the token type (e.g., 6 for WORD, 19 for DATEREL, 1 for PUNCTUATION)
+2. **Normalized text**: The processed text of the token
+3. **Value**: The parsed value, if applicable (e.g., date tuples, amounts, abbreviation expansions), or empty string
+4. **Original text**: The original text including preserved whitespace
+5. **Span indices**: Character indices mapping each character in the normalized text to its position in the original text, separated by hyphens
+
+Sentences are separated by rows containing `0,"","","",""`.
 
 #### JSON Output Format
 
@@ -306,7 +318,8 @@ You can pass the option `normalize=True` to the function if you want
 the normalized form of punctuation tokens. Normalization outputs
 Icelandic single and double quotes („these“) instead of English-style
 ones ("these"), converts three-dot ellipsis ... to single character
-ellipsis …, and casts en-dashes – and em-dashes — to regular hyphens.
+ellipsis …, normalizes year ranges to use en-dash (1914–1918), and
+ensures em-dashes are centered with spaces ( — ).
 
 The `tokenizer.split_into_sentences()` function is typically called
 in a `for` loop:
@@ -361,8 +374,9 @@ The `tokenizer.normalized_text(token)` function
 returns the normalized text for a token. This means that the original
 token text is returned except for certain punctuation tokens, where a
 normalized form is returned instead. Specifically, English-type quotes
-are converted to Icelandic ones, and en- and em-dashes are converted
-to regular hyphens.
+are converted to Icelandic ones („these“), hyphens in year ranges are
+converted to en-dash (1914–1918), and consecutive identical dashes are
+preserved as multi-character tokens.
 
 ## The `text_from_tokens()` function
 
@@ -374,7 +388,7 @@ with spaces between tokens. Example:
 >>> import tokenizer
 >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
 >>> tokenizer.text_from_tokens(toklist)
-'Hann sagði : \" Þú ert ágæt ! \" .'
+'Hann sagði : " Þú ert ágæt ! " .'
 ```
 
 ## The `normalized_text_from_tokens()` function
@@ -387,7 +401,7 @@ token list, with spaces between tokens. Example (note the double quotes):
 >>> import tokenizer
 >>> toklist = list(tokenizer.tokenize("Hann sagði: \"Þú ert ágæt!\"."))
 >>> tokenizer.normalized_text_from_tokens(toklist)
-'Hann sagði : \xE2\x80\x9e Þú ert ágæt ! \xE2\x80\x9c .'
+'Hann sagði : „ Þú ert ágæt ! “ .'
 ```
 
 ## Tokenization options
@@ -464,6 +478,37 @@ functions:
   `handle_kludgy_ordinals` were set to
   `tokenizer.KLUDGY_ORDINALS_TRANSLATE`.
 
+## Dash and Hyphen Handling
+
+Tokenizer distinguishes between three dash types and handles them contextually:
+
+- **Hyphen (-)**: Regular hyphen, used e.g. in compound words
+- **En-dash (–)**: Longer dash, preferred in Icelandic for year/date ranges
+- **Em-dash (—)**: Longest dash, used for emphasis or parenthetical remarks
+
+### Context-Specific Behavior
+
+**Year ranges**: Hyphens between years are normalized to en-dash when
+`normalize=True`, following Icelandic spelling rules: `1914-1918` → `1914–1918`.
+
+**Free-standing dashes**: Hyphens and en-dashes with spaces around them
+preserve those spaces: `word - word` remains `word - word`, not `word-word`.
+
+**Composite word continuations**: Hyphens stay attached to preceding words
+in patterns like `fjölskyldu- og húsdýragarðurinn`, and to succeeding words
+in cases like `eldhúsborð og -stólar`.
+
+**Em-dashes**: Treated as centered punctuation with spaces on both
+sides: `word—word` → `word — word`.
+
+**Consecutive dashes**: Multiple identical dashes (`--`, `––`, `——`) are
+treated as single tokens and preserve their spacing.
+
+### Edge Cases
+
+The tokenizer correctly handles `1914 -1918` where `-1918` might appear to
+be a negative number but is actually part of a year range.
+
 ## The token object
 
 Each token is an instance of the class `Tok` that has three main properties:
@@ -509,8 +554,9 @@ defines within the `TOK` class:
 | S_BEGIN       | 11001   | Start of sentence   |                           |
 | S_END         | 11002   | End of sentence     |                           |
 
-(*) The token types marked with an asterisk are reserved for the GreynirEngine package
-and not currently returned by the tokenizer.
+(*) The token types marked with an asterisk are reserved for
+the [GreynirEngine package](https://github.com/mideind/GreynirEngine) and
+not currently returned by the tokenizer.
 
 To obtain a descriptive text for a token kind, use
 `TOK.descr[token.kind]` (see example above).
@@ -628,7 +674,7 @@ An example is *o.s.frv.*, which results in a `val` field equal to
 `[('og svo framvegis', 0, 'ao', 'frasi', 'o.s.frv.', '-')]`.
 
 The tuple format is designed to be compatible with the
-*Database of Icelandic Morphology* (*DIM*),
+[*Database of Icelandic Morphology* (*DIM*)](https://bin.arnastofnun.is/DMII/),
 *Beygingarlýsing íslensks nútímamáls*, i.e. the so-called *Sigrúnarsnið*.
 
 ## Development installation
@@ -693,6 +739,12 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
 
 ## Changelog
 
+* Version 3.5.4: Improved dash and hyphen handling: free-standing hyphens
+  between words now preserve spaces, year ranges normalize to en-dash (with
+  `normalize=True`), em-dashes are centered with spaces, and consecutive
+  identical dashes are handled as single tokens. Fixed edge case where negative
+  years in ranges (e.g., "1914 -1918") were incorrectly parsed as negative
+  numbers.
 * Version 3.5.3: Fixed PyPI package description display (README.md reference in pyproject.toml)
 * Version 3.5.2: Improved JSON output format and BIN_Tuple representation; documentation updates
 * Version 3.5.1: Fixed bug in composite glyph handling

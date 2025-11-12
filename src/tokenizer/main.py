@@ -39,7 +39,6 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Optional,
     TextIO,
     Iterator,
     Callable,
