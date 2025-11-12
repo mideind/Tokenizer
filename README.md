@@ -306,7 +306,7 @@ You can pass the option `normalize=True` to the function if you want
 the normalized form of punctuation tokens. Normalization outputs
 Icelandic single and double quotes („these“) instead of English-style
 ones ("these"), converts three-dot ellipsis ... to single character
-ellipsis …, and casts en-dashes – and em-dashes — to regular hyphens.
+ellipsis …, and regularizes hyphens, en-dashes – and em-dashes —.
 
 The `tokenizer.split_into_sentences()` function is typically called
 in a `for` loop:
@@ -361,8 +361,8 @@ The `tokenizer.normalized_text(token)` function
 returns the normalized text for a token. This means that the original
 token text is returned except for certain punctuation tokens, where a
 normalized form is returned instead. Specifically, English-type quotes
-are converted to Icelandic ones, and en- and em-dashes are converted
-to regular hyphens.
+are converted to Icelandic ones, and hyphens, en- and em-dashes are
+regularized.
 
 ## The `text_from_tokens()` function
 

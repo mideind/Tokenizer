@@ -74,6 +74,24 @@ EXCLAMATIONS = frozenset(("!", "?"))
 SPAN_START = 0
 SPAN_END = 1
 
+ISO_DATE_HYPHEN = r"(\d{4}-\d\d-\d\d)"
+ISO_DATE_SLASH = r"(\d{4}/\d\d/\d\d)"
+ISO_DATE_EN_DASH = ISO_DATE_HYPHEN.replace(HYPHEN, EN_DASH)
+ISO_DATE = r"(" + ISO_DATE_HYPHEN + "|" + ISO_DATE_SLASH + "|" + ISO_DATE_EN_DASH + r")(?!\d)"
+
+DMY_DATE_DOT = r"\d{1,2}\.\d{1,2}\.\d{2,4}"
+DMY_DATE_HYPHEN = r"\d{1,2}-\d{1,2}-\d{2,4}"
+DMY_DATE_EN_DASH = DMY_DATE_HYPHEN.replace(HYPHEN, EN_DASH)
+DMY_DATE_SLASH = r"\d{1,2}/\d{1,2}/\d{2,4}"
+DMY_DATE = r"(" + DMY_DATE_DOT + "|" + DMY_DATE_SLASH + "|" + DMY_DATE_HYPHEN + "|" + DMY_DATE_EN_DASH + r")(?!\d)"
+
+SINGLE_DASH_OR_DOT_DATE = r"(\d{2})[-.](\d{4})(?!\d)".replace("-", HYPHEN + EN_DASH)
+
+HYPHEN_OG = f"{HYPHEN}og"
+HYPHEN_EÐA = f"{HYPHEN}eða"
+EN_DASH_OG = f"{EN_DASH}og"
+EN_DASH_EÐA = f"{EN_DASH}eða"
+
 
 class Tok:
     """Information about a single token"""
@@ -1034,12 +1052,14 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Time(t, h, m, 0), rest
 
-    s = re.match(r"((\d{4}-\d\d-\d\d)|(\d{4}/\d\d/\d\d))(?!\d)", w)
+    s = re.match(ISO_DATE, w)
     if s:
         # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
         g = s.group()
-        if "-" in g:
-            p = g.split("-")
+        if HYPHEN in g:
+            p = g.split(HYPHEN)
+        elif EN_DASH in g:
+            p = g.split(EN_DASH)
         else:
             p = g.split("/")
         y = int(p[0])
@@ -1049,18 +1069,16 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Date(t, y, m, d), rest
 
-    s = (
-        re.match(r"\d{1,2}\.\d{1,2}\.\d{2,4}(?!\d)", w)
-        or re.match(r"\d{1,2}/\d{1,2}/\d{2,4}(?!\d)", w)
-        or re.match(r"\d{1,2}-\d{1,2}-\d{2,4}(?!\d)", w)
-    )
+    s = re.match(DMY_DATE, w)
     if s:
         # Looks like a date with day, month and year parts
         g = s.group()
         if "/" in g:
             p = g.split("/")
-        elif "-" in g:
-            p = g.split("-")
+        elif HYPHEN in g:
+            p = g.split(HYPHEN)
+        elif EN_DASH in g:
+            p = g.split(EN_DASH)
         else:
             p = g.split(".")
         y = int(p[2])
@@ -1088,7 +1106,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Daterel(t, y=0, m=m, d=d), rest
 
-    s = re.match(r"(\d{2})[-.](\d{4})(?!\d)", w)
+    s = re.match(SINGLE_DASH_OR_DOT_DATE, w)
     if s:
         # A date in the form of mm.yyyy or mm-yyyy
         g = s.group()
@@ -1287,7 +1305,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> Tuple[Tok, Tok]:
     s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
-        telno = w[0:3] + "-" + w[3:7]
+        telno = w[0:3] + HYPHEN + w[3:7]
         t, rest = tok.split(7)
         return TOK.Telno(t, telno), rest
 
@@ -1661,10 +1679,10 @@ class LetterParser:
             yield TOK.Punctuation(punct)
             yield TOK.Word(word2)
 
-        elif ww.endswith("-og") or ww.endswith("-eða"):
+        elif ww.endswith((HYPHEN_OG, HYPHEN_EÐA, EN_DASH_OG, EN_DASH_EÐA)):
             # Handle missing space before 'og'/'eða',
             # such as 'fjármála-og efnahagsráðuneyti'
-            a = ww.split("-")
+            a = ww.split(EN_DASH if EN_DASH in ww else HYPHEN)
 
             word1, rt = rt.split(len(a[0]))
             punct, rt = rt.split(1)
@@ -1807,9 +1825,21 @@ class PunctuationParser:
                     punct, rt = rt.split(numcommas)
                     yield TOK.Punctuation(punct, normalized=",")
             elif rtxt[0] in HYPHENS:
-                # Normalize all hyphens the same way
-                punct, rt = rt.split(1)
-                yield TOK.Punctuation(punct, normalized=HYPHEN)
+                # Coalesce a sequence of identical hyphens into a single token
+                numhyphens = 1
+                hyphen_char = rtxt[0]
+                for c in rtxt[1:]:
+                    if c == hyphen_char:
+                        numhyphens += 1
+                    else:
+                        break
+                punct, rt = rt.split(numhyphens)
+                if numhyphens == 2 and hyphen_char == HYPHEN:
+                    # Normalize exactly two hyphens to an em dash
+                    yield TOK.Punctuation(punct, normalized=EM_DASH)
+                else:
+                    # Normalize all other hyphens to a regular hyphen
+                    yield TOK.Punctuation(punct, normalized=HYPHEN)
             elif rtxt[0] in DQUOTES:
                 # Convert to a proper closing double quote
                 punct, rt = rt.split(1)
@@ -2349,7 +2379,7 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 and re.search(r"^\d\d\d$", token.txt)
                 and re.search(r"^\d\d\d\d$", next_token.txt)
             ):
-                telno = token.txt + "-" + next_token.txt
+                telno = token.txt + HYPHEN + next_token.txt
                 token = TOK.Telno(token.concatenate(next_token, separator=" "), telno)
                 next_token = next(token_stream)
 
@@ -3026,6 +3056,59 @@ def parse_phrases_2(
                         # Eat the percent word token
                         next_token = next(token_stream)
 
+            # Check for year range with negative year: [YEAR] [NUMBER(negative year)]
+            # This handles the edge case "1914 -1918" where -1918 is parsed as a negative number
+            # but should be treated as a year in a year range
+            if (
+                token.kind == TOK.YEAR
+                and next_token.kind == TOK.NUMBER
+                and next_token.number < 0  # Negative number
+                and 1776 <= -next_token.number <= 2100  # Looks like a year when positive
+                and next_token.txt.startswith("-")  # Text starts with regular hyphen (not EN_DASH)
+            ):
+                # Split the token "-1918" into a hyphen punctuation and a year "1918"
+                # According to Icelandic spelling rules, normalize to EN_DASH between years
+                hyphen_tok, year_tok = next_token.split(1)
+                hyphen_tok = TOK.Punctuation(hyphen_tok, normalized=EN_DASH)
+                year_tok = TOK.Year(year_tok, int(-next_token.number))
+                # Yield the current year, then the hyphen, then continue with the new year
+                yield token
+                yield hyphen_tok
+                token = year_tok
+                next_token = next(token_stream)
+                continue
+
+            # Check for year range with hyphen: [YEAR] [PUNCTUATION(hyphen)] [YEAR]
+            # According to Icelandic spelling rules, normalize hyphens to EN_DASH between years
+            if (
+                token.kind == TOK.YEAR
+                and next_token.kind == TOK.PUNCTUATION
+                and next_token.punctuation == HYPHEN  # Only normalize if it's a regular hyphen
+            ):
+                # Peek ahead to see if there's another year
+                try:
+                    third_token = next(token_stream)
+                    if third_token.kind == TOK.YEAR:
+                        # This is a year range, normalize the hyphen to EN_DASH
+                        next_token = TOK.Punctuation(next_token, normalized=EN_DASH)
+                        # Yield the current year and hyphen, then continue with the second year
+                        yield token
+                        yield next_token
+                        token = third_token
+                        next_token = next(token_stream)
+                        continue
+                    else:
+                        # Not a year range, put the third token back by yielding current token
+                        # and setting up the lookahead to be hyphen and third_token
+                        yield token
+                        token = next_token
+                        next_token = third_token
+                        # Don't continue - fall through to normal flow
+                except StopIteration:
+                    # No third token available, yield token and set next_token as current
+                    # This will be handled by the normal loop flow
+                    pass
+
             # Check for composites:
             # 'stjórnskipunar- og eftirlitsnefnd'
             # 'dómsmála-, viðskipta- og iðnaðarráðherra'
@@ -3067,7 +3150,8 @@ def parse_phrases_2(
                             _acc = _acc.concatenate(
                                 t, separator=" ", metadata_from_other=True
                             )
-                        _acc.substitute_all(" -", "-")
+                        _acc.substitute_all(f" {HYPHEN}", HYPHEN)
+                        _acc.substitute_all(f" {EN_DASH}", EN_DASH)
                         _acc.substitute_all(" ,", ",")
                         token = _acc
                         next_token = next(token_stream)
@@ -3128,10 +3212,12 @@ def split_into_sentences(
     This function returns a generator of strings, where each string
     is a sentence, and tokens are separated by spaces."""
     to_text: Callable[[Tok], str]
-    og = options.pop("original", False)
-    if options.pop("normalize", False):
+    original = options.pop("original", False)
+    normalize = options.pop("normalize", False)
+    if normalize:
         to_text = normalized_text
-    elif og:
+        original = False  # normalize takes precedence over original
+    elif original:
         to_text = lambda t: t.original or t.txt
     else:
         to_text = lambda t: t.txt
@@ -3142,7 +3228,7 @@ def split_into_sentences(
             # Note that curr_sent can be an empty list,
             # and in that case we yield an empty string
             if t.kind == TOK.S_END or t.kind == TOK.S_SPLIT:
-                if og:
+                if original:
                     yield "".join(curr_sent)
                 else:
                     yield " ".join(curr_sent)
@@ -3152,7 +3238,7 @@ def split_into_sentences(
             if txt:
                 curr_sent.append(txt)
     if curr_sent:
-        if og:
+        if original:
             yield "".join(curr_sent)
         else:
             yield " ".join(curr_sent)
@@ -3225,6 +3311,8 @@ RE_SPLIT_STR = (
     r"|([^\W\d_]+\.(?:[^\W\d_]+\.)+)(?![^\W\d_]+\s)"
     # The following regex catches degree characters, i.e. °C, °F
     r"|(°[CF])"
+    # The following regex catches consecutive identical hyphens/dashes
+    r"|(--+|––+|——+)"  # --, ––, ——
     # Finally, space and punctuation
     r"|([~\s" + "".join("\\" + c for c in PUNCTUATION) + r"])"
 )
@@ -3239,33 +3327,67 @@ def correct_spaces(s: str) -> str:
     r: List[str] = []
     last = TP_NONE
     double_quote_count = 0
-    for w in RE_SPLIT.split(s):
-        if w is None:
+    last_was_word = False  # Track if previous non-empty token was a word
+    last_word_text = ""  # Track the actual text of the last word token
+    had_space_before = False  # Track if there was whitespace before current token
+    for w_raw in RE_SPLIT.split(s):
+        if w_raw is None:
             continue
-        w = w.strip()
+        # Check for whitespace before stripping
+        w = w_raw.strip()
         if not w:
+            if w_raw:  # Non-empty but all whitespace
+                had_space_before = True
             continue
+        # Now w is a non-empty token
         if len(w) > 1:
             this = TP_WORD
+            last_was_word = w.isalpha()
+            last_word_text = w.lower() if last_was_word else ""
         elif w == '"':
             # For English-type double quotes, we glue them alternatively
             # to the right and to the left token
             this = (TP_LEFT, TP_RIGHT)[double_quote_count % 2]
             double_quote_count += 1
+            last_was_word = False
+            last_word_text = ""
         elif w in LEFT_PUNCTUATION:
             this = TP_LEFT
+            last_was_word = False
+            last_word_text = ""
         elif w in RIGHT_PUNCTUATION:
             this = TP_RIGHT
+            last_was_word = False
+            last_word_text = ""
         elif w in NONE_PUNCTUATION:
-            this = TP_NONE
+            # Special case: free-standing hyphens/en-dashes after words
+            # If hyphen had space before it and follows a word (not year/number),
+            # BUT not "og"/"eða" (which are part of composite word patterns),
+            # treat as TP_CENTER to preserve spaces on both sides
+            if (
+                w in COMPOSITE_HYPHENS
+                and had_space_before
+                and last_was_word
+                and last_word_text not in ("og", "eða")
+            ):
+                this = TP_CENTER
+            else:
+                this = TP_NONE
+            last_was_word = False
+            last_word_text = ""
         elif w in CENTER_PUNCTUATION:
             this = TP_CENTER
+            last_was_word = False
+            last_word_text = ""
         else:
             this = TP_WORD
+            last_was_word = True
+            last_word_text = w.lower()
+        had_space_before = False
         if (
             (w == "og" or w == "eða")
             and len(r) >= 2
-            and r[-1] == "-"
+            and r[-1] in COMPOSITE_HYPHENS
             and r[-2].lstrip().isalpha()
         ):
             # Special case for compounds such as "fjármála- og efnahagsráðuneytið"
@@ -3275,13 +3397,13 @@ def correct_spaces(s: str) -> str:
         elif (
             this == TP_WORD
             and len(r) >= 2
-            and r[-1] == "-"
+            and r[-1] in COMPOSITE_HYPHENS
             and w.isalpha()
             and (r[-2] == "," or r[-2].lstrip() in ("og", "eða"))
         ):
             # Special case for compounds such as
             # "bensínstöðvar, -dælur og -tankar"
-            r[-1] = " -"
+            r[-1] = " " + r[-1]
             r.append(w)
         elif (
             TP_SPACE[last - 1][this - 1]
@@ -3311,10 +3433,15 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
     to_text: Callable[[Tok], str] = normalized_text if normalize else lambda t: t.txt
     r: List[str] = []
     last = TP_NONE
+    last_kind = None  # Track the previous token kind
     double_quote_count = 0
     for t in tokens:
         w = to_text(t)
         if not w:
+            if t.kind == TOK.S_END:
+                # Reset the double quote counter at the end of a sentence
+                double_quote_count = 0
+            last_kind = None
             continue
         this = TP_WORD
         if t.kind == TOK.PUNCTUATION:
@@ -3329,6 +3456,18 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
                 this = TP_LEFT
             elif w in RIGHT_PUNCTUATION:
                 this = TP_RIGHT
+            elif w in COMPOSITE_HYPHENS:
+                if (last_kind == TOK.WORD
+                    and t.original
+                    and t.original.startswith(" ")
+                ):
+                    # Special case: free-standing hyphens/en-dashes between words
+                    # If the hyphen had a space before it in the original text,
+                    # and follows a WORD (not YEAR or NUMBER), treat as TP_CENTER
+                    # to preserve spaces on both sides
+                    this = TP_CENTER
+                else:
+                    this = TP_NONE
             elif w in NONE_PUNCTUATION:
                 this = TP_NONE
             elif w in CENTER_PUNCTUATION:
@@ -3338,6 +3477,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
         else:
             r.append(w)
         last = this
+        last_kind = t.kind
     return "".join(r)
 
 
