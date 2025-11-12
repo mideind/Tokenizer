@@ -1,5 +1,3 @@
-# type: ignore
-
 """
 
     test_detokenize.py
@@ -31,6 +29,8 @@
         SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
+
+# type: ignore
 
 import tokenizer as t
 

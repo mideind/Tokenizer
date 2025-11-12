@@ -1,4 +1,3 @@
-# type: ignore
 """
 
     Tests for Tokenizer module
@@ -27,6 +26,8 @@
         SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
+
+# type: ignore
 
 import tokenizer
 

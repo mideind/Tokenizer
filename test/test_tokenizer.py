@@ -1,4 +1,3 @@
-# type: ignore
 """
 
     test_tokenizer.py
@@ -31,7 +30,7 @@
 
 """
 
-from typing import Any, Iterable, Iterator, Union, cast
+from typing import Any, Iterable, Iterator, List, Union, cast
 
 import tokenizer as t
 from tokenizer.definitions import BIN_Tuple, ValType, EN_DASH, EM_DASH
@@ -63,7 +62,7 @@ def get_text_and_norm(orig: str) -> tuple[str, str]:
 
 
 def test_single_tokens() -> None:
-    TEST_CASES = [
+    TEST_CASES: List[TestCase] = [
         (".", TOK.PUNCTUATION),
         (",", TOK.PUNCTUATION),
         ("!", TOK.PUNCTUATION),
@@ -514,7 +513,7 @@ def test_single_tokens() -> None:
         ("4ra", [Tok(TOK.WORD, "4ra", None)]),
     ]
 
-    TEST_CASES_CONVERT_TELNOS = [
+    TEST_CASES_CONVERT_TELNOS: List[TestCase] = [
         ("525-4764", TOK.TELNO),
         ("4204200", [Tok(TOK.TELNO, "4204200", ("420-4200", "354"))]),
         ("699 2422", [Tok(TOK.TELNO, "699 2422", ("699-2422", "354"))]),
@@ -544,7 +543,7 @@ def test_single_tokens() -> None:
         ("£5.199", [Tok(TOK.AMOUNT, "£5.199", (5199, "GBP", None, None))]),
     ]
 
-    TEST_CASES_COALESCE_PERCENT = [
+    TEST_CASES_COALESCE_PERCENT: List[TestCase] = [
         ("12,3prósent", [Tok(TOK.PERCENT, "12,3 prósent", (12.3, None, None))]),
         ("12,3 prósent", TOK.PERCENT),
         (
@@ -563,7 +562,7 @@ def test_single_tokens() -> None:
     def run_test(test_cases: Iterable[TestCase], **options: Any) -> None:
         for test_case in test_cases:
             if len(test_case) == 3:
-                txt, kind, val = cast(tuple[str, int, ValType], test_case)
+                txt, kind, val = test_case
                 c = [Tok(kind, txt, val)]
             elif isinstance(test_case[1], list):
                 txt, c = cast(tuple[str, list[Tok]], test_case)
@@ -1172,7 +1171,7 @@ def test_correct_spaces() -> None:
 
 
 def test_abbrev() -> None:
-    tokens = list(t.tokenize("Í dag las ég fréttina um IBM t.d. á Mbl."))
+    tokens: List[Tok] = list(t.tokenize("Í dag las ég fréttina um IBM t.d. á Mbl."))
     tokens = strip_originals(tokens)
     assert tokens == [
         Tok(kind=TOK.S_BEGIN, txt=None, val=(0, None)),

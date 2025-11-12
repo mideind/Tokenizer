@@ -57,7 +57,7 @@ from typing import (
 
 import datetime
 import re
-import unicodedata  # type: ignore
+import unicodedata
 from collections import deque
 
 from .abbrev import Abbreviations

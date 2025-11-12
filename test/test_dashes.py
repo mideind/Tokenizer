@@ -1,5 +1,3 @@
-# type: ignore
-
 """
 
 test_dashes.py
@@ -30,6 +28,8 @@ This software is licensed under the MIT License:
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
+
+# type: ignore
 
 import pytest
 import tokenizer as t

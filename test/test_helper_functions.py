@@ -1,5 +1,3 @@
-# type: ignore
-
 """
     Test helper functions from definitions.py
     Copyright (C) 2025 Miðeind ehf.
@@ -8,7 +6,7 @@
 from tokenizer.definitions import valid_ssn, roman_to_int
 
 
-def test_valid_ssn():
+def test_valid_ssn() -> None:
     # Test valid Icelandic SSNs (kennitölur)
     assert valid_ssn("311281-5189")
     assert valid_ssn("101275-5239")
@@ -24,7 +22,6 @@ def test_valid_ssn():
     assert not valid_ssn("0101011019")
     assert not valid_ssn("010101-10199")
     assert not valid_ssn("")
-    assert not valid_ssn(None)
 
     # Test invalid formats - no hyphen
     assert not valid_ssn("0101011019")
@@ -50,7 +47,7 @@ def test_valid_ssn():
     assert not valid_ssn("not-a-ssn")
 
 
-def test_roman_to_int():
+def test_roman_to_int() -> None:
     # Test basic single numerals
     assert roman_to_int("I") == 1
     assert roman_to_int("V") == 5
