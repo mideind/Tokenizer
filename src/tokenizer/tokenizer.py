@@ -77,13 +77,25 @@ SPAN_END = 1
 ISO_DATE_HYPHEN = r"(\d{4}-\d\d-\d\d)"
 ISO_DATE_SLASH = r"(\d{4}/\d\d/\d\d)"
 ISO_DATE_EN_DASH = ISO_DATE_HYPHEN.replace(HYPHEN, EN_DASH)
-ISO_DATE = r"(" + ISO_DATE_HYPHEN + "|" + ISO_DATE_SLASH + "|" + ISO_DATE_EN_DASH + r")(?!\d)"
+ISO_DATE = (
+    r"(" + ISO_DATE_HYPHEN + "|" + ISO_DATE_SLASH + "|" + ISO_DATE_EN_DASH + r")(?!\d)"
+)
 
 DMY_DATE_DOT = r"\d{1,2}\.\d{1,2}\.\d{2,4}"
 DMY_DATE_HYPHEN = r"\d{1,2}-\d{1,2}-\d{2,4}"
 DMY_DATE_EN_DASH = DMY_DATE_HYPHEN.replace(HYPHEN, EN_DASH)
 DMY_DATE_SLASH = r"\d{1,2}/\d{1,2}/\d{2,4}"
-DMY_DATE = r"(" + DMY_DATE_DOT + "|" + DMY_DATE_SLASH + "|" + DMY_DATE_HYPHEN + "|" + DMY_DATE_EN_DASH + r")(?!\d)"
+DMY_DATE = (
+    r"("
+    + DMY_DATE_DOT
+    + "|"
+    + DMY_DATE_SLASH
+    + "|"
+    + DMY_DATE_HYPHEN
+    + "|"
+    + DMY_DATE_EN_DASH
+    + r")(?!\d)"
+)
 
 SINGLE_DASH_OR_DOT_DATE = r"(\d{2})[-.](\d{4})(?!\d)".replace("-", HYPHEN + EN_DASH)
 
@@ -1623,7 +1635,7 @@ class LetterParser:
 
     def __init__(self, rt: Tok) -> None:
         self.rt = rt
-        
+
     def _is_letter(self, char: str) -> bool:
         """Test if character is alphabetic - fast path."""
         return char.isalpha()
@@ -1708,11 +1720,11 @@ class LetterParser:
 class LetterParserComposite(LetterParser):
     """Parses a sequence of alphabetic characters off the front of a raw token.
     Handles combining characters when --keep_composite_glyphs is specified."""
-    
+
     def _is_letter(self, char: str) -> bool:
         """Test if character is alphabetic or a combining mark."""
         cat = unicodedata.category(char)
-        return cat.startswith(('L', 'M'))
+        return cat.startswith(("L", "M"))
 
 
 class NumberParser:
@@ -1885,12 +1897,17 @@ class PunctuationParser:
 
 
 def parse_mixed(
-    rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool, replace_composite_glyphs: bool = True
+    rt: Tok,
+    handle_kludgy_ordinals: int,
+    convert_numbers: bool,
+    replace_composite_glyphs: bool = True,
 ) -> Iterable[Tok]:
     """Parse a mixed raw token string, from the token rt"""
 
     # Select the appropriate letter parser class based on composite glyph handling
-    LetterParserClass = LetterParser if replace_composite_glyphs else LetterParserComposite
+    LetterParserClass = (
+        LetterParser if replace_composite_glyphs else LetterParserComposite
+    )
 
     # Initialize a singleton parser for punctuation
     pp = PunctuationParser()
@@ -2039,8 +2056,10 @@ def is_word_with_composites(txt: str) -> bool:
     it can contain composite characters (combining accents, etc.). However,
     the word must start with a proper alphabetic character, since combining
     accents musth *follow* a letter - they can't *precede* it."""
-    return len(txt) > 1 and txt[0].isalpha() and all(
-        unicodedata.category(char).startswith(('L', 'M')) for char in txt[1:]
+    return (
+        len(txt) > 1
+        and txt[0].isalpha()
+        and all(unicodedata.category(char).startswith(("L", "M")) for char in txt[1:])
     )
 
 
@@ -2159,7 +2178,9 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield TOK.Punctuation(punct, normalized="‚")
 
         # More complex case of mixed punctuation, letters and numbers
-        yield from parse_mixed(rt, handle_kludgy_ordinals, convert_numbers, replace_composite_glyphs)
+        yield from parse_mixed(
+            rt, handle_kludgy_ordinals, convert_numbers, replace_composite_glyphs
+        )
 
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()
@@ -3063,8 +3084,12 @@ def parse_phrases_2(
                 token.kind == TOK.YEAR
                 and next_token.kind == TOK.NUMBER
                 and next_token.number < 0  # Negative number
-                and 1776 <= -next_token.number <= 2100  # Looks like a year when positive
-                and next_token.txt.startswith("-")  # Text starts with regular hyphen (not EN_DASH)
+                and 1776
+                <= -next_token.number
+                <= 2100  # Looks like a year when positive
+                and next_token.txt.startswith(
+                    "-"
+                )  # Text starts with regular hyphen (not EN_DASH)
             ):
                 # Split the token "-1918" into a hyphen punctuation and a year "1918"
                 # According to Icelandic spelling rules, normalize to EN_DASH between years
@@ -3076,14 +3101,14 @@ def parse_phrases_2(
                 yield hyphen_tok
                 token = year_tok
                 next_token = next(token_stream)
-                continue
 
             # Check for year range with hyphen: [YEAR] [PUNCTUATION(hyphen)] [YEAR]
             # According to Icelandic spelling rules, normalize hyphens to EN_DASH between years
             if (
                 token.kind == TOK.YEAR
                 and next_token.kind == TOK.PUNCTUATION
-                and next_token.punctuation == HYPHEN  # Only normalize if it's a regular hyphen
+                and next_token.punctuation
+                == HYPHEN  # Only normalize if it's a regular hyphen
             ):
                 # Peek ahead to see if there's another year
                 try:
@@ -3096,7 +3121,6 @@ def parse_phrases_2(
                         yield next_token
                         token = third_token
                         next_token = next(token_stream)
-                        continue
                     else:
                         # Not a year range, put the third token back by yielding current token
                         # and setting up the lookahead to be hyphen and third_token
@@ -3210,7 +3234,13 @@ def split_into_sentences(
     """Shallow tokenization of the input text, which can be either
     a text string or a generator of lines of text (such as a file).
     This function returns a generator of strings, where each string
-    is a sentence, and tokens are separated by spaces."""
+    is a sentence, and tokens are separated by spaces.
+    The function accepts 'original' and 'normalize' boolean options:
+    - If 'original' is True, the original text of each token is returned,
+      with the original whitespace.
+    - If 'normalize' is True, the normalized text of each token is returned,
+      where certain modifications may have been applied (see README).
+      This option takes precedence over 'original' if both are True."""
     to_text: Callable[[Tok], str]
     original = options.pop("original", False)
     normalize = options.pop("normalize", False)
@@ -3314,7 +3344,9 @@ RE_SPLIT_STR = (
     # The following regex catches consecutive identical hyphens/dashes
     r"|(--+|––+|——+)"  # --, ––, ——
     # Finally, space and punctuation
-    r"|([~\s" + "".join("\\" + c for c in PUNCTUATION) + r"])"
+    r"|([~\s"
+    + "".join("\\" + c for c in PUNCTUATION)
+    + r"])"
 )
 RE_SPLIT = re.compile(RE_SPLIT_STR)
 
@@ -3457,10 +3489,7 @@ def detokenize(tokens: Iterable[Tok], normalize: bool = False) -> str:
             elif w in RIGHT_PUNCTUATION:
                 this = TP_RIGHT
             elif w in COMPOSITE_HYPHENS:
-                if (last_kind == TOK.WORD
-                    and t.original
-                    and t.original.startswith(" ")
-                ):
+                if last_kind == TOK.WORD and t.original and t.original.startswith(" "):
                     # Special case: free-standing hyphens/en-dashes between words
                     # If the hyphen had a space before it in the original text,
                     # and follows a WORD (not YEAR or NUMBER), treat as TP_CENTER

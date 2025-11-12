@@ -2,32 +2,32 @@
 
 """
 
-    test_dashes.py
+test_dashes.py
 
-    Tests for dash handling in Tokenizer module
+Tests for dash handling in Tokenizer module
 
-    Copyright (C) 2016-2025 by Miðeind ehf.
-    Original author: Vilhjálmur Þorsteinsson
+Copyright (C) 2016-2025 by Miðeind ehf.
+Original author: Vilhjálmur Þorsteinsson
 
-    This software is licensed under the MIT License:
+This software is licensed under the MIT License:
 
-        Permission is hereby granted, free of charge, to any person
-        obtaining a copy of this software and associated documentation
-        files (the "Software"), to deal in the Software without restriction,
-        including without limitation the rights to use, copy, modify, merge,
-        publish, distribute, sublicense, and to permit persons to whom the
-        Software is furnished to do so, subject to the following conditions:
+    Permission is hereby granted, free of charge, to any person
+    obtaining a copy of this software and associated documentation
+    files (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
 
-        The above copyright notice and this permission notice shall be
-        included in all copies or substantial portions of the Software.
+    The above copyright notice and this permission notice shall be
+    included in all copies or substantial portions of the Software.
 
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-        EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-        MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-        IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-        CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-        TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-        SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 """
 
@@ -44,7 +44,10 @@ YEAR_RANGES = [
     ("1914 -1918", "1914-1918"),  # Regular hyphen - negative year converted to positive
     ("1914-  1918", "1914-1918"),  # Regular hyphen
     ("1914 -  1918", "1914-1918"),  # Regular hyphen
-    ("1914  -1918", "1914-1918"),  # Regular hyphen - negative year converted to positive
+    (
+        "1914  -1918",
+        "1914-1918",
+    ),  # Regular hyphen - negative year converted to positive
     (f"1914{EN}1918", f"1914{EN}1918"),  # En dash
     (f"1914 {EN}1918", f"1914{EN}1918"),  # En dash
     (f"1914{EN} 1918", f"1914{EN}1918"),  # En dash
@@ -132,9 +135,12 @@ COMPOUND_WORDS = [
 ]
 
 BEGIN_DASHES = [
-    ("- Byrjar á bandstriki" , "-Byrjar á bandstriki"),
+    ("- Byrjar á bandstriki", "-Byrjar á bandstriki"),
     (f"{EN} Byrjar á en striki", f"{EN}Byrjar á en striki"),
-    (f"{EM} Byrjar á em striki", f"{EM} Byrjar á em striki"),  # Should preserve space after
+    (
+        f"{EM} Byrjar á em striki",
+        f"{EM} Byrjar á em striki",
+    ),  # Should preserve space after
 ]
 
 END_DASHES = [
@@ -142,14 +148,23 @@ END_DASHES = [
     ("Endar á bandstriki -", "Endar á bandstriki -"),
     (f"Endar á en striki{EN}", f"Endar á en striki{EN}"),
     (f"Endar á en striki {EN}", f"Endar á en striki {EN}"),
-    (f"Endar á em striki{EM}", f"Endar á em striki {EM}"),  # Should preserve space before
-    (f"Endar á em striki {EM}", f"Endar á em striki {EM}"),  # Should preserve space before
+    (
+        f"Endar á em striki{EM}",
+        f"Endar á em striki {EM}",
+    ),  # Should preserve space before
+    (
+        f"Endar á em striki {EM}",
+        f"Endar á em striki {EM}",
+    ),  # Should preserve space before
 ]
 
 MULTIPLE_DASHES_IN_SEQUENCE = [
     ("This is -- a test", "This is -- a test"),  # Multiple hyphens
     (f"This is {EN}{EN} a test", f"This is {EN}{EN} a test"),  # Multiple en dashes
-    (f"This is {EM}{EM} a test", f"This is {EM}{EM} a test"),  # Multiple em dashes - MUST preserve spaces
+    (
+        f"This is {EM}{EM} a test",
+        f"This is {EM}{EM} a test",
+    ),  # Multiple em dashes - MUST preserve spaces
 ]
 
 
@@ -160,7 +175,9 @@ def test_year_ranges_tokenize(test_pair: tuple[str, str]) -> None:
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", YEAR_RANGES)
@@ -171,7 +188,9 @@ def test_year_ranges_correct_spaces(test_pair: tuple[str, str]) -> None:
     sentences = list(t.split_into_sentences(text_in))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
 
 
 def test_year_ranges_normalize_to_en_dash() -> None:
@@ -191,7 +210,9 @@ def test_year_ranges_normalize_to_en_dash() -> None:
     for text_in, expected in test_cases:
         tokens = list(t.tokenize(text_in))
         detok = t.detokenize(tokens, normalize=True)
-        assert detok == expected, f"normalize=True failed for {repr(text_in)}: expected {repr(expected)}, got {repr(detok)}"
+        assert (
+            detok == expected
+        ), f"normalize=True failed for {repr(text_in)}: expected {repr(expected)}, got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", THOUGHT_PAUSES)
@@ -204,7 +225,9 @@ def test_thought_pauses_tokenize(test_pair: tuple[str, str]) -> None:
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", THOUGHT_PAUSES)
@@ -218,7 +241,9 @@ def test_thought_pauses_correct_spaces(test_pair: tuple[str, str]) -> None:
     sentences = list(t.split_into_sentences(text_in))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
 
 
 @pytest.mark.parametrize("test_pair", COMPOSITE_WORD_CONTINUATIONS)
@@ -231,7 +256,9 @@ def test_composite_word_continuation_tokenize(test_pair: tuple[str, str]) -> Non
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", COMPOSITE_WORD_CONTINUATIONS)
@@ -245,7 +272,9 @@ def test_composite_word_continuation_correct_spaces(test_pair: tuple[str, str]) 
     sentences = list(t.split_into_sentences(text_in, original=True))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
 
 
 @pytest.mark.parametrize("test_pair", COMPOUND_WORDS)
@@ -255,7 +284,9 @@ def test_compound_words(test_pair: tuple[str, str]) -> None:
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", COMPOUND_WORDS)
@@ -266,7 +297,9 @@ def test_compound_words_correct_spaces(test_pair: tuple[str, str]) -> None:
     sentences = list(t.split_into_sentences(text_in))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
 
 
 @pytest.mark.parametrize("test_pair", MULTIPLE_DASHES_IN_SEQUENCE)
@@ -279,7 +312,9 @@ def test_multiple_dashes_in_sequence_tokenize(test_pair: tuple[str, str]) -> Non
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", MULTIPLE_DASHES_IN_SEQUENCE)
@@ -290,7 +325,9 @@ def test_multiple_dashes_in_sequence_correct_spaces(test_pair: tuple[str, str]) 
     sentences = list(t.split_into_sentences(text_in, original=True))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
 
 
 @pytest.mark.parametrize("test_pair", BEGIN_DASHES)
@@ -303,7 +340,9 @@ def test_dashes_at_start_tokenize(test_pair: tuple[str, str]) -> None:
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", BEGIN_DASHES)
@@ -314,7 +353,9 @@ def test_dashes_at_start_correct_spaces(test_pair: tuple[str, str]) -> None:
     sentences = list(t.split_into_sentences(text_in))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
 
 
 @pytest.mark.parametrize("test_pair", END_DASHES)
@@ -327,7 +368,9 @@ def test_dashes_at_end_tokenize(test_pair: tuple[str, str]) -> None:
     # Test tokenize + detokenize preserves text
     tokens = list(t.tokenize(text_in))
     detok = t.detokenize(tokens)
-    assert detok == text_out, f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
+    assert (
+        detok == text_out
+    ), f"detokenize failed for {repr(text_in)}: got {repr(detok)}"
 
 
 @pytest.mark.parametrize("test_pair", END_DASHES)
@@ -338,4 +381,6 @@ def test_dashes_at_end_correct_spaces(test_pair: tuple[str, str]) -> None:
     sentences = list(t.split_into_sentences(text_in, original=True))
     if sentences:
         corrected = t.correct_spaces(sentences[0])
-        assert corrected == text_out, f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
+        assert (
+            corrected == text_out
+        ), f"correct_spaces failed for {repr(text_in)}: got {repr(corrected)}"
