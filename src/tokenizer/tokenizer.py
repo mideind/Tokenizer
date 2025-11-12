@@ -1850,8 +1850,8 @@ class PunctuationParser:
                     # Normalize exactly two hyphens to an em dash
                     yield TOK.Punctuation(punct, normalized=EM_DASH)
                 else:
-                    # Normalize all other hyphens to a regular hyphen
-                    yield TOK.Punctuation(punct, normalized=HYPHEN)
+                    # Normalize to a regular hyphen in other cases
+                    yield TOK.Punctuation(punct, normalized=HYPHEN * numhyphens)
             elif rtxt[0] in DQUOTES:
                 # Convert to a proper closing double quote
                 punct, rt = rt.split(1)
