@@ -1,14 +1,29 @@
+# Build system configuration (PEP 517/518)
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "tokenizer"
 version = "3.5.4"
-description = "A tokenizer for Icelandic text"
+description = "A fast, compact pure-Python tokenizer for Icelandic text with sentence segmentation"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
-readme = { file = "README.md", content-type = "text/markdown" }
-license = { text = "MIT" }
+maintainers = [{ name = "Vilhjálmur Þorsteinsson", email = "vt@mideind.is" }]
+readme = "README.md"
+license = "MIT"
+keywords = [
+    "tokenizer",
+    "tokenization",
+    "icelandic",
+    "nlp",
+    "natural-language-processing",
+    "text-processing",
+    "sentence-segmentation",
+    "parsing",
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: Unix",
     "Operating System :: POSIX",
     "Operating System :: MacOS",
@@ -31,40 +46,81 @@ classifiers = [
 requires-python = ">=3.9"
 
 [project.urls]
-repository = "https://github.com/mideind/Tokenizer"
-homepage = "https://mideind.is"
+Homepage = "https://mideind.is"
+Repository = "https://github.com/mideind/Tokenizer"
+Documentation = "https://github.com/mideind/Tokenizer#readme"
+Issues = "https://github.com/mideind/Tokenizer/issues"
+Changelog = "https://github.com/mideind/Tokenizer#changelog"
 
 [project.optional-dependencies]
-# dev dependencies
-dev = ["pytest"]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "build>=1.0",
+    "twine>=4.0",
+]
 
 [project.scripts]
-# 'tokenize' command line tool
 tokenize = "tokenizer.main:main"
 
-# *** Configuration of tools ***
+# *** Tool Configuration ***
+
+[tool.setuptools]
+zip-safe = false
 
 [tool.setuptools.packages.find]
 where = ["src"]
+namespaces = false
 
 [tool.setuptools.package-data]
-include = ["src/tokenizer/*.conf"]
+tokenizer = ["*.conf"]
 
+# Ruff: Modern Python linter and formatter
 [tool.ruff]
 line-length = 88
+target-version = "py39"
+src = ["src"]
 
 [tool.ruff.lint]
-#select = ["ALL"] # We use default rules for now
-extend-select = ["E501"] # Complain about line length
-# Ignore specific rules
-# (we should aim to have these as few as possible)
+extend-select = [
+    "E501",  # Line too long
+    "I",     # isort (import sorting)
+]
 ignore = [
-    "F405", # 'F405: Name may be undefined, or defined from star imports: typing'
-    "E731", # 'E731: Do not assign a lambda expression, use a def'
+    "F405",  # Name may be undefined, or defined from star imports
+    "E731",  # Do not assign a lambda expression, use a def
 ]
 
-[tool.isort]
-# This forces these imports to placed at the top
-known_future_library = ["typing"]
-profile = "black"
-line_length = 88
+[tool.ruff.lint.isort]
+known-first-party = ["tokenizer"]
+force-sort-within-sections = true
+
+# MyPy: Static type checker
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+
+# Pytest: Testing framework
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--showlocals",
+]
+testpaths = ["test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
