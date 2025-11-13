@@ -739,6 +739,10 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
 
 ## Changelog
 
+* Version 3.5.5: Maintenance release with modernized package metadata (PEP 517/518
+  build system, enhanced PyPI discoverability with keywords and URLs), improved
+  tooling configuration (ruff, mypy, pytest), and type checking improvements.
+  CI updated for setuptools compatibility.
 * Version 3.5.4: Improved dash and hyphen handling: free-standing hyphens
   between words now preserve spaces, year ranges normalize to en-dash (with
   `normalize=True`), em-dashes are centered with spaces, and consecutive
