@@ -29,8 +29,6 @@ This software is licensed under the MIT License:
 
 """
 
-# type: ignore
-
 import pytest
 import tokenizer as t
 

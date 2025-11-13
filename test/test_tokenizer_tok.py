@@ -27,8 +27,6 @@
 
 """
 
-# type: ignore
-
 import tokenizer
 
 Tok = tokenizer.Tok

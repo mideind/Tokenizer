@@ -30,8 +30,6 @@
 
 """
 
-# type: ignore
-
 import tokenizer as t
 
 
