@@ -1730,43 +1730,24 @@ class LetterParserComposite(LetterParser):
 class NumberParser:
     """Parses a sequence of digits off the front of a raw token"""
 
-    def __init__(
-        self, rt: Tok, handle_kludgy_ordinals: int, convert_numbers: bool
-    ) -> None:
+    def __init__(self, rt: Tok, convert_numbers: bool) -> None:
         self.rt = rt
-        self.handle_kludgy_ordinals = handle_kludgy_ordinals
         self.convert_numbers = convert_numbers
 
     def parse(self) -> Iterable[Tok]:
         """Parse the raw token, yielding result tokens"""
         # Handle kludgy ordinals: '3ji', '5ti', etc.
+        # Yield them unchanged as word tokens (pass-through behavior)
         rt = self.rt
-        handle_kludgy_ordinals = self.handle_kludgy_ordinals
         convert_numbers = self.convert_numbers
-        for key, val in ORDINAL_ERRORS.items():
-            rtxt = rt.txt
-            if rtxt.startswith(key):
-                # This is a kludgy ordinal
-                key_tok, rt = rt.split(len(key))
-                if handle_kludgy_ordinals == KLUDGY_ORDINALS_MODIFY:
-                    # Convert ordinals to corresponding word tokens:
-                    # '1sti' -> 'fyrsti', '3ji' -> 'þriðji', etc.
-                    key_tok.substitute_longer((0, len(key)), val)
+        rtxt = rt.txt
+        if rtxt.startswith(KLUDGY_ORDINALS):
+            # This is a kludgy ordinal: find which one matched and yield as word token
+            for key in KLUDGY_ORDINALS:
+                if rtxt.startswith(key):
+                    key_tok, rt = rt.split(len(key))
                     yield TOK.Word(key_tok)
-                elif (
-                    handle_kludgy_ordinals == KLUDGY_ORDINALS_TRANSLATE
-                    and key in ORDINAL_NUMBERS
-                ):
-                    # Convert word-form ordinals into ordinal tokens,
-                    # i.e. '1sti' -> TOK.Ordinal('1sti', 1),
-                    # but leave other kludgy constructs ('2ja')
-                    # as word tokens
-                    yield TOK.Ordinal(key_tok, ORDINAL_NUMBERS[key])
-                else:
-                    # No special handling of kludgy ordinals:
-                    # yield them unchanged as word tokens
-                    yield TOK.Word(key_tok)
-                break  # This skips the for loop 'else'
+                    break
         else:
             # Not a kludgy ordinal: eat tokens starting with a digit
             t, rt = parse_digits(rt, convert_numbers)
@@ -1898,7 +1879,6 @@ class PunctuationParser:
 
 def parse_mixed(
     rt: Tok,
-    handle_kludgy_ordinals: int,
     convert_numbers: bool,
     replace_composite_glyphs: bool = True,
 ) -> Iterable[Tok]:
@@ -1994,7 +1974,7 @@ def parse_mixed(
             rtxt[0] in DIGITS_PREFIX
             or (rtxt[0] in SIGN_PREFIX and len(rtxt) >= 2 and rtxt[1] in DIGITS_PREFIX)
         ):
-            np = NumberParser(rt, handle_kludgy_ordinals, convert_numbers)
+            np = NumberParser(rt, convert_numbers)
             yield from np.parse()
             rt = np.rt
             ate = True
@@ -2071,12 +2051,6 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
     replace_composite_glyphs: bool = options.get("replace_composite_glyphs", True)
     replace_html_escapes: bool = options.get("replace_html_escapes", False)
     one_sent_per_line: bool = options.get("one_sent_per_line", False)
-
-    # The default behavior for kludgy ordinals is to pass them
-    # through as word tokens
-    handle_kludgy_ordinals: int = options.get(
-        "handle_kludgy_ordinals", KLUDGY_ORDINALS_PASS_THROUGH
-    )
 
     # This code proceeds roughly as follows:
     # 1) The text is split into raw tokens on whitespace boundaries.
@@ -2178,9 +2152,7 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
                 yield TOK.Punctuation(punct, normalized="‚")
 
         # More complex case of mixed punctuation, letters and numbers
-        yield from parse_mixed(
-            rt, handle_kludgy_ordinals, convert_numbers, replace_composite_glyphs
-        )
+        yield from parse_mixed(rt, convert_numbers, replace_composite_glyphs)
 
     # Yield a sentinel token at the end that will be cut off by the final generator
     yield TOK.End_Sentinel()

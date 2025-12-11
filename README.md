@@ -118,7 +118,6 @@ Other options can be specified on the command line:
 | `-g`, `--keep_composite_glyphs` | Do not replace composite glyphs using Unicode COMBINING codes with their accented/umlaut counterparts. |
 | `-e`, `--replace_html_escapes` | HTML escape codes replaced by their meaning, such as `&aacute;` -> `á`. |
 | `-c`, `--convert_numbers`      | English-style decimal points and thousands separators in numbers changed to Icelandic style. |
-| `-k N`, `--handle_kludgy_ordinals N` | Kludgy ordinal handling defined. 0: Returns the original mixed word form, 1. Kludgy ordinal returned as pure word forms, 2: Kludgy ordinals returned as pure numbers. |
 
 Type `tokenize -h` or `tokenize --help` to get a short help message.
 
@@ -453,31 +452,6 @@ functions:
 
   The default value for the `replace_html_escapes` option is `False`.
 
-* `handle_kludgy_ordinals=[value]`
-
-  This options controls the way Tokenizer handles 'kludgy' ordinals, such as
-  *1sti*, *4ðu*, or *2ja*. By default, such ordinals are returned unmodified
-  ('passed through') as word tokens (`TOK.WORD`).
-  However, this can be modified as follows:
-
-  * `tokenizer.KLUDGY_ORDINALS_MODIFY`: Kludgy ordinals are corrected
-    to become 'proper' word tokens, i.e. *1sti* becomes *fyrsti* and
-    *2ja* becomes *tveggja*.
-
-  * `tokenizer.KLUDGY_ORDINALS_TRANSLATE`: Kludgy ordinals that represent
-    proper ordinal numbers are translated to ordinal tokens (`TOK.ORDINAL`),
-    with their original text and their ordinal value. *1sti* thus
-    becomes a `TOK.ORDINAL` token with a value of 1, and *3ja* becomes
-    a `TOK.ORDINAL` with a value of 3.
-
-  * `tokenizer.KLUDGY_ORDINALS_PASS_THROUGH` is the default value of
-    the option. It causes kludgy ordinals to be returned unmodified as
-    word tokens.
-
-  Note that versions of Tokenizer prior to 1.4 behaved as if
-  `handle_kludgy_ordinals` were set to
-  `tokenizer.KLUDGY_ORDINALS_TRANSLATE`.
-
 ## Dash and Hyphen Handling
 
 Tokenizer distinguishes between three dash types and handles them contextually:
@@ -578,9 +552,8 @@ with the following exceptions:
   can be disabled; see the `replace_composite_glyphs` option described
   above.)
 
-* If the appropriate options are specified (see above), it converts
-  kludgy ordinals (*3ja*) to proper ones (*þriðja*), and English-style
-  thousand and decimal separators to Icelandic ones
+* If the `convert_numbers` option is specified (see above), English-style
+  thousand and decimal separators are converted to Icelandic ones
   (*10,345.67* becomes *10.345,67*).
 
 * If the `replace_html_escapes` option is set, Tokenizer replaces
@@ -812,8 +785,8 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
   `TOK.SERIALNUMBER` token kinds; abbreviations can now have multiple
   meanings.
 * Version 1.4.0: Added the `**options` parameter to the
-  `tokenize()` function, giving control over the handling of numbers,
-  telephone numbers, and 'kludgy' ordinals.
+  `tokenize()` function, giving control over the handling of numbers
+  and telephone numbers.
 * Version 1.3.0: Added `TOK.DOMAIN` and `TOK.HASHTAG` token types; 
   improved handling of capitalized month name *Ágúst*, which is
   now recognized when following an ordinal number; improved recognition

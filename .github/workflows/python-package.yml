@@ -29,11 +29,14 @@ jobs:
       run: |
         python -m pip install --upgrade uv
         uv pip install --system --upgrade wheel setuptools
-        uv pip install --system ".[dev]"
+        if [ "${{ matrix.python-version }}" == "3.9" ]; then
+          uv pip install --system ".[dev]"
+        else
+          uv pip install --system ".[test]"
+        fi
 
     - name: Type check with mypy (only on oldest supported Python version)
       run: |
-        if [ "${{ matrix.python-version }}" == "3.9" ]; then python -m pip install mypy; fi
         if [ "${{ matrix.python-version }}" == "3.9" ]; then mypy --python-version=3.9 src/tokenizer; fi
 
     - name: Test with pytest

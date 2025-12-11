@@ -498,21 +498,6 @@ def test_single_tokens() -> None:
         ("1-800-1234-545566", TOK.SERIALNUMBER),
     ]
 
-    TEST_CASES_KLUDGY_MODIFY = [
-        ("1sti", [Tok(TOK.WORD, "fyrsti", None)]),
-        ("4ðu", [Tok(TOK.WORD, "fjórðu", None)]),
-        ("2svar", [Tok(TOK.WORD, "tvisvar", None)]),
-        ("4ra", [Tok(TOK.WORD, "fjögurra", None)]),
-        ("2ja", [Tok(TOK.WORD, "tveggja", None)]),
-    ]
-
-    TEST_CASES_KLUDGY_TRANSLATE = [
-        ("1sti", [Tok(TOK.ORDINAL, "1sti", 1)]),
-        ("4ðu", [Tok(TOK.ORDINAL, "4ðu", 4)]),
-        ("2svar", [Tok(TOK.WORD, "2svar", None)]),
-        ("4ra", [Tok(TOK.WORD, "4ra", None)]),
-    ]
-
     TEST_CASES_CONVERT_TELNOS: List[TestCase] = [
         ("525-4764", TOK.TELNO),
         ("4204200", [Tok(TOK.TELNO, "4204200", ("420-4200", "354"))]),
@@ -602,10 +587,6 @@ def test_single_tokens() -> None:
 
     run_test(cast(Iterable[TestCase], TEST_CASES))
     run_test(cast(Iterable[TestCase], TEST_CASES_CONVERT_TELNOS))
-    run_test(TEST_CASES_KLUDGY_MODIFY, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY)
-    run_test(
-        TEST_CASES_KLUDGY_TRANSLATE, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE
-    )
     run_test(TEST_CASES_CONVERT_NUMBERS, convert_numbers=True)
     run_test(
         cast(Iterable[TestCase], TEST_CASES_COALESCE_PERCENT), coalesce_percent=True
@@ -1051,42 +1032,6 @@ def test_correction() -> None:
             """Hann „gaf“ mér €10.780,65.""",
         ),
     ]
-    SENT_KLUDGY_ORDINALS_MODIFY = [
-        (
-            """Hann sagði: ´Þú ert fífl´! Farðu í 3ja herbergja íbúð.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu í þriggja herbergja íbúð.""",
-        ),
-        (
-            """Hann sagði: ´Þú ert fífl´! Farðu í 1sta sinn.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu í fyrsta sinn.""",
-        ),
-        (
-            """Hann sagði: ´Þú ert fífl´! Farðu 2svar í bað.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu tvisvar í bað.""",
-        ),
-        (
-            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
-            """Ég keypti fjögurra herbergja íbúð á verði tveggja herbergja.""",
-        ),
-    ]
-    SENT_KLUDGY_ORDINALS_TRANSLATE = [
-        (
-            """Hann sagði: ´Þú ert fífl´! Farðu í 3ja sinn.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu í 3ja sinn.""",
-        ),
-        (
-            """Hann sagði: ´Þú ert fífl´! Farðu í 1sta sinn.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu í 1sta sinn.""",
-        ),
-        (
-            """Hann sagði: ´Þú ert fífl´! Farðu 2svar í bað.""",
-            """Hann sagði: ‚Þú ert fífl‘! Farðu 2svar í bað.""",
-        ),
-        (
-            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
-            """Ég keypti 4ra herbergja íbúð á verði 2ja herbergja.""",
-        ),
-    ]
     SENT_CONVERT_NUMBERS = [
         (
             """Hann "gaf" mér 10,780.65 dollara.""",
@@ -1100,14 +1045,6 @@ def test_correction() -> None:
     ]
     for sent, correct in SENT:
         s = t.tokenize(sent)
-        txt = t.detokenize(s, normalize=True)
-        assert txt == correct
-    for sent, correct in SENT_KLUDGY_ORDINALS_MODIFY:
-        s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_MODIFY)
-        txt = t.detokenize(s, normalize=True)
-        assert txt == correct
-    for sent, correct in SENT_KLUDGY_ORDINALS_TRANSLATE:
-        s = t.tokenize(sent, handle_kludgy_ordinals=t.KLUDGY_ORDINALS_TRANSLATE)
         txt = t.detokenize(s, normalize=True)
         assert txt == correct
     for sent, correct in SENT_CONVERT_NUMBERS:
