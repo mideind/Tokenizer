@@ -605,20 +605,8 @@ NUM_WITH_UNIT_REGEX3 = re.compile(
 )
 
 
-# If the handle_kludgy_ordinals option is set to
-# KLUDGY_ORDINALS_PASS_THROUGH, we do not convert
-# kludgy ordinals but pass them through as word tokens.
-KLUDGY_ORDINALS_PASS_THROUGH = 0
-# If the handle_kludgy_ordinals option is set to
-# KLUDGY_ORDINALS_MODIFY, we convert '1sti' to 'fyrsti', etc.,
-# and return the modified word as a token.
-KLUDGY_ORDINALS_MODIFY = 1
-# If the handle_kludgy_ordinals option is set to
-# KLUDGY_ORDINALS_TRANSLATE, we convert '1sti' to TOK.Ordinal('1sti', 1), etc.,
-# but otherwise pass the original word through as a word token ('2ja').
-KLUDGY_ORDINALS_TRANSLATE = 2
-
-# Incorrectly written ('kludgy') ordinals
+# Incorrectly written ('kludgy') ordinals: these are passed through unchanged
+# as word tokens, but they need to be recognized so they are not parsed as numbers
 ORDINAL_ERRORS: Mapping[str, str] = {
     "1sti": "fyrsti",
     "1sta": "fyrsta",
@@ -637,22 +625,6 @@ ORDINAL_ERRORS: Mapping[str, str] = {
     "2ja": "tveggja",
     "3ja": "þriggja",
     "4ra": "fjögurra",
-}
-
-# Translations of kludgy ordinal words into numbers
-ORDINAL_NUMBERS: Mapping[str, int] = {
-    "1sti": 1,
-    "1sta": 1,
-    "1stu": 1,
-    "3ji": 3,
-    "3ja": 3,
-    "3ju": 3,
-    "4ði": 4,
-    "4ða": 4,
-    "4ðu": 4,
-    "5ti": 5,
-    "5ta": 5,
-    "5tu": 5,
 }
 
 # Handling of Roman numerals

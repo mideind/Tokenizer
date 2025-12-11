@@ -200,13 +200,4 @@ def test_cli(capsys: CaptureFixture[str], monkeypatch: MonkeyPatch) -> None:
         == "Hann fékk 7,5 í meðaleinkunn en bara 3,3 í íþróttum , og hlaut 2.000,5 USD fyrir ."
     )
 
-    # Handle kludgy ordinals
-    # --handle_kludgy_ordinals flag
-    t = "Hann var 1sti maðurinn til að heimsækja tunglið."
-    r = run_cli(c, m, ["-", "-", "--handle_kludgy_ordinals", "1"], t)
-    assert r == "Hann var fyrsti maðurinn til að heimsækja tunglið ."
-    # TODO: Broken functionality, needs to be fixed
-    # r = run_cli(c, m, ["-", "-", "--handle_kludgy_ordinals", "2"], t)
-    # assert r == "Hann var 1. maðurinn til að heimsækja tunglið ."
-
     # TODO: Add more tests for the CLI to achieve 100% coverage

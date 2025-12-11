@@ -150,19 +150,6 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "-k",
-    "--handle_kludgy_ordinals",
-    type=int,
-    default=0,
-    help=(
-        "Kludgy ordinal handling defined.\n"
-        "\t0: Returns the original word form.\n"
-        "\t1: Ordinals returned as pure words.\n"
-        "\t2: Ordinals returned as numbers."
-    ),
-)
-
-parser.add_argument(
     "-v",
     "--version",
     action="version",
@@ -262,9 +249,6 @@ def main() -> None:
 
     if args.one_sent_per_line:
         options["one_sent_per_line"] = True
-
-    if args.handle_kludgy_ordinals:
-        options["handle_kludgy_ordinals"] = args.handle_kludgy_ordinals
 
     if args.original:
         options["original"] = args.original
