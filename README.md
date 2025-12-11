@@ -712,6 +712,9 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
 
 ## Changelog
 
+* Version 3.6.0: Removed the deprecated `--handle_kludgy_ordinals` CLI flag
+  and `handle_kludgy_ordinals` API option. Kludgy ordinals (e.g. `1sti`, `3ja`)
+  are now always passed through unchanged as word tokens.
 * Version 3.5.5: Maintenance release with modernized package metadata (PEP 517/518
   build system, enhanced PyPI discoverability with keywords and URLs), improved
   tooling configuration (ruff, mypy, pytest), and type checking improvements.
