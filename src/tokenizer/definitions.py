@@ -607,25 +607,24 @@ NUM_WITH_UNIT_REGEX3 = re.compile(
 
 # Incorrectly written ('kludgy') ordinals: these are passed through unchanged
 # as word tokens, but they need to be recognized so they are not parsed as numbers
-ORDINAL_ERRORS: Mapping[str, str] = {
-    "1sti": "fyrsti",
-    "1sta": "fyrsta",
-    "1stu": "fyrstu",
-    "3ji": "þriðji",
-    # "3ja": "þriðja",  # þriggja
-    "3ju": "þriðju",
-    "4ði": "fjórði",
-    "4ða": "fjórða",
-    "4ðu": "fjórðu",
-    "5ti": "fimmti",
-    "5ta": "fimmta",
-    "5tu": "fimmtu",
-    "2svar": "tvisvar",
-    "3svar": "þrisvar",
-    "2ja": "tveggja",
-    "3ja": "þriggja",
-    "4ra": "fjögurra",
-}
+KLUDGY_ORDINALS: tuple[str, ...] = (
+    "1sti",
+    "1sta",
+    "1stu",
+    "2svar",
+    "3svar",
+    "2ja",
+    "3ja",
+    "3ji",
+    "3ju",
+    "4ði",
+    "4ða",
+    "4ðu",
+    "4ra",
+    "5ti",
+    "5ta",
+    "5tu",
+)
 
 # Handling of Roman numerals
 

@@ -1740,13 +1740,14 @@ class NumberParser:
         # Yield them unchanged as word tokens (pass-through behavior)
         rt = self.rt
         convert_numbers = self.convert_numbers
-        for key in ORDINAL_ERRORS:
-            rtxt = rt.txt
-            if rtxt.startswith(key):
-                # This is a kludgy ordinal: yield it unchanged as a word token
-                key_tok, rt = rt.split(len(key))
-                yield TOK.Word(key_tok)
-                break  # This skips the for loop 'else'
+        rtxt = rt.txt
+        if rtxt.startswith(KLUDGY_ORDINALS):
+            # This is a kludgy ordinal: find which one matched and yield as word token
+            for key in KLUDGY_ORDINALS:
+                if rtxt.startswith(key):
+                    key_tok, rt = rt.split(len(key))
+                    yield TOK.Word(key_tok)
+                    break
         else:
             # Not a kludgy ordinal: eat tokens starting with a digit
             t, rt = parse_digits(rt, convert_numbers)
