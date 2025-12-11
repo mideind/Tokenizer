@@ -53,6 +53,9 @@ Issues = "https://github.com/mideind/Tokenizer/issues"
 Changelog = "https://github.com/mideind/Tokenizer#changelog"
 
 [project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+]
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
