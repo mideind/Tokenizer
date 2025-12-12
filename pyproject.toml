@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tokenizer"
-version = "3.6.0"
+version = "3.6.1"
 description = "A fast, compact pure-Python tokenizer for Icelandic text with sentence segmentation"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 maintainers = [{ name = "Vilhjálmur Þorsteinsson", email = "vt@mideind.is" }]
@@ -78,7 +78,7 @@ where = ["src"]
 namespaces = false
 
 [tool.setuptools.package-data]
-tokenizer = ["*.conf"]
+tokenizer = ["*.conf", "py.typed"]
 
 # Ruff: Modern Python linter and formatter
 [tool.ruff]
