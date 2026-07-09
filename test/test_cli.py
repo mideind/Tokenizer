@@ -10,9 +10,8 @@ from unittest.mock import patch
 
 from pytest import CaptureFixture, MonkeyPatch
 
-from tokenizer.main import main
 from tokenizer import __version__ as tokenizer_version
-
+from tokenizer.main import main
 
 CLT_NAME = "tokenize"
 

@@ -2,6 +2,7 @@
 """Tests for the OrderedSet class in tokenizer.abbrev module."""
 
 from typing import Any
+
 from tokenizer.abbrev import OrderedSet
 
 

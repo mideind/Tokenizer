@@ -28,20 +28,18 @@ This software is licensed under the MIT License:
 
 """
 
+import re
 from typing import (
-    Mapping,
-    Union,
     Callable,
-    Sequence,
-    Optional,
-    NamedTuple,
-    Tuple,
     List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
     cast,
 )
-
-import re
-
 
 BeginTuple = Tuple[int, Optional[int]]
 PunctuationTuple = Tuple[int, str]
@@ -146,7 +144,10 @@ ZEROWIDTH_CHARACTERS: Mapping[str, str] = {
 }
 
 # Combined dictionary for backward compatibility
-UNICODE_REPLACEMENTS: Mapping[str, str] = {**COMPOSITE_REPLACEMENTS, **ZEROWIDTH_CHARACTERS}
+UNICODE_REPLACEMENTS: Mapping[str, str] = {
+    **COMPOSITE_REPLACEMENTS,
+    **ZEROWIDTH_CHARACTERS,
+}
 
 # Regex for composite glyphs only
 COMPOSITE_REGEX = re.compile(
@@ -629,7 +630,7 @@ KLUDGY_ORDINALS: tuple[str, ...] = (
 # Handling of Roman numerals
 
 RE_ROMAN_NUMERAL = re.compile(
-    r"^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$"
+    r"^(?=.)M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$"
 )
 
 ROMAN_NUMERAL_MAP = tuple(
@@ -642,13 +643,16 @@ ROMAN_NUMERAL_MAP = tuple(
 
 def roman_to_int(s: str) -> int:
     """Quick and dirty conversion of an already validated Roman numeral to integer"""
+    if not s:
+        raise ValueError("Empty Roman numeral")
     # Adapted from http://code.activestate.com/recipes/81611-roman-numerals/
     i = result = 0
     for integer, numeral in ROMAN_NUMERAL_MAP:
         while s[i : i + len(numeral)] == numeral:
             result += integer
             i += len(numeral)
-    assert i == len(s)
+    if i != len(s):
+        raise ValueError(f"Invalid Roman numeral: {s}")
     return result
 
 
@@ -905,7 +909,8 @@ TOP_LEVEL_DOMAINS = frozenset(
         "km",
         "kn",
         "kp",
-        # "kr", # Clashes with "kr" abbreviation (e.g. "þús.kr" is a legitimate domain name)
+        # "kr", # Clashes with "kr" abbreviation
+        #        # (e.g. "þús.kr" is a legitimate domain name)
         "kw",
         "ky",
         "kz",
@@ -1184,6 +1189,8 @@ KT_MAGIC = [3, 2, 7, 6, 5, 4, 0, 3, 2]
 def valid_ssn(kt: str) -> bool:
     """Validate Icelandic social security number ("kennitala")"""
     if not kt or len(kt) != 11 or (kt[6] != HYPHEN and kt[6] != EN_DASH):
+        return False
+    if not (kt[:6] + kt[7:]).isdigit():
         return False
     m = 11 - sum((ord(kt[i]) - 48) * KT_MAGIC[i] for i in range(9)) % 11
     c = ord(kt[9]) - 48

@@ -33,11 +33,10 @@ resource library) as this Python source file.
 
 """
 
-from typing import Dict, Generic, Iterator, List, Optional, Set, TypeVar
-
-from threading import Lock
 from collections import defaultdict
 import importlib.resources as importlib_resources
+from threading import Lock
+from typing import Dict, Generic, Iterator, List, Optional, Set, TypeVar
 
 from .definitions import BIN_Tuple
 

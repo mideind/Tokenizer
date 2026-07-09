@@ -33,7 +33,7 @@
 from typing import Any, Iterable, Iterator, List, Union, cast
 
 import tokenizer as t
-from tokenizer.definitions import BIN_Tuple, ValType, EN_DASH, EM_DASH
+from tokenizer.definitions import EM_DASH, EN_DASH, BIN_Tuple, ValType
 
 TOK = t.TOK
 Tok = t.Tok
@@ -2487,6 +2487,28 @@ def test_html_escapes() -> None:
         Tok(kind=11002, txt=None, val=None),
     ]
     assert toklist == correct
+
+
+def test_invalid_numeric_html_escapes_do_not_crash() -> None:
+    toklist = list(
+        t.tokenize(
+            "Ógild merki: &#9999999999; og &#xFFFFFFFF;.",
+            replace_html_escapes=True,
+        )
+    )
+    assert [tok.txt for tok in toklist if tok.txt] == [
+        "Ógild",
+        "merki",
+        ":",
+        "&",
+        "#9999999999",
+        ";",
+        "og",
+        "&",
+        "#xFFFFFFFF",
+        ";",
+        ".",
+    ]
 
 
 def test_one_sent_per_line() -> None:

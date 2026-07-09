@@ -38,6 +38,9 @@ an abbreviation, or the day, month and year for dates).
 
 """
 
+from collections import deque
+import datetime
+import re
 from typing import (
     Any,
     Callable,
@@ -54,11 +57,7 @@ from typing import (
     Union,
     cast,
 )
-
-import datetime
-import re
 import unicodedata
-from collections import deque
 
 from .abbrev import Abbreviations
 from .definitions import *  # noqa: F403
@@ -115,6 +114,8 @@ class Tok:
         val: ValType,
         original: Optional[str] = None,
         origin_spans: Optional[list[int]] = None,
+        lazy_origin_spans: bool = False,
+        lazy_origin_offset: int = 0,
     ) -> None:
         # Type of token
         self.kind: int = kind
@@ -125,16 +126,20 @@ class Tok:
         # The full original source string behind this token.
         # If this is None then we're not tracking origins.
         self.original: Optional[str] = original
-        # origin_spans contains an integer for each character in 'txt'.
+        # _origin_spans contains an integer for each character in 'txt'.
         # Each such integer index maps the corresponding character
         # (which may have substitutions) to its index in 'original'.
         # This is required to preserve 'original' correctly when splitting.
-        self.origin_spans: Optional[list[int]] = origin_spans
+        self._origin_spans: Optional[list[int]] = origin_spans
+        # Most raw tokens have a simple identity origin map. Avoid allocating
+        # list(range(len(txt))) until a caller or mutating operation needs it.
+        self._lazy_origin_spans: bool = lazy_origin_spans
+        self._lazy_origin_offset: int = lazy_origin_offset
 
     @classmethod
     def from_txt(cls: Type[_T], txt: str) -> _T:
         """Create a token from text"""
-        return cls(TOK.RAW, txt, None, txt, list(range(len(txt))))
+        return cls(TOK.RAW, txt, None, txt, lazy_origin_spans=True)
 
     @classmethod
     def from_token(cls: Type[_T], t: "Tok") -> _T:
@@ -144,8 +149,27 @@ class Tok:
             t.txt,
             t.val,
             t.original,
-            None if t.origin_spans is None else t.origin_spans[:],
+            None if t._origin_spans is None else t._origin_spans[:],
+            t._lazy_origin_spans,
+            t._lazy_origin_offset,
         )
+
+    @property
+    def origin_spans(self) -> Optional[list[int]]:
+        """Return origin spans, materializing the identity map lazily."""
+        if self._lazy_origin_spans:
+            self._origin_spans = [
+                self._lazy_origin_offset + i for i in range(len(self.txt))
+            ]
+            self._lazy_origin_spans = False
+            self._lazy_origin_offset = 0
+        return self._origin_spans
+
+    @origin_spans.setter
+    def origin_spans(self, value: Optional[list[int]]) -> None:
+        self._origin_spans = value
+        self._lazy_origin_spans = False
+        self._lazy_origin_offset = 0
 
     @property
     def punctuation(self) -> str:
@@ -225,30 +249,62 @@ class Tok:
         ltk: Tok
         rtk: Tok
 
-        if self.origin_spans is not None and self.original is not None:
-            if pos >= len(self.origin_spans):
+        if self._lazy_origin_spans and self.original is not None:
+            if pos >= len(self.txt):
                 ltk = Tok(
                     self.kind,
                     self.txt,
                     self.val,
                     self.original,
-                    self.origin_spans,
+                    lazy_origin_spans=True,
+                    lazy_origin_offset=self._lazy_origin_offset,
                 )
-                rtk = Tok(self.kind, "", None, "", [])
+                rtk = Tok(self.kind, "", None, "", lazy_origin_spans=True)
             else:
+                pos = pos if pos >= 0 else len(self.txt) + pos
+                origin_pos = self._lazy_origin_offset + pos
                 ltk = Tok(
                     self.kind,
                     self.txt[:pos],
                     self.val,
-                    self.original[: self.origin_spans[pos]],
-                    self.origin_spans[:pos],
+                    self.original[:origin_pos],
+                    lazy_origin_spans=True,
+                    lazy_origin_offset=self._lazy_origin_offset,
                 )
                 rtk = Tok(
                     self.kind,
                     self.txt[pos:],
                     self.val,
-                    self.original[self.origin_spans[pos] :],
-                    [x - self.origin_spans[pos] for x in self.origin_spans[pos:]],
+                    self.original[origin_pos:],
+                    lazy_origin_spans=True,
+                )
+        elif self.origin_spans is not None and self.original is not None:
+            origin_spans = self.origin_spans
+            assert origin_spans is not None
+            if pos >= len(origin_spans):
+                ltk = Tok(
+                    self.kind,
+                    self.txt,
+                    self.val,
+                    self.original,
+                    origin_spans,
+                )
+                rtk = Tok(self.kind, "", None, "", [])
+            else:
+                origin_pos = origin_spans[pos]
+                ltk = Tok(
+                    self.kind,
+                    self.txt[:pos],
+                    self.val,
+                    self.original[:origin_pos],
+                    origin_spans[:pos],
+                )
+                rtk = Tok(
+                    self.kind,
+                    self.txt[pos:],
+                    self.val,
+                    self.original[origin_pos:],
+                    [x - origin_pos for x in origin_spans[pos:]],
                 )
         else:
             ltk = Tok(self.kind, self.txt[:pos], self.val)
@@ -258,12 +314,17 @@ class Tok:
 
     def substitute(self, span: Tuple[int, int], new: str) -> None:
         """Substitute a span with a single or empty character 'new'."""
+        if self._lazy_origin_spans and new == "" and span[0] == 0:
+            self.txt = self.txt[span[1] :]
+            self._lazy_origin_offset += span[1]
+            return
+        origin_spans = self.origin_spans
         self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
-        if self.origin_spans is not None:
+        if origin_spans is not None:
             # Remove origin entries that correspond to characters that are gone.
-            self.origin_spans = (
-                self.origin_spans[: span[0] + len(new)] + self.origin_spans[span[1] :]
-            )
+            self.origin_spans = origin_spans[: span[0] + len(new)] + origin_spans[
+                span[1] :
+            ]
 
     def substitute_longer(self, span: Tuple[int, int], new: str) -> None:
         """Substitute a span with a potentially longer string"""
@@ -276,11 +337,12 @@ class Tok:
         # later gets split or substituted but that should not
         # happen in the current implementation.
 
+        origin_spans = self.origin_spans
         self.txt = self.txt[: span[0]] + new + self.txt[span[1] :]
 
-        if self.origin_spans is not None and self.original is not None:
-            head = self.origin_spans[: span[0]]
-            tail = self.origin_spans[span[1] :]
+        if origin_spans is not None and self.original is not None:
+            head = origin_spans[: span[0]]
+            tail = origin_spans[span[1] :]
 
             # The origin span of the new stuff will be of length 0 since we can't
             # proprely attribute it to individual characters in the original string.
@@ -292,7 +354,7 @@ class Tok:
                 # Use the length instead
                 new_origin = len(self.original)
             else:
-                new_origin = self.origin_spans[span[1]]
+                new_origin = origin_spans[span[1]]
 
             self.origin_spans = head + [new_origin] * len(new) + tail
 
@@ -339,6 +401,19 @@ class Tok:
         self_original = self.original or ""
         other_original = other.original or ""
         new_original = self_original + other_original
+
+        if (
+            separator == ""
+            and self._lazy_origin_spans
+            and other._lazy_origin_spans
+            and self._lazy_origin_offset == 0
+            and other._lazy_origin_offset == 0
+            and self.original is not None
+            and other.original is not None
+            and self.original == self.txt
+            and other.original == other.txt
+        ):
+            return Tok(new_kind, new_txt, new_val, new_original, lazy_origin_spans=True)
 
         self_origin_spans = self.origin_spans or []
         other_origin_spans = other.origin_spans or []
@@ -1375,11 +1450,17 @@ def html_escape(match: Match[str]) -> Tuple[Tuple[int, int], str]:
     g = match.group(2)
     if g is not None:
         # Hex code: '#xABCD'
-        return match.span(), chr(int(g[2:], base=16))
+        try:
+            return match.span(), chr(int(g[2:], base=16))
+        except (OverflowError, ValueError):
+            return match.span(), match.group(0)
     g = match.group(3)
     assert g is not None
     # Decimal code: '#8930'
-    return match.span(), chr(int(g[1:]))
+    try:
+        return match.span(), chr(int(g[1:]))
+    except (OverflowError, ValueError):
+        return match.span(), match.group(0)
 
 
 def composite_replacement(token: Tok) -> Tok:
@@ -1568,9 +1649,11 @@ def generate_raw_tokens(
                     for small_tok in generate_rough_tokens_from_tok(tok):
                         if small_tok.txt == "":
                             # There was whitespace at the end of the last token.
-                            # We do not want to yield a token with empty text if possible.
-                            # We want to attach it in front of the next token, if there is one.
-                            # If there is no next token, we attach it in front of the next 'big_text'.
+                            # We do not want to yield a token with empty text
+                            # if possible. We want to attach it in front of
+                            # the next token, if there is one.
+                            # If there is no next token, we attach it in front
+                            # of the next 'big_text'.
                             # This will happen:
                             # 1. When 'text' has whitespace at the end
                             # 2. When we have replaced a composite glyph or an HTML
@@ -2090,7 +2173,8 @@ def parse_tokens(txt: Union[str, Iterable[str]], **options: Any) -> Iterator[Tok
             yield TOK.Word(rt)
             continue
         elif not replace_composite_glyphs and is_word_with_composites(rtxt):
-            # This is a word with combining characters when --keep_composite_glyphs is specified
+            # This is a word with combining characters when
+            # --keep_composite_glyphs is specified
             yield TOK.Word(rt)
             continue
 
@@ -2597,7 +2681,8 @@ def parse_sentences(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     # To preserve origin tracking through this operation we must:
                     # 1. squish the two tokens together
                     _skip_me = token.concatenate(next_token, metadata_from_other=True)
-                    # 2. replace their text with nothing (while preserving the original text)
+                    # 2. replace their text with nothing
+                    #    while preserving the original text
                     _skip_me.substitute((0, len(_skip_me.txt)), "")
                     token = cast(Tok, None)
                     # 3. attach them to the front of the next token
@@ -3049,9 +3134,10 @@ def parse_phrases_2(
                         # Eat the percent word token
                         next_token = next(token_stream)
 
-            # Check for year range with negative year: [YEAR] [NUMBER(negative year)]
-            # This handles the edge case "1914 -1918" where -1918 is parsed as a negative number
-            # but should be treated as a year in a year range
+            # Check for year range with negative year:
+            # [YEAR] [NUMBER(negative year)]. This handles the edge case
+            # "1914 -1918" where -1918 is parsed as a negative number
+            # but should be treated as a year in a year range.
             if (
                 token.kind == TOK.YEAR
                 and next_token.kind == TOK.NUMBER
@@ -3063,19 +3149,22 @@ def parse_phrases_2(
                     "-"
                 )  # Text starts with regular hyphen (not EN_DASH)
             ):
-                # Split the token "-1918" into a hyphen punctuation and a year "1918"
-                # According to Icelandic spelling rules, normalize to EN_DASH between years
+                # Split the token "-1918" into a hyphen punctuation and a year
+                # "1918". According to Icelandic spelling rules, normalize to
+                # EN_DASH between years.
                 hyphen_tok, year_tok = next_token.split(1)
                 hyphen_tok = TOK.Punctuation(hyphen_tok, normalized=EN_DASH)
                 year_tok = TOK.Year(year_tok, int(-next_token.number))
-                # Yield the current year, then the hyphen, then continue with the new year
+                # Yield the current year, then the hyphen, then continue with
+                # the new year.
                 yield token
                 yield hyphen_tok
                 token = year_tok
                 next_token = next(token_stream)
 
-            # Check for year range with hyphen: [YEAR] [PUNCTUATION(hyphen)] [YEAR]
-            # According to Icelandic spelling rules, normalize hyphens to EN_DASH between years
+            # Check for year range with hyphen:
+            # [YEAR] [PUNCTUATION(hyphen)] [YEAR]. According to Icelandic
+            # spelling rules, normalize hyphens to EN_DASH between years.
             if (
                 token.kind == TOK.YEAR
                 and next_token.kind == TOK.PUNCTUATION
@@ -3088,20 +3177,23 @@ def parse_phrases_2(
                     if third_token.kind == TOK.YEAR:
                         # This is a year range, normalize the hyphen to EN_DASH
                         next_token = TOK.Punctuation(next_token, normalized=EN_DASH)
-                        # Yield the current year and hyphen, then continue with the second year
+                        # Yield the current year and hyphen, then continue
+                        # with the second year.
                         yield token
                         yield next_token
                         token = third_token
                         next_token = next(token_stream)
                     else:
-                        # Not a year range, put the third token back by yielding current token
+                        # Not a year range, put the third token back by
+                        # yielding current token.
                         # and setting up the lookahead to be hyphen and third_token
                         yield token
                         token = next_token
                         next_token = third_token
                         # Don't continue - fall through to normal flow
                 except StopIteration:
-                    # No third token available, yield token and set next_token as current
+                    # No third token available, yield token and set next_token
+                    # as current.
                     # This will be handled by the normal loop flow
                     pass
 

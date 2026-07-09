@@ -1,5 +1,5 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-3817/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 ![Release](https://shields.io/github/v/release/mideind/Tokenizer?display_name=tag)
 ![PyPI](https://img.shields.io/pypi/v/tokenizer)
 [![tests](https://github.com/mideind/Tokenizer/workflows/tests/badge.svg)](https://github.com/mideind/Tokenizer)
@@ -40,6 +40,11 @@ using a 64-bit 2.6 GHz Intel Core i9:
 | PyPy 3.11     |        8.08 |
 
 Running tokenization with PyPy is about 3x faster than with CPython.
+
+Version 3.6.3 reduces the cost of origin tracking by materializing
+`origin_spans` lazily. On `test/toktest_large.txt` (573 KB, about 149k tokens),
+this improved CPython tokenization throughput by roughly 8-12% and reduced
+peak memory by about 9 MB when retaining the token list.
 
 ## Deep vs. shallow tokenization
 
@@ -668,12 +673,11 @@ Tokenizer comes with a large test suite.
 The file `test/test_tokenizer.py` contains built-in tests that
 run under `pytest`.
 
-To run the built-in tests, install [pytest](https://docs.pytest.org/en/latest/),
-`cd` to your `Tokenizer` subdirectory (and optionally
-activate your virtualenv), then run:
+To run the built-in tests with uv, `cd` to your `Tokenizer`
+subdirectory, then run:
 
 ```console
-$ python -m pytest
+$ uv run --group test pytest
 ```
 
 The file `test/toktest_large.txt` contains a test set of 13,075 lines.
@@ -712,6 +716,12 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
 
 ## Changelog
 
+* Version 3.6.3: Improved origin tracking performance by materializing
+  `origin_spans` lazily, while preserving the public token API and index
+  behavior. Fixed validation edge cases in `valid_ssn()`, Roman numeral
+  handling, and numeric HTML escape replacement. Modernized the supported
+  baseline to Python 3.10+, updated CI to test stable Python 3.14, and added
+  uv dependency groups for test, lint, type checking, and release workflows.
 * Version 3.6.0: Removed the deprecated `--handle_kludgy_ordinals` CLI flag
   and `handle_kludgy_ordinals` API option. Kludgy ordinals (e.g. `1sti`, `3ja`)
   are now always passed through unchanged as word tokens.

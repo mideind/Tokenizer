@@ -552,7 +552,9 @@ def test_tok_substitute_longer() -> None:
 def test_tok_from_txt() -> None:
     s = "asdf"
     t = Tok.from_txt(s)
+    assert t._origin_spans is None
     assert t == Tok(TOK.RAW, s, None, s, list(range(len(s))))
+    assert t._origin_spans == list(range(len(s)))
 
     s = " asdf"
     t = Tok.from_txt(s)

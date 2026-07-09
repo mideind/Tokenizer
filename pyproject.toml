@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tokenizer"
-version = "3.6.2"
+version = "3.6.3"
 description = "A fast, compact pure-Python tokenizer for Icelandic text with sentence segmentation"
 authors = [{ name = "Miðeind ehf.", email = "mideind@mideind.is" }]
 maintainers = [{ name = "Vilhjálmur Þorsteinsson", email = "vt@mideind.is" }]
@@ -31,7 +31,6 @@ classifiers = [
     "Natural Language :: Icelandic",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -43,7 +42,7 @@ classifiers = [
     "Topic :: Utilities",
     "Topic :: Text Processing :: Linguistic",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 [project.urls]
 Homepage = "https://mideind.is"
@@ -54,21 +53,46 @@ Changelog = "https://github.com/mideind/Tokenizer#changelog"
 
 [project.optional-dependencies]
 test = [
-    "pytest>=7.0",
+    "pytest>=8.0",
 ]
 dev = [
-    "pytest>=7.0",
-    "pytest-cov>=4.0",
-    "ruff>=0.1.0",
-    "mypy>=1.0",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.15.0",
+    "mypy>=2.0",
     "build>=1.0",
-    "twine>=4.0",
+    "twine>=6.0",
 ]
 
 [project.scripts]
 tokenize = "tokenizer.main:main"
 
+[dependency-groups]
+test = [
+    "pytest>=8.0",
+]
+lint = [
+    "ruff>=0.15.0",
+]
+type = [
+    "mypy>=2.0",
+]
+release = [
+    "build>=1.0",
+    "twine>=6.0",
+]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+    { include-group = "type" },
+    { include-group = "release" },
+    "pytest-cov>=5.0",
+]
+
 # *** Tool Configuration ***
+
+[tool.uv]
+default-groups = []
 
 [tool.setuptools]
 zip-safe = false
@@ -83,7 +107,7 @@ tokenizer = ["*.conf", "py.typed"]
 # Ruff: Modern Python linter and formatter
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 src = ["src"]
 
 [tool.ruff.lint]
@@ -100,9 +124,15 @@ ignore = [
 known-first-party = ["tokenizer"]
 force-sort-within-sections = true
 
+[tool.ruff.lint.per-file-ignores]
+"test/*.py" = [
+    "E501",  # Long fixture strings are easier to audit inline
+    "E741",  # Split tests intentionally use l/r for left/right tokens
+]
+
 # MyPy: Static type checker
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false

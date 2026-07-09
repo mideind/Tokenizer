@@ -35,28 +35,26 @@ of this module is registered as a CLI command in pyproject.toml.
 
 """
 
+import argparse
+from functools import partial
+import json
+import sys
 from typing import (
+    Any,
+    Callable,
     Dict,
     Iterable,
+    Iterator,
     List,
     TextIO,
-    Iterator,
-    Callable,
-    Any,
     Tuple,
     Union,
     cast,
 )
 
-import sys
-import argparse
-import json
-from functools import partial
-
+from . import __version__ as tokenizer_version
 from .definitions import AmountTuple, BIN_Tuple, NumberTuple, PunctuationTuple
 from .tokenizer import TOK, Tok, tokenize
-from . import __version__ as tokenizer_version
-
 
 # Define the command line arguments
 

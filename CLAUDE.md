@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Tokenizer is a Python (>= 3.9) library for tokenizing Icelandic text. It converts input text into streams of tokens (words, punctuation, numbers, dates, etc.) and segments them into sentences. The project supports both shallow tokenization (space-separated strings) and deep tokenization (structured token objects with type annotations and metadata).
+Tokenizer is a Python (>= 3.10) library for tokenizing Icelandic text. It converts input text into streams of tokens (words, punctuation, numbers, dates, etc.) and segments them into sentences. The project supports both shallow tokenization (space-separated strings) and deep tokenization (structured token objects with type annotations and metadata).
 
 ## Core Architecture
 
@@ -26,16 +26,16 @@ Tokenizer is a Python (>= 3.9) library for tokenizing Icelandic text. It convert
 
 ### Testing
 ```bash
-python -m pytest                    # Run all tests
-python -m pytest test/test_tokenizer.py  # Run specific test file
-python -m pytest -v test/test_tokenizer.py::test_single_tokens  # Run specific test
+uv run --group test pytest                    # Run all tests
+uv run --group test pytest test/test_tokenizer.py  # Run specific test file
+uv run --group test pytest -v test/test_tokenizer.py::test_single_tokens  # Run specific test
 ```
 
 ### Linting and Type Checking
 ```bash
-ruff check src/tokenizer            # Code linting (configured in pyproject.toml)
-ruff format src/tokenizer           # Code formatting
-mypy src/tokenizer                  # Type checking (config in mypy.ini)
+uv run --group lint ruff check src/tokenizer  # Code linting
+uv run --group lint ruff format src/tokenizer # Code formatting
+uv run --group type mypy src/tokenizer        # Type checking
 ```
 
 ### Installation
@@ -72,7 +72,7 @@ The tokenizer recognizes 30+ token types including:
 ## Configuration
 
 - **pyproject.toml**: Project metadata, dependencies, ruff configuration
-- **mypy.ini**: Type checker configuration (currently set for Python 3.6/PyPy)
+- **mypy.ini**: Compatibility shim; main type checker configuration is in pyproject.toml
 - **Abbrev.conf**: Icelandic abbreviation dictionary
 
 ## Testing Structure
@@ -87,7 +87,7 @@ The tokenizer recognizes 30+ token types including:
 
 - The project uses type annotations in all code and tries to avoid Any types
 - Python 3.9 is supported so type annotations should adhere to 3.9-compatible syntax
-- Note: mypy.ini currently targets Python 3.6 for PyPy compatibility
+- Python 3.10 is the oldest supported CPython baseline
 
 ## Development Environment
 

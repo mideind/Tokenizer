@@ -3,7 +3,9 @@
     Copyright (C) 2025 Miðeind ehf.
 """
 
-from tokenizer.definitions import valid_ssn, roman_to_int
+import pytest
+
+from tokenizer.definitions import RE_ROMAN_NUMERAL, roman_to_int, valid_ssn
 
 
 def test_valid_ssn() -> None:
@@ -38,6 +40,7 @@ def test_valid_ssn() -> None:
     assert not valid_ssn("310354-2268")
 
     # Test invalid format - non-digit characters
+    assert not valid_ssn("H10101-1019")
     assert not valid_ssn("01010A-1019")
     assert not valid_ssn("010101-10B9")
 
@@ -83,3 +86,9 @@ def test_roman_to_int() -> None:
     assert roman_to_int("MCMXCIX") == 1999
     assert roman_to_int("MMXXIII") == 2023
     assert roman_to_int("MMMCMXCIX") == 3999
+
+
+def test_empty_roman_numeral_is_invalid() -> None:
+    assert RE_ROMAN_NUMERAL.match("") is None
+    with pytest.raises(ValueError):
+        roman_to_int("")

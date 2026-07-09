@@ -30,6 +30,7 @@ This software is licensed under the MIT License:
 """
 
 import pytest
+
 import tokenizer as t
 
 EN = t.EN_DASH
@@ -117,8 +118,8 @@ COMPOSITE_WORD_CONTINUATIONS = [
         f"Forstjóri Barna{EN} og fjölskyldustofu segir dæmi um að…",
     ),
     (
-        f"Innflutningur bensín-, dísel- og rafmagnsbíla hefur aukist.",
-        f"Innflutningur bensín-, dísel- og rafmagnsbíla hefur aukist.",
+        "Innflutningur bensín-, dísel- og rafmagnsbíla hefur aukist.",
+        "Innflutningur bensín-, dísel- og rafmagnsbíla hefur aukist.",
     ),
     (
         f"Innflutningur bensín{EN}, dísel{EN} og rafmagnsbíla hefur aukist.",

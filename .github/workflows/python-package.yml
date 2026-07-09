@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14.0-beta.4", "pypy-3.11"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "pypy-3.11"]
 
     steps:
     - uses: actions/checkout@v4
@@ -28,17 +28,12 @@ jobs:
     - name: Install Tokenizer
       run: |
         python -m pip install --upgrade uv
-        uv pip install --system --upgrade wheel setuptools
-        if [ "${{ matrix.python-version }}" == "3.9" ]; then
-          uv pip install --system ".[dev]"
-        else
-          uv pip install --system ".[test]"
-        fi
+        uv sync --group test
 
     - name: Type check with mypy (only on oldest supported Python version)
       run: |
-        if [ "${{ matrix.python-version }}" == "3.9" ]; then mypy --python-version=3.9 src/tokenizer; fi
+        if [ "${{ matrix.python-version }}" == "3.10" ]; then uv run --group type mypy src/tokenizer; fi
 
     - name: Test with pytest
       run: |
-        python -m pytest
+        uv run --group test pytest

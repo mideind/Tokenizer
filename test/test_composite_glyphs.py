@@ -29,7 +29,7 @@ This software is licensed under the MIT License:
     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from tokenizer import TOK, tokenize, split_into_sentences
+from tokenizer import TOK, split_into_sentences, tokenize
 
 
 def test_composite_glyphs_default():

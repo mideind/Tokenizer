@@ -28,36 +28,36 @@ This software is licensed under the MIT License:
 
 import importlib.metadata
 
+from .abbrev import Abbreviations, ConfigError
 from .definitions import (
-    TP_LEFT,
-    TP_CENTER,
-    TP_RIGHT,
-    TP_NONE,
-    TP_WORD,
-    EN_DASH,
     EM_DASH,
+    EN_DASH,
+    TP_CENTER,
+    TP_LEFT,
+    TP_NONE,
+    TP_RIGHT,
+    TP_WORD,
     BIN_Tuple,
     BIN_TupleList,
 )
 from .tokenizer import (
     TOK,
     Tok,
-    tokenize,
-    tokenize_without_annotation,
-    split_into_sentences,
-    parse_tokens,
+    TokenStream,
+    calculate_indexes,
     correct_spaces,
     detokenize,
+    generate_raw_tokens,
     mark_paragraphs,
-    paragraphs,
     normalized_text,
     normalized_text_from_tokens,
+    paragraphs,
+    parse_tokens,
+    split_into_sentences,
     text_from_tokens,
-    calculate_indexes,
-    generate_raw_tokens,
-    TokenStream,
+    tokenize,
+    tokenize_without_annotation,
 )
-from .abbrev import Abbreviations, ConfigError
 
 __author__ = "Miðeind ehf."
 __copyright__ = "(C) 2016-2025 Miðeind ehf."
