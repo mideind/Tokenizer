@@ -1518,7 +1518,16 @@ def generate_rough_tokens_from_txt(text: str) -> Iterator[Tok]:
         match = ROUGH_TOKEN_REGEX.match(text, pos)
         assert match is not None
         match_span = match.span(ROUGH_TOKEN_REGEX_ENTIRE_MATCH)
-        tok = Tok.from_txt(text[match_span[SPAN_START] : match_span[SPAN_END]])
+        whitespace_span = match.span(ROUGH_TOKEN_REGEX_WHITE_SPACE_GROUP)
+        token_span = match.span(ROUGH_TOKEN_REGEX_TOKEN_GROUP)
+        tok = Tok(
+            TOK.RAW,
+            text[token_span[SPAN_START] : token_span[SPAN_END]],
+            None,
+            text[match_span[SPAN_START] : match_span[SPAN_END]],
+            lazy_origin_spans=True,
+            lazy_origin_offset=whitespace_span[SPAN_END] - match_span[SPAN_START],
+        )
         pos = match_span[SPAN_END]
         yield tok
 
@@ -1643,10 +1652,15 @@ def generate_raw_tokens(
                     if replace_html_escapes:
                         # Replace HTML escapes: '&aacute;' -> 'á'
                         tok = html_replacement(tok)
-                    # HTML escapes and unicode may contain whitespace characters
-                    # e.g. Em space '&#8195;' and non-breaking space '&nbsp;'
-                    # Here we split those tokens into multiple tokens.
-                    for small_tok in generate_rough_tokens_from_tok(tok):
+                    # HTML escapes may introduce whitespace characters, e.g. Em
+                    # space '&#8195;' and non-breaking space '&nbsp;'. Only that
+                    # optional replacement requires another rough-token pass.
+                    small_tokens: Iterable[Tok] = (
+                        generate_rough_tokens_from_tok(tok)
+                        if replace_html_escapes
+                        else (tok,)
+                    )
+                    for small_tok in small_tokens:
                         if small_tok.txt == "":
                             # There was whitespace at the end of the last token.
                             # We do not want to yield a token with empty text
