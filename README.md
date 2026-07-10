@@ -41,10 +41,11 @@ using a 64-bit 2.6 GHz Intel Core i9:
 
 Running tokenization with PyPy is about 3x faster than with CPython.
 
-Version 3.6.3 reduces the cost of origin tracking by materializing
-`origin_spans` lazily. On `test/toktest_large.txt` (573 KB, about 149k tokens),
-this improved CPython tokenization throughput by roughly 8-12% and reduced
-peak memory by about 9 MB when retaining the token list.
+Version 3.6.4 avoids a redundant whitespace-tokenization pass for normal input,
+while retaining the additional pass when HTML escape replacement can introduce
+whitespace. On `test/toktest_large.txt` (573 KB, about 149k tokens), this reduces
+CPython tokenization time by roughly 20% compared with version 3.6.3, with
+identical token text, values, original text and origin spans.
 
 ## Deep vs. shallow tokenization
 
@@ -716,6 +717,11 @@ can be found in the file `test/toktest_normal_gold_expected.txt`.
 
 ## Changelog
 
+* Version 3.6.4: Improved tokenization performance by constructing rough tokens
+  directly with their lazy origin offsets and skipping a redundant second
+  whitespace-tokenization pass unless HTML escape replacement is enabled. This
+  reduces CPython tokenization time by roughly 20% on the large test corpus while
+  preserving token output and origin tracking.
 * Version 3.6.3: Improved origin tracking performance by materializing
   `origin_spans` lazily, while preserving the public token API and index
   behavior. Fixed validation edge cases in `valid_ssn()`, Roman numeral
