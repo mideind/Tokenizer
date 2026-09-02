@@ -130,6 +130,25 @@ def test_single_tokens() -> None:
         ("3. maí", [Tok(TOK.DATEREL, "3. maí", (0, 5, 3))]),
         ("Ágúst", TOK.WORD),  # Not month name if capitalized
         ("13. ágúst", [Tok(TOK.DATEREL, "13. ágúst", (0, 8, 13))]),
+        (
+            "ágúst-september",
+            [
+                Tok(TOK.DATEREL, "ágúst", (0, 8, 0)),
+                Tok(TOK.PUNCTUATION, "-", None),
+                Tok(TOK.DATEREL, "september", (0, 9, 0)),
+            ],
+        ),
+        (
+            "júlí–ágúst",
+            [
+                Tok(TOK.DATEREL, "júlí", (0, 7, 0)),
+                Tok(TOK.PUNCTUATION, "–", None),
+                Tok(TOK.DATEREL, "ágúst", (0, 8, 0)),
+            ],
+        ),
+        ("mar-apr", TOK.WORD),  # Ambiguous month names: left alone
+        ("Ágúst-september", TOK.WORD),  # Blacklisted capitalized Ágúst
+        ("vestur-þýska", TOK.WORD),  # Ordinary hyphenated word
         ("nóvember 1918", [Tok(TOK.DATEREL, "nóvember 1918", (1918, 11, 0))]),
         (
             "nóvember 19180",
