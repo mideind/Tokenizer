@@ -3004,17 +3004,15 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                 a = token.txt.split(hchar)
                 if (
                     len(a) == 2
-                    and a[0] not in AMBIGUOUS_MONTH_NAMES
-                    and a[1] not in AMBIGUOUS_MONTH_NAMES
+                    and (a0 := a[0]) not in AMBIGUOUS_MONTH_NAMES
+                    and (a1 := a[1]) not in AMBIGUOUS_MONTH_NAMES
                 ):
-                    m1 = MONTHS.get(a[0].lower())
-                    m2 = MONTHS.get(a[1].lower())
+                    m1 = MONTHS.get(a0.lower())
+                    m2 = MONTHS.get(a1.lower())
                     if m1 is not None and m2 is not None:
-                        first, rest = token.split(len(a[0]))
-                        hyphen, second = rest.split(1)
-                        yield TOK.Daterel(first, y=0, m=m1, d=0)
-                        yield TOK.Punctuation(hyphen)
-                        token = TOK.Daterel(second, y=0, m=m2, d=0)
+                        yield TOK.Daterel(a0, y=0, m=m1, d=0)
+                        yield TOK.Punctuation(hchar)
+                        token = TOK.Daterel(a1, y=0, m=m2, d=0)
 
             # Check for a single month, change to DATEREL
             if token.kind == TOK.WORD:
