@@ -2992,6 +2992,28 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                         # Eat the year token
                         next_token = next(token_stream)
 
+            # Check for a [month name]-[month name] range fused into
+            # a single word token, such as 'ágúst-september': split it
+            # into DATEREL, hyphen and DATEREL. The guard is deliberately
+            # cheap: only WORD tokens containing a hyphen or an en dash
+            # are examined any further.
+            if token.kind == TOK.WORD and (
+                HYPHEN in token.txt or EN_DASH in token.txt
+            ):
+                hchar = HYPHEN if HYPHEN in token.txt else EN_DASH
+                a = token.txt.split(hchar)
+                if (
+                    len(a) == 2
+                    and (a0 := a[0]) not in AMBIGUOUS_MONTH_NAMES
+                    and (a1 := a[1]) not in AMBIGUOUS_MONTH_NAMES
+                ):
+                    m1 = MONTHS.get(a0.lower())
+                    m2 = MONTHS.get(a1.lower())
+                    if m1 is not None and m2 is not None:
+                        yield TOK.Daterel(a0, y=0, m=m1, d=0)
+                        yield TOK.Punctuation(hchar)
+                        token = TOK.Daterel(a1, y=0, m=m2, d=0)
+
             # Check for a single month, change to DATEREL
             if token.kind == TOK.WORD:
                 month = month_for_token(token)
