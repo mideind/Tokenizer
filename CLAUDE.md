@@ -86,8 +86,10 @@ The tokenizer recognizes 30+ token types including:
 ## Type Checking
 
 - The project uses type annotations in all code and tries to avoid Any types
-- Python 3.9 is supported so type annotations should adhere to 3.9-compatible syntax
-- Python 3.10 is the oldest supported CPython baseline
+- Python 3.10 is the oldest supported CPython baseline, so PEP 604 unions (`X | None`) and
+  builtin generics (`list[str]`) are fine, but `typing.Self` (3.11) is not
+- Tokenizer has no runtime dependencies: never import `typing_extensions` (ruff's
+  autofix may try to)
 
 ## Development Environment
 

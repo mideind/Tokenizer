@@ -34,9 +34,10 @@ resource library) as this Python source file.
 """
 
 from collections import defaultdict
+from collections.abc import Iterator
 import importlib.resources as importlib_resources
 from threading import Lock
-from typing import Dict, Generic, Iterator, List, Optional, Set, TypeVar
+from typing import ClassVar, Generic, TypeVar
 
 from .definitions import BIN_Tuple
 
@@ -56,7 +57,7 @@ class OrderedSet(Generic[_T]):
 
     def __init__(self) -> None:
         # Insertions are ordered in Python 3.7+ dicts
-        self._dict: Dict[_T, None] = {}
+        self._dict: dict[_T, None] = {}
 
     def add(self, item: _T) -> None:
         """Add an item at the end of the ordered set"""
@@ -81,35 +82,35 @@ class Abbreviations:
     initialized from the config file"""
 
     # Dictionary of abbreviations and their meanings
-    DICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    DICT: ClassVar[dict[str, OrderedSet[BIN_Tuple]]] = defaultdict(OrderedSet)
     # Wrong versions of abbreviations
-    WRONGDICT: Dict[str, OrderedSet[BIN_Tuple]] = defaultdict(OrderedSet)
+    WRONGDICT: ClassVar[dict[str, OrderedSet[BIN_Tuple]]] = defaultdict(OrderedSet)
     # All abbreviation meanings
-    MEANINGS: Set[str] = set()
+    MEANINGS: ClassVar[set[str]] = set()
     # Single-word abbreviations, i.e. those with only one dot at the end
-    SINGLES: Set[str] = set()
+    SINGLES: ClassVar[set[str]] = set()
     # Set of abbreviations without periods, e.g. "td", "osfrv"
-    WRONGSINGLES: Set[str] = set()
+    WRONGSINGLES: ClassVar[set[str]] = set()
     # Potential sentence finishers, i.e. those with a dot at the end,
     # marked with an asterisk in the config file
-    FINISHERS: Set[str] = set()
+    FINISHERS: ClassVar[set[str]] = set()
     # Abbreviations that should not be seen as such at the end of sentences,
     # marked with an exclamation mark in the config file
-    NOT_FINISHERS: Set[str] = set()
+    NOT_FINISHERS: ClassVar[set[str]] = set()
     # Abbreviations that should not be seen as such at the end of sentences, but
     # are allowed in front of person names; marked with a hat ^ in the config file
-    NAME_FINISHERS: Set[str] = set()
+    NAME_FINISHERS: ClassVar[set[str]] = set()
     # Wrong versions of abbreviations with possible corrections
     # wrong version : [correction1, correction2, ...]
-    WRONGDOTS: Dict[str, List[str]] = defaultdict(list)
+    WRONGDOTS: ClassVar[dict[str, list[str]]] = defaultdict(list)
     # Word forms that should never be interpreted as abbreviations
-    NOT_ABBREVIATIONS: Set[str] = set()
+    NOT_ABBREVIATIONS: ClassVar[set[str]] = set()
 
     # Ensure that only one thread initializes the abbreviations
     _lock = Lock()
 
     @staticmethod
-    def add(abbrev: str, meaning: str, gender: str, fl: Optional[str] = None) -> None:
+    def add(abbrev: str, meaning: str, gender: str, fl: str | None = None) -> None:
         """Add an abbreviation to the dictionary.
         Called from the config file handler."""
         # Check for sentence finishers
@@ -148,7 +149,7 @@ class Abbreviations:
                     "Only abbreviations ending with periods "
                     "can be marked as name finishers"
                 )
-        if abbrev.endswith("!") or abbrev.endswith("*") or abbrev.endswith("^"):
+        if abbrev.endswith(("!", "*", "^")):
             raise ConfigError(
                 "!, * and ^ modifiers are mutually exclusive on abbreviations"
             )
@@ -214,7 +215,7 @@ class Abbreviations:
                 i1 = indices[0]
                 i2 = indices[1]
                 i3 = indices[2]
-                wabbrevs: List[str] = []
+                wabbrevs: list[str] = []
                 # 1 and 2 removed
                 wabbrevs.append(abbrev[:i1] + abbrev[i1 + 1 : i2] + abbrev[i2 + 1 :])
                 # 1 and 3 removed
@@ -263,7 +264,7 @@ class Abbreviations:
         return meaning in Abbreviations.MEANINGS
 
     @staticmethod
-    def get_meaning(abbrev: str) -> Optional[list[BIN_Tuple]]:
+    def get_meaning(abbrev: str) -> list[BIN_Tuple] | None:
         """Look up meaning(s) of abbreviation, if available."""
         m = Abbreviations.DICT.get(abbrev)
         if not m:

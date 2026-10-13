@@ -36,19 +36,13 @@ of this module is registered as a CLI command in pyproject.toml.
 """
 
 import argparse
+from collections.abc import Callable, Iterable, Iterator
 from functools import partial
 import json
 import sys
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
     TextIO,
-    Tuple,
-    Union,
     cast,
 )
 
@@ -160,7 +154,7 @@ def main() -> None:
     """Main function, called when the tokenize command is invoked"""
 
     args = parser.parse_args()
-    options: Dict[str, bool] = {}
+    options: dict[str, bool] = {}
 
     def quote(s: str) -> str:
         """Return the string s within double quotes, and with any contained
@@ -173,8 +167,7 @@ def main() -> None:
 
     def gen(f: TextIO) -> Iterator[str]:
         """Generate the lines of text in the input file"""
-        for line in f:
-            yield line
+        yield from f
 
     def val(t: Tok, quote_word: bool = False) -> Any:
         """Return the value part of the token t"""
@@ -182,7 +175,7 @@ def main() -> None:
             return None
         if t.kind == TOK.WORD:
             # Get the full expansion of an abbreviation
-            mm = cast(List[BIN_Tuple], t.val)
+            mm = cast(list[BIN_Tuple], t.val)
             if quote_word:
                 # Return a |-delimited list of possible meanings,
                 # joined into a single string
@@ -195,7 +188,7 @@ def main() -> None:
             am = cast(AmountTuple, t.val)
             if quote_word:
                 # Format as "1234.56|USD"
-                return '"{0}|{1}"'.format(am[0], am[1])
+                return f'"{am[0]}|{am[1]}"'
             return am[0], am[1]
         if t.kind == TOK.S_BEGIN:
             return None
@@ -215,7 +208,7 @@ def main() -> None:
             TOK.MEASUREMENT,
         }:
             # Return a |-delimited list of numbers
-            vv = cast(Tuple[Any, ...], t.val)
+            vv = cast(tuple[Any, ...], t.val)
             return quote("|".join(str(v) for v in vv))
         if quote_word and isinstance(t.val, str):
             return quote(t.val)
@@ -253,14 +246,14 @@ def main() -> None:
 
     # Configure our JSON dump function
     json_dumps = partial(json.dumps, ensure_ascii=False, separators=(",", ":"))
-    curr_sent: List[str] = []
+    curr_sent: list[str] = []
     tsep = "" if args.original else " "  # token separator
     for t in tokenize(gen(args.infile), **options):
         if args.csv:
             # Output the tokens in CSV format, one line per token
             if t.txt:
                 print(
-                    "{0},{1},{2},{3},{4}".format(
+                    "{},{},{},{},{}".format(
                         t.kind,
                         quote(t.txt),
                         val(t, quote_word=True) or '""',
@@ -274,7 +267,7 @@ def main() -> None:
                 print('0,"","","",""', file=args.outfile)
         elif args.json:
             # Output the tokens in JSON format, one line per token
-            d: Dict[str, Union[str, List[int]]] = {"k": TOK.descr[t.kind]}
+            d: dict[str, str | list[int]] = {"k": TOK.descr[t.kind]}
             if t.txt:
                 d["t"] = t.txt
             v = val(t)
