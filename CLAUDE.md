@@ -52,10 +52,15 @@ echo "Texti hér." | tokenize        # Pipe from stdin
 ```
 
 ### Large Test Set Validation
+`test/test_large_gold.py` fails if the CLI output for `test/toktest_large.txt` differs
+from `test/toktest_large_gold_acceptable.txt` (the current output, enforced). For an
+intended tokenization change, regenerate the gold file and review its diff:
 ```bash
-tokenize test/toktest_large.txt test/toktest_large_out.txt
-diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt
+tokenize test/toktest_large.txt test/toktest_large_gold_acceptable.txt
+git diff test/toktest_large_gold_acceptable.txt
 ```
+`test/Overview.txt` cites line ranges `[input|gold]` in the gold file; they shift
+when sentence splitting changes.
 
 ### Performance Bench
 ```bash
