@@ -57,6 +57,15 @@ tokenize test/toktest_large.txt test/toktest_large_out.txt
 diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt
 ```
 
+### Performance Bench
+```bash
+python bench/bench.py --save /tmp/base.json      # timings + output digests
+python bench/bench.py --compare /tmp/base.json   # speed change, "same"/"OUTPUT DIFFERS"
+bench/profile.sh tokenize 15                     # CPython 3.15 sampling profiler
+```
+Profile with `--blocking` (profile.sh does): without it the 3.15 sampler fails to
+unwind ~70% of stacks in the generator pipeline and misattributes time.
+
 ## Token Types
 
 The tokenizer recognizes 30+ token types including:

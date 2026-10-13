@@ -89,6 +89,37 @@ DMY_DATE = (
 
 SINGLE_DASH_OR_DOT_DATE = r"(\d{2})[-.](\d{4})(?!\d)".replace("-", HYPHEN + EN_DASH)
 
+# Precompiled regexes for the hot token parsing paths
+TIME_HMS_MS_REGEX = re.compile(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)")
+TIME_HMS_REGEX = re.compile(r"\d{1,2}:\d\d:\d\d(?!\d)")
+TIME_HM_REGEX = re.compile(r"\d{1,2}:\d\d(?!\d)")
+ISO_DATE_REGEX = re.compile(ISO_DATE)
+DMY_DATE_REGEX = re.compile(DMY_DATE)
+DAY_MONTH_REGEX = re.compile(r"(\d{2})\.(\d{2})(?!\d)")
+SINGLE_DASH_OR_DOT_DATE_REGEX = re.compile(SINGLE_DASH_OR_DOT_DATE)
+NUMBER_WITH_LETTER_REGEX = re.compile(r"\d+([a-zA-Z])(?!\w)")
+NUMBER_WITH_FRACTION_REGEX = re.compile(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])")
+IS_REAL_NUMBER_REGEX = re.compile(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)")
+COMMA_DIGITS_REGEX = re.compile(r",\d+")
+IS_THOUSANDS_INTEGER_REGEX = re.compile(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)")
+DAY_SLASH_MONTH_REGEX = re.compile(r"\d{1,2}/\d{1,2}(?!\d)")
+FOUR_DIGITS_REGEX = re.compile(r"\d\d\d\d(?!\d)")
+SSN_REGEX = re.compile(r"\d{6}\-\d{4}(?!\d)")
+TELNO_HYPHEN_REGEX = re.compile(r"\d\d\d\-\d\d\d\d(?!\d)")
+SERIAL_NUMBER_REGEX = re.compile(r"\d+\-\d+(\-\d+)+")
+SEVEN_DIGITS_REGEX = re.compile(r"\d\d\d\d\d\d\d(?!\d)")
+CHAPTER_NUMBER_REGEX = re.compile(r"\d+\.\d+(\.\d+)+")
+EN_REAL_NUMBER_REGEX = re.compile(r"[\+\-]?\d+(,\d\d\d)*\.\d+")
+EN_INTEGER_REGEX = re.compile(r"[\+\-]?\d+(,\d\d\d)*(?!\d)")
+USERNAME_REGEX = re.compile(r"\@[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*")
+EMAIL_REGEX = re.compile(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+")
+HASHTAG_REGEX = re.compile(r"#\w")
+NUMBER_SIGN_REGEX = re.compile(r"#\d+$")
+THREE_DIGITS_REGEX = re.compile(r"^\d\d\d$")
+FOUR_DIGITS_ONLY_REGEX = re.compile(r"^\d\d\d\d$")
+ONE_SENT_PER_LINE_SPLIT_REGEX = re.compile(r"(\n)")
+SENTENCE_SPLIT_REGEX = re.compile(r"(\n\s*\n|^\s+$|\]\]\[\[)")
+
 HYPHEN_OG = f"{HYPHEN}og"
 HYPHEN_EÐA = f"{HYPHEN}eða"
 EN_DASH_OG = f"{EN_DASH}og"
@@ -1091,7 +1122,7 @@ def is_valid_date(y: int, m: int, d: int) -> bool:
 def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
     """Parse a raw token starting with a digit"""
     w = tok.txt
-    s: Match[str] | None = re.match(r"\d{1,2}:\d\d:\d\d,\d\d(?!\d)", w)
+    s: Match[str] | None = TIME_HMS_MS_REGEX.match(w)
     g: str
     n: str
     if s:
@@ -1106,7 +1137,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Time(t, h, m, sec), rest
 
-    s = re.match(r"\d{1,2}:\d\d:\d\d(?!\d)", w)
+    s = TIME_HMS_REGEX.match(w)
     if s:
         # Looks like a 24-hour clock, H:M:S
         g = s.group()
@@ -1118,7 +1149,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Time(t, h, m, sec), rest
 
-    s = re.match(r"\d{1,2}:\d\d(?!\d)", w)
+    s = TIME_HM_REGEX.match(w)
     if s:
         # Looks like a 24-hour clock, H:M
         g = s.group()
@@ -1129,7 +1160,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Time(t, h, m, 0), rest
 
-    s = re.match(ISO_DATE, w)
+    s = ISO_DATE_REGEX.match(w)
     if s:
         # Looks like an ISO format date: YYYY-MM-DD or YYYY/MM/DD
         g = s.group()
@@ -1146,7 +1177,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Date(t, y, m, d), rest
 
-    s = re.match(DMY_DATE, w)
+    s = DMY_DATE_REGEX.match(w)
     if s:
         # Looks like a date with day, month and year parts
         g = s.group()
@@ -1171,7 +1202,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Date(t, y, m, d), rest
 
-    s = re.match(r"(\d{2})\.(\d{2})(?!\d)", w)
+    s = DAY_MONTH_REGEX.match(w)
     if s:
         # A date in the form dd.mm
         # (Allowing hyphens here would interfere with for instance
@@ -1183,7 +1214,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Daterel(t, y=0, m=m, d=d), rest
 
-    s = re.match(SINGLE_DASH_OR_DOT_DATE, w)
+    s = SINGLE_DASH_OR_DOT_DATE_REGEX.match(w)
     if s:
         # A date in the form of mm.yyyy or mm-yyyy
         g = s.group()
@@ -1193,9 +1224,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Daterel(t, y=y, m=m, d=0), rest
 
-    # Note: the following must use re.UNICODE to make sure that
-    # \w matches all Icelandic characters under Python 2
-    s = re.match(r"\d+([a-zA-Z])(?!\w)", w, re.UNICODE)
+    s = NUMBER_WITH_LETTER_REGEX.match(w)
     if s:
         # Looks like a number with a single trailing character, e.g. 14b, 33C, 1122f
         g = s.group()
@@ -1285,7 +1314,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
         t, rest = tok.split(s.end())
         return TOK.Measurement(t, unit, value), rest
 
-    s = re.match(r"(\d+)([\u00BC-\u00BE\u2150-\u215E])", w, re.UNICODE)
+    s = NUMBER_WITH_FRACTION_REGEX.match(w)
     if s:
         # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
         g = s.group()
@@ -1296,31 +1325,31 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
         return TOK.Number(t, val), rest
 
     # Can't end with digits.digits
-    s = re.match(r"[\+\-]?\d+(\.\d\d\d)*,\d+(?!\d*\.\d)", w)
+    s = IS_REAL_NUMBER_REGEX.match(w)
     if s:
         # Icelandic-style real number formatted with decimal comma (,)
         # and possibly thousands separators (.)
         # (we need to check this before checking integers)
         g = s.group()
-        if re.match(r",\d+", w[len(g) :]):
+        if COMMA_DIGITS_REGEX.match(w[len(g) :]):
             # English-style thousand separator multiple times
             s = None
         else:
-            n = re.sub(r"\.", "", g)  # Eliminate thousands separators
-            n = re.sub(",", ".", n)  # Convert decimal comma to point
+            n = g.replace(".", "")  # Eliminate thousands separators
+            n = n.replace(",", ".")  # Convert decimal comma to point
             t, rest = tok.split(s.end())
             return TOK.Number(t, float(n)), rest
 
-    s = re.match(r"[\+\-]?\d+(\.\d\d\d)+(?!\d)", w)
+    s = IS_THOUSANDS_INTEGER_REGEX.match(w)
     if s:
         # Integer with a '.' thousands separator
         # (we need to check this before checking dd.mm dates)
         g = s.group()
-        n = re.sub(r"\.", "", g)  # Eliminate thousands separators
+        n = g.replace(".", "")  # Eliminate thousands separators
         t, rest = tok.split(s.end())
         return TOK.Number(t, int(n)), rest
 
-    s = re.match(r"\d{1,2}/\d{1,2}(?!\d)", w)
+    s = DAY_SLASH_MONTH_REGEX.match(w)
     if s:
         # Looks like a date (and not something like 10/2007)
         g = s.group()
@@ -1345,7 +1374,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(s.end())
             return TOK.Daterel(t, y=0, m=m, d=d), rest
 
-    s = re.match(r"\d\d\d\d(?!\d)", w)
+    s = FOUR_DIGITS_REGEX.match(w)
     if s:
         nn = int(s.group())
         if 1776 <= nn <= 2100:
@@ -1353,7 +1382,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(4)
             return TOK.Year(t, nn), rest
 
-    s = re.match(r"\d{6}\-\d{4}(?!\d)", w)
+    s = SSN_REGEX.match(w)
     if s:
         # Looks like a social security number
         g = s.group()
@@ -1361,7 +1390,7 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t, rest = tok.split(11)
             return TOK.Ssn(t), rest
 
-    s = re.match(r"\d\d\d\-\d\d\d\d(?!\d)", w)
+    s = TELNO_HYPHEN_REGEX.match(w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = s.group()
@@ -1373,35 +1402,35 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
         t, rest = tok.split(s.end())
         return TOK.SerialNumber(t), rest
 
-    s = re.match(r"\d+\-\d+(\-\d+)+", w)
+    s = SERIAL_NUMBER_REGEX.match(w)
     if s:
         # Multi-component serial number
         t, rest = tok.split(s.end())
         return TOK.SerialNumber(t), rest
 
-    s = re.match(r"\d\d\d\d\d\d\d(?!\d)", w)
+    s = SEVEN_DIGITS_REGEX.match(w)
     if s and w[0] in TELNO_PREFIXES:
         # Looks like a telephone number
         telno = w[0:3] + HYPHEN + w[3:7]
         t, rest = tok.split(7)
         return TOK.Telno(t, telno), rest
 
-    s = re.match(r"\d+\.\d+(\.\d+)+", w)
+    s = CHAPTER_NUMBER_REGEX.match(w)
     if s:
         # Some kind of ordinal chapter number: 2.5.1 etc.
         # (we need to check this before numbers with decimal points)
         g = s.group()
         # !!! TODO: A better solution would be to convert 2.5.1 to (2,5,1)
-        n = re.sub(r"\.", "", g)  # Eliminate dots, 2.5.1 -> 251
+        n = g.replace(".", "")  # Eliminate dots, 2.5.1 -> 251
         t, rest = tok.split(s.end())
         return TOK.Ordinal(t, int(n)), rest
 
-    s = re.match(r"[\+\-]?\d+(,\d\d\d)*\.\d+", w)
+    s = EN_REAL_NUMBER_REGEX.match(w)
     if s:
         # English-style real number with a decimal point (.),
         # and possibly commas as thousands separators (,)
         g = s.group()
-        n = re.sub(",", "", g)  # Eliminate thousands separators
+        n = g.replace(",", "")  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
         t, rest = tok.split(s.end())
         if convert_numbers:
@@ -1410,11 +1439,11 @@ def parse_digits(tok: Tok, convert_numbers: bool) -> tuple[Tok, Tok]:
             t.substitute_all("x", ".")  # Change 'x' to '.'
         return TOK.Number(t, float(n)), rest
 
-    s = re.match(r"[\+\-]?\d+(,\d\d\d)*(?!\d)", w)
+    s = EN_INTEGER_REGEX.match(w)
     if s:
         # Integer, possibly with a ',' thousands separator
         g = s.group()
-        n = re.sub(",", "", g)  # Eliminate thousands separators
+        n = g.replace(",", "")  # Eliminate thousands separators
         # !!! TODO: May want to mark this as an error
         t, rest = tok.split(s.end())
         if convert_numbers:
@@ -1608,13 +1637,13 @@ def generate_raw_tokens(
         if one_sent_per_line:
             # We know there's a single sentence per line
             # Only split on newline
-            sentence_split_pattern = r"(\n)"
+            sentence_split_regex = ONE_SENT_PER_LINE_SPLIT_REGEX
         else:
             # Split on empty lines, eventually containing whitespace,
             # but also on paragraph splits within a line
-            sentence_split_pattern = r"(\n\s*\n|^\s+$|\]\]\[\[)"
+            sentence_split_regex = SENTENCE_SPLIT_REGEX
 
-        splits = re.split(sentence_split_pattern, big_text)
+        splits = sentence_split_regex.split(big_text)
         # We know that splits will contain alternatively useful text and the splitting
         # pattern, starting and ending with useful text. See the documentation on
         # re.split.
@@ -1634,10 +1663,19 @@ def generate_raw_tokens(
                         text = text[:-2]
                         # Postpone the yield until after the raw token loop
                         paragraph_end += 1
+                # Zero-width characters and composite glyphs are rare, so we
+                # check once per text whether the per-token replacements are
+                # needed at all. Removing a zero-width character can bring a
+                # composite glyph together, hence the second condition.
+                has_zerowidth = ZEROWIDTH_REGEX.search(text) is not None
+                has_composites = replace_composite_glyphs and (
+                    has_zerowidth or COMPOSITE_REGEX.search(text) is not None
+                )
                 for tok in generate_rough_tokens_from_txt(text):
-                    # Always remove zero-width characters
-                    tok = zerowidth_replacement(tok)
-                    if replace_composite_glyphs:
+                    if has_zerowidth:
+                        # Always remove zero-width characters
+                        tok = zerowidth_replacement(tok)
+                    if has_composites:
                         # Replace composite glyphs with single code points
                         tok = composite_replacement(tok)
                     if replace_html_escapes:
@@ -1937,7 +1975,7 @@ class PunctuationParser:
                 # Username on Twitter or other social media platforms
                 # User names may contain alphabetic characters, digits
                 # and embedded periods (but not consecutive ones)
-                s = re.match(r"\@[0-9a-zA-Z_]+(\.[0-9a-zA-Z_]+)*", rtxt)
+                s = USERNAME_REGEX.match(rtxt)
                 if s:
                     g = s.group()
                     username, rt = rt.split(s.end())
@@ -1992,7 +2030,7 @@ def parse_mixed(
             # Check for valid e-mail
             # Note: we don't allow double quotes (simple or closing ones) in e-mails
             # here even though they're technically allowed according to the RFCs
-            s = re.match(r"[^@\s]+@[^@\s]+(\.[^@\s\.,/:;\"\(\)%#!\?”]+)+", rtxt)
+            s = EMAIL_REGEX.match(rtxt)
             if s:
                 email, rt = rt.split(s.end())
                 yield TOK.Email(email)
@@ -2020,7 +2058,7 @@ def parse_mixed(
             yield TOK.Url(url)
             ate = True
 
-        if rtxt and len(rtxt) >= 2 and re.match(r"#\w", rtxt, re.UNICODE):
+        if rtxt and len(rtxt) >= 2 and HASHTAG_REGEX.match(rtxt):
             # Handle hashtags. Eat all text up to next punctuation character
             # so we can handle strings like "#MeToo-hreyfingin" as two words
             w = rtxt
@@ -2030,7 +2068,7 @@ def parse_mixed(
                 tag += w[0]
                 w = w[1:]
             tag_tok, rt = rt.split(len(tag))
-            if re.match(r"#\d+$", tag):
+            if NUMBER_SIGN_REGEX.match(tag):
                 # Hash is being used as a number sign, e.g. "#12"
                 yield TOK.Ordinal(tag_tok, int(tag[1:]))
             else:
@@ -2458,8 +2496,8 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
                 token.kind == TOK.NUMBER
                 and (next_token.kind == TOK.NUMBER or next_token.kind == TOK.YEAR)
                 and token.txt[0] in TELNO_PREFIXES
-                and re.search(r"^\d\d\d$", token.txt)
-                and re.search(r"^\d\d\d\d$", next_token.txt)
+                and THREE_DIGITS_REGEX.search(token.txt)
+                and FOUR_DIGITS_ONLY_REGEX.search(next_token.txt)
             ):
                 telno = token.txt + HYPHEN + next_token.txt
                 token = TOK.Telno(token.concatenate(next_token, separator=" "), telno)
