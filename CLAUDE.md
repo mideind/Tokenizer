@@ -52,10 +52,24 @@ echo "Texti hér." | tokenize        # Pipe from stdin
 ```
 
 ### Large Test Set Validation
+`test/test_large_gold.py` fails if the CLI output for `test/toktest_large.txt` differs
+from `test/toktest_large_gold_acceptable.txt` (the current output, enforced). For an
+intended tokenization change, regenerate the gold file and review its diff:
 ```bash
-tokenize test/toktest_large.txt test/toktest_large_out.txt
-diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt
+tokenize test/toktest_large.txt test/toktest_large_gold_acceptable.txt
+git diff test/toktest_large_gold_acceptable.txt
 ```
+`test/Overview.txt` cites line ranges `[input|gold]` in the gold file; they shift
+when sentence splitting changes.
+
+### Performance Bench
+```bash
+python bench/bench.py --save /tmp/base.json      # timings + output digests
+python bench/bench.py --compare /tmp/base.json   # speed change, "same"/"OUTPUT DIFFERS"
+bench/profile.sh tokenize 15                     # CPython 3.15 sampling profiler
+```
+Profile with `--blocking` (profile.sh does): without it the 3.15 sampler fails to
+unwind ~70% of stacks in the generator pipeline and misattributes time.
 
 ## Token Types
 
@@ -86,8 +100,10 @@ The tokenizer recognizes 30+ token types including:
 ## Type Checking
 
 - The project uses type annotations in all code and tries to avoid Any types
-- Python 3.9 is supported so type annotations should adhere to 3.9-compatible syntax
-- Python 3.10 is the oldest supported CPython baseline
+- Python 3.10 is the oldest supported CPython baseline, so PEP 604 unions (`X | None`) and
+  builtin generics (`list[str]`) are fine, but `typing.Self` (3.11) is not
+- Tokenizer has no runtime dependencies: never import `typing_extensions` (ruff's
+  autofix may try to)
 
 ## Development Environment
 

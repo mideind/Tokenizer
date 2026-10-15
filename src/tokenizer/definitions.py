@@ -28,28 +28,22 @@ This software is licensed under the MIT License:
 
 """
 
+from collections.abc import Callable, Mapping, Sequence
 import re
 from typing import (
-    Callable,
-    List,
-    Mapping,
     NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
     cast,
 )
 
-BeginTuple = Tuple[int, Optional[int]]
-PunctuationTuple = Tuple[int, str]
-NumberTuple = Tuple[float, Optional[List[str]], Optional[List[str]]]
-DateTimeTuple = Tuple[int, int, int]
-MeasurementTuple = Tuple[str, float]
-TimeStampTuple = Tuple[int, int, int, int, int, int]
-AmountTuple = Tuple[float, str, Optional[List[str]], Optional[List[str]]]
-TelnoTuple = Tuple[str, str]
-CurrencyTuple = Tuple[str, Optional[List[str]], Optional[List[str]]]
+BeginTuple = tuple[int, int | None]
+PunctuationTuple = tuple[int, str]
+NumberTuple = tuple[float, list[str] | None, list[str] | None]
+DateTimeTuple = tuple[int, int, int]
+MeasurementTuple = tuple[str, float]
+TimeStampTuple = tuple[int, int, int, int, int, int]
+AmountTuple = tuple[float, str, list[str] | None, list[str] | None]
+TelnoTuple = tuple[str, str]
+CurrencyTuple = tuple[str, list[str] | None, list[str] | None]
 
 
 class BIN_Tuple(NamedTuple):
@@ -74,29 +68,29 @@ BIN_TupleList = Sequence[BIN_Tuple]
 
 class PersonNameTuple(NamedTuple):
     name: str
-    gender: Optional[str]
-    case: Optional[str]
+    gender: str | None
+    case: str | None
 
 
 PersonNameList = Sequence[PersonNameTuple]
 
 # All possible contents of the Tok.val attribute
-ValType = Union[
-    None,
-    int,  # YEAR, ORDINAL
-    str,  # USERNAME
-    BeginTuple,  # S_BEGIN
-    PunctuationTuple,  # PUNCTUATION, NUMWLETTER
-    MeasurementTuple,  # MEASUREMENT
-    TelnoTuple,  # TELNO
-    DateTimeTuple,  # DATE, TIME
-    TimeStampTuple,  # TIMESTAMP
-    NumberTuple,  # PERCENT, NUMBER
-    AmountTuple,  # AMOUNT
-    CurrencyTuple,  # CURRENCY
-    BIN_TupleList,  # WORD
-    PersonNameList,  # PERSON
-]
+ValType = (
+    None
+    | int  # YEAR, ORDINAL
+    | str  # USERNAME
+    | BeginTuple  # S_BEGIN
+    | PunctuationTuple  # PUNCTUATION, NUMWLETTER
+    | MeasurementTuple  # MEASUREMENT
+    | TelnoTuple  # TELNO
+    | DateTimeTuple  # DATE, TIME
+    | TimeStampTuple  # TIMESTAMP
+    | NumberTuple  # PERCENT, NUMBER
+    | AmountTuple  # AMOUNT
+    | CurrencyTuple  # CURRENCY
+    | BIN_TupleList  # WORD
+    | PersonNameList  # PERSON
+)
 
 # This seems to be needed as a workaround for Pylance/Pyright
 _escape = cast(Callable[[str], str], re.escape)
@@ -190,7 +184,7 @@ NONE_PUNCTUATION = "^/±'´~\\" + HYPHEN + EN_DASH
 PUNCTUATION = (
     LEFT_PUNCTUATION + CENTER_PUNCTUATION + RIGHT_PUNCTUATION + NONE_PUNCTUATION
 )
-PUNCTUATION_REGEX = "[{0}]".format("|".join(re.escape(p) for p in PUNCTUATION))
+PUNCTUATION_REGEX = "[{}]".format("|".join(re.escape(p) for p in PUNCTUATION))
 
 # Punctuation types: left, center or right of word
 
@@ -460,7 +454,7 @@ CURRENCY_SYMBOLS: Mapping[str, str] = {
 SINGLECHAR_FRACTIONS = "↉⅒⅑⅛⅐⅙⅕¼⅓½⅖⅔⅜⅗¾⅘⅝⅚⅞"
 
 # Derived unit : (base SI unit, conversion factor/function)
-SI_UNITS: Mapping[str, tuple[str, Union[float, Callable[[float], float]]]] = {
+SI_UNITS: Mapping[str, tuple[str, float | Callable[[float], float]]] = {
     # Distance
     "m": ("m", 1.0),
     "mm": ("m", 1.0e-3),
@@ -575,7 +569,7 @@ SI_UNITS_REGEX_STRING = r"|".join(
         sorted(SI_UNITS.keys(), key=len, reverse=True),
     )
 )
-SI_UNITS_REGEX = re.compile(r"({0})".format(SI_UNITS_REGEX_STRING), re.UNICODE)
+SI_UNITS_REGEX = re.compile(rf"({SI_UNITS_REGEX_STRING})", re.UNICODE)
 
 CURRENCY_REGEX_STRING = r"|".join(
     map(
@@ -591,18 +585,18 @@ UNIT_REGEX_STRING = SI_UNITS_REGEX_STRING + r"|" + CURRENCY_REGEX_STRING
 
 # Icelandic-style number, followed by a unit
 NUM_WITH_UNIT_REGEX1 = re.compile(
-    r"([-+]?\d+(\.\d\d\d)*(,\d+)?)({0})".format(UNIT_REGEX_STRING), re.UNICODE
+    rf"([-+]?\d+(\.\d\d\d)*(,\d+)?)({UNIT_REGEX_STRING})", re.UNICODE
 )
 
 # English-style number, followed by a unit
 NUM_WITH_UNIT_REGEX2 = re.compile(
-    r"([-+]?\d+(,\d\d\d)*(\.\d+)?)({0})".format(UNIT_REGEX_STRING), re.UNICODE
+    rf"([-+]?\d+(,\d\d\d)*(\.\d+)?)({UNIT_REGEX_STRING})", re.UNICODE
 )
 
 # One or more digits, followed by a unicode vulgar fraction char (e.g. '2½')
 # and a unit (SI, percent or currency symbol)
 NUM_WITH_UNIT_REGEX3 = re.compile(
-    r"(\d+)([\u00BC-\u00BE\u2150-\u215E])({0})".format(UNIT_REGEX_STRING), re.UNICODE
+    rf"(\d+)([\u00BC-\u00BE\u2150-\u215E])({UNIT_REGEX_STRING})", re.UNICODE
 )
 
 
@@ -688,7 +682,7 @@ PERCENTAGES: Mapping[str, int] = {
 
 # Amount abbreviations including 'kr' for the ISK
 # Corresponding abbreviations are found in Abbrev.conf
-AMOUNT_ABBREV: Mapping[str, Union[int, float]] = {
+AMOUNT_ABBREV: Mapping[str, int | float] = {
     "kr.": 1,
     "kr": 1,
     "krónur": 1,
@@ -1042,7 +1036,7 @@ TOP_LEVEL_DOMAINS = frozenset(
 # Regex to recognise domain names
 MIN_DOMAIN_LENGTH = 4  # E.g. "t.co"
 DOMAIN_REGEX = re.compile(
-    r"({0})({1}*)$".format(
+    r"({})({}*)$".format(
         r"|".join(r"\w\." + d for d in map(_escape, TOP_LEVEL_DOMAINS)),
         PUNCTUATION_REGEX,
     ),
@@ -1178,7 +1172,7 @@ ELEMENTS = (
 # Note that we place a further constraint on the token so that
 # it must contain at least one digit to qualify as a molecular formula
 ELEMENTS_REGEX = r"|".join(ELEMENTS)
-MOLECULE_REGEX = re.compile(r"^(({0})+\d*)+".format(ELEMENTS_REGEX))
+MOLECULE_REGEX = re.compile(rf"^(({ELEMENTS_REGEX})+\d*)+")
 MOLECULE_FILTER = re.compile(r"\d")
 
 

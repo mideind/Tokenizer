@@ -686,7 +686,8 @@ The lines test sentence detection, token detection and token classification.
 For analysis, `test/toktest_large_gold_perfect.txt` contains
 the expected output of a perfect shallow tokenization, and
 `test/toktest_large_gold_acceptable.txt` contains the current output of the
-shallow tokenization.
+shallow tokenization. The test suite (`test/test_large_gold.py`) checks that
+the output of the `tokenize` command matches it exactly.
 
 The file `test/Overview.txt` (only in Icelandic) contains a description
 of the test set, including line numbers for each part in both
@@ -709,6 +710,15 @@ To compare it to the acceptable behaviour:
 
 ```console
 $ diff test/toktest_large_out.txt test/toktest_large_gold_acceptable.txt > diff.txt
+```
+
+When a change in tokenization is intended, regenerate the gold file and review
+its diff before committing it. The line ranges in `test/Overview.txt` that refer
+to the gold file may then need updating as well:
+
+```console
+$ tokenize test/toktest_large.txt test/toktest_large_gold_acceptable.txt
+$ git diff test/toktest_large_gold_acceptable.txt
 ```
 
 The file `test/toktest_normal.txt` contains a running text from recent

@@ -118,6 +118,7 @@ extend-select = [
 ignore = [
     "F405",  # Name may be undefined, or defined from star imports
     "E731",  # Do not assign a lambda expression, use a def
+    "SIM102",  # Nested ifs mirror the token matching logic; keep them
 ]
 
 [tool.ruff.lint.isort]
