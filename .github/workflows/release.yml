@@ -22,7 +22,7 @@ jobs:
           python -m pip install --upgrade uv
 
       - name: Build sdist and wheel
-        run: uv run --group release python -m build
+        run: uv run --locked --group release python -m build
 
       - name: List distributions
         run: ls -lh dist/

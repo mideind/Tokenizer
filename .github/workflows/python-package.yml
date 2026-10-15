@@ -28,7 +28,7 @@ jobs:
     - name: Install Tokenizer
       run: |
         python -m pip install --upgrade uv
-        uv sync --group test
+        uv sync --locked --group test
 
     - name: Type check with mypy (only on oldest supported Python version)
       run: |
