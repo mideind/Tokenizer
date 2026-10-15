@@ -61,7 +61,6 @@ dev = [
     "ruff>=0.15.0",
     "mypy>=2.0",
     "build>=1.0",
-    "twine>=6.0",
 ]
 
 [project.scripts]
@@ -79,7 +78,6 @@ type = [
 ]
 release = [
     "build>=1.0",
-    "twine>=6.0",
 ]
 dev = [
     { include-group = "test" },
