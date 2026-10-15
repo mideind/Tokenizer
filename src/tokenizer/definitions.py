@@ -559,6 +559,11 @@ _unit_lambda: Callable[[str], str] = lambda unit: (
 )
 
 SI_UNITS_SET: frozenset[str] = frozenset(SI_UNITS.keys())
+# Units that can stand alone as word tokens, to be coalesced with a preceding
+# number later. Units that are also punctuation ('%', '‰', '°') are excluded,
+# so that on their own they are punctuation tokens, as when attached to other
+# punctuation.
+SI_UNIT_WORDS: frozenset[str] = SI_UNITS_SET - frozenset(PUNCTUATION)
 SI_UNITS_REGEX_STRING = r"|".join(
     map(
         # If the unit ends with a letter, don't allow the next character

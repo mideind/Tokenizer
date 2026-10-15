@@ -2211,7 +2211,7 @@ def parse_tokens(txt: str | Iterable[str], **options: Any) -> Iterator[Tok]:
             continue
 
         rtxt = rt.txt
-        if rtxt.isalpha() or rtxt in SI_UNITS:
+        if rtxt.isalpha() or rtxt in SI_UNIT_WORDS:
             # Shortcut for most common case: pure word
             yield TOK.Word(rt)
             continue
@@ -2506,13 +2506,16 @@ def parse_particles(token_stream: Iterator[Tok], **options: Any) -> Iterator[Tok
             # Coalesce percentages or promilles into a single token
             if next_token.punctuation in ("%", "‰"):
                 if token.kind == TOK.NUMBER:
-                    # Percentage: convert to a single 'tight' percentage token
+                    # Percentage: convert to a single percentage token,
+                    # keeping the space between the number and the sign
+                    # as the SI unit coalescing below does ('5 %')
                     # In this case, there are no cases and no gender
                     sign = next_token.txt
                     # Store promille as one-tenth of a percentage
                     factor = 1.0 if sign == "%" else 0.1
                     token = TOK.Percent(
-                        token.concatenate(next_token), token.number * factor
+                        token.concatenate(next_token, separator=" "),
+                        token.number * factor,
                     )
                     next_token = next(token_stream)
 

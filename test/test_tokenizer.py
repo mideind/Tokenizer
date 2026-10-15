@@ -33,7 +33,7 @@
 from typing import Any, Iterable, Iterator, List, Union, cast
 
 import tokenizer as t
-from tokenizer.definitions import EM_DASH, EN_DASH, BIN_Tuple, ValType
+from tokenizer.definitions import EM_DASH, EN_DASH, TP_RIGHT, BIN_Tuple, ValType
 
 TOK = t.TOK
 Tok = t.Tok
@@ -415,6 +415,15 @@ def test_single_tokens() -> None:
         ("+354 699 2422", [Tok(TOK.TELNO, "+354 699 2422", ("699-2422", "+354"))]),
         ("12,3%", TOK.PERCENT),
         ("12,3 %", [Tok(TOK.PERCENT, "12,3 %", (12.3, None, None))]),
+        ("%", [Tok(TOK.PUNCTUATION, "%", (TP_RIGHT, "%"))]),
+        ("‰", [Tok(TOK.PUNCTUATION, "‰", (TP_RIGHT, "‰"))]),
+        (
+            "12,3 %.",
+            [
+                Tok(TOK.PERCENT, "12,3 %", (12.3, None, None)),
+                Tok(TOK.PUNCTUATION, ".", (TP_RIGHT, ".")),
+            ],
+        ),
         ("http://www.greynir.is", TOK.URL),
         ("https://greynir.is", TOK.URL),
         ("https://pypi.org/project/tokenizer/", TOK.URL),
