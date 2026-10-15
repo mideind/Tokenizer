@@ -12,7 +12,7 @@ Tokenization is a necessary first step in many natural language processing
 tasks, such as word counting, parsing, spell checking, corpus generation, and
 statistical analysis of text.
 
-**Tokenizer** is a compact pure-Python (>=3.9) executable
+**Tokenizer** is a compact pure-Python (>=3.10) executable
 program and module for tokenizing Icelandic text. It converts input text to
 streams of *tokens*, where each token is a separate word, punctuation sign,
 number/amount, date, e-mail, URL/URI, etc. It also segments the token stream
@@ -23,7 +23,7 @@ The package contains a dictionary of common Icelandic abbreviations,
 in the file `src/tokenizer/Abbrev.conf`.
 
 Tokenizer is an independent spinoff from the [Greynir project](https://greynir.is)
-(GitHub repository [here](https://github.com/mideind/Greynir)), by the same authors.
+(GitHub repository [here](https://github.com/mideind/GreynirServer)), by the same authors.
 The [Greynir natural language parser for Icelandic](https://github.com/mideind/GreynirEngine) 
 uses Tokenizer on its input.
 
@@ -31,21 +31,24 @@ Tokenizer is licensed under the MIT license.
 
 ## Indicative performance
 
-Time to tokenize 1 MB of a wide selection of texts from the Icelandic Gigaword Corpus
-using a 64-bit 2.6 GHz Intel Core i9:
+Time to deep-tokenize 1 MB of text with `tokenize()`, measured on the test set
+`test/toktest_large.txt` (573 KB, about 149k tokens) using a 3.4 GHz
+Intel Core i7-4770 (best of 7 runs):
 
-|               |  Time (sec) |
-|---------------|------------:|
-| CPython 3.12  |       25.27 |
-| PyPy 3.11     |        8.08 |
+|               | Version 3.6.4 (sec) | Version 3.7.0 (sec) |
+|---------------|--------------------:|--------------------:|
+| CPython 3.13  |                2.22 |                1.80 |
+| CPython 3.14  |                2.26 |                1.88 |
+| CPython 3.15  |                2.24 |                1.90 |
+| PyPy 3.11     |                1.17 |                1.04 |
+| PyPy 3.12     |                1.07 |                0.97 |
 
-Running tokenization with PyPy is about 3x faster than with CPython.
-
-Version 3.6.4 avoids a redundant whitespace-tokenization pass for normal input,
-while retaining the additional pass when HTML escape replacement can introduce
-whitespace. On `test/toktest_large.txt` (573 KB, about 149k tokens), this reduces
-CPython tokenization time by roughly 20% compared with version 3.6.3, with
-identical token text, values, original text and origin spans.
+Running tokenization with PyPy is about 1.9x faster than with CPython.
+Version 3.7.0 takes 15-19% less time than version 3.6.4 on CPython, and about
+10% less on PyPy, with identical output. Shallow tokenization with
+`split_into_sentences()` is slightly faster than `tokenize()`: by 2% on CPython
+and 5-6% on PyPy. To measure performance on your own setup, see
+[Performance bench](#performance-bench) below.
 
 ## Deep vs. shallow tokenization
 
@@ -124,6 +127,7 @@ Other options can be specified on the command line:
 | `-g`, `--keep_composite_glyphs` | Do not replace composite glyphs using Unicode COMBINING codes with their accented/umlaut counterparts. |
 | `-e`, `--replace_html_escapes` | HTML escape codes replaced by their meaning, such as `&aacute;` -> `á`. |
 | `-c`, `--convert_numbers`      | English-style decimal points and thousands separators in numbers changed to Icelandic style. |
+| `-v`, `--version`              | Show the version number and exit. |
 
 Type `tokenize -h` or `tokenize --help` to get a short help message.
 
@@ -285,8 +289,9 @@ The `text` parameter can be a string, or an iterable that yields strings
 (such as a text file object).
 
 The function returns a Python *generator* of token objects.
-Each token object is a simple `namedtuple` with three
-fields: `(kind, txt, val)` (further documented below).
+Each token object is an instance of the `Tok` class, whose main
+properties are `kind`, `txt` and `val` (further documented below).
+A token can be unpacked into a `(kind, txt, val)` tuple.
 
 The `tokenizer.tokenize()` function is typically called in a `for` loop:
 
@@ -325,6 +330,12 @@ Icelandic single and double quotes („these“) instead of English-style
 ones ("these"), converts three-dot ellipsis ... to single character
 ellipsis …, normalizes year ranges to use en-dash (1914–1918), and
 ensures em-dashes are centered with spaces ( — ).
+
+You can pass the option `original=True` to obtain the original text of
+each token, including its original whitespace, instead of the token text.
+The tokens of each sentence are then concatenated without added spaces,
+which makes the function a pure sentence splitter. If both `normalize` and
+`original` are `True`, `normalize` takes precedence.
 
 The `tokenizer.split_into_sentences()` function is typically called
 in a `for` loop:
@@ -458,6 +469,22 @@ functions:
 
   The default value for the `replace_html_escapes` option is `False`.
 
+* `one_sent_per_line=[bool]`
+
+  Setting this option to `True` indicates that the input contains strictly
+  one sentence per line, i.e. every newline is a sentence boundary.
+
+  The default value for the `one_sent_per_line` option is `False`.
+
+* `coalesce_percent=[bool]`
+
+  Setting this option to `True` causes the tokenizer to combine a number
+  with a following word form denoting percentage (*prósent*, *prósentustig*,
+  *hundraðshlutar*) into a single `TOK.PERCENT` token, i.e. *15 prósent*.
+  This option only affects `tokenize()`, not `split_into_sentences()`.
+
+  The default value for the `coalesce_percent` option is `False`.
+
 ## Dash and Hyphen Handling
 
 Tokenizer distinguishes between three dash types and handles them contextually:
@@ -501,7 +528,7 @@ defines within the `TOK` class:
 
 | Constant      | Value   | Explanation         | Examples                  |
 |---------------|---------|---------------------|---------------------------|
-| PUNCTUATION   | 1       | Punctuation         | . ! ; % &                 |
+| PUNCTUATION   | 1       | Punctuation         | . ! ; &                   |
 | TIME          | 2       | Time (h, m, s)      | 11:35:40, kl. 7:05, klukkan 23:35 |
 | DATE *        | 3       | Date (y, m, d)      | [Unused, see DATEABS and DATEREL] |
 | YEAR          | 4       | Year                | árið 874 e.Kr., 1965, 44 f.Kr. |
@@ -513,13 +540,13 @@ defines within the `TOK` class:
 | ORDINAL       | 10      | Ordinal number      | 30., XVIII.               |
 | TIMESTAMP *   | 11      | Timestamp           | [Unused, see TIMESTAMPABS and TIMESTAMPREL] |
 | CURRENCY *    | 12      | Currency name       | [Unused]                  |
-| AMOUNT        | 13      | Amount              | €2.345,67, 750 þús.kr., 2,7 mrð. USD, kr. 9.900, EUR 200 |
+| AMOUNT        | 13      | Amount              | €2.345,67, 750 þús.kr., kr. 9.900, EUR 200 |
 | PERSON *      | 14      | Person name         | [Unused]                  |
 | EMAIL         | 15      | E-mail              | `fake@news.is`          |
 | ENTITY *      | 16      | Named entity        | [Unused]                  |
 | UNKNOWN       | 17      | Unknown token       |                           |
 | DATEABS       | 18      | Absolute date       | 30. desember 1965, 30/12/1965, 1965-12-30, 1965/12/30 |
-| DATEREL       | 19      | Relative date       | 15. mars, 15/3, 15.3., mars 1911 |
+| DATEREL       | 19      | Relative date       | 15. mars, 15/3, 15.03., mars 1911, ágúst-september (two DATEREL tokens with a hyphen between) |
 | TIMESTAMPABS  | 20      | Absolute timestamp  | 30. desember 1965 11:34, 1965-12-30 kl. 13:00 |
 | TIMESTAMPREL  | 21      | Relative timestamp  | 30. desember kl. 13:00  |
 | MEASUREMENT   | 22      | Value with a measurement unit | 690 MW, 1.010 hPa, 220 m², 80° C |
@@ -531,12 +558,18 @@ defines within the `TOK` class:
 | USERNAME      | 28      | Twitter user handle | @username_123             |
 | SERIALNUMBER  | 29      | Serial number       | 394-5388, 12-345-6789     |
 | COMPANY *     | 30      | Company name        | [Unused]                  |
+| P_BEGIN       | 10001   | Start of paragraph  |                           |
+| P_END         | 10002   | End of paragraph    |                           |
 | S_BEGIN       | 11001   | Start of sentence   |                           |
 | S_END         | 11002   | End of sentence     |                           |
 
 (*) The token types marked with an asterisk are reserved for
 the [GreynirEngine package](https://github.com/mideind/GreynirEngine) and
 not currently returned by the tokenizer.
+
+`P_BEGIN` and `P_END` tokens are only returned if the input contains
+paragraph markers, `[[` and `]]`, which the `mark_paragraphs()` function
+inserts into plain text at newlines.
 
 To obtain a descriptive text for a token kind, use
 `TOK.descr[token.kind]` (see example above).
@@ -618,8 +651,11 @@ specified with the suffix *f.Kr.* (e.g. *árið 33 f.Kr.*).
   as an integer. The original ordinal may be a decimal number
   or a Roman numeral.
 
-- For `TOK.TIMESTAMP`, the `val` field contains
-  a `(year, month, day, hour, minute, second)` tuple.
+- For `TOK.TIMESTAMPABS` and `TOK.TIMESTAMPREL`, the `val` field contains
+  a `(year, month, day, hour, minute, second)` tuple. In a `TOK.TIMESTAMPREL`,
+  the missing date fields are set to 0.
+
+- For `TOK.NUMWLETTER`, the `val` field contains a `(number, letter)` tuple.
 
 - For `TOK.AMOUNT`, the `val` field contains
   an `(amount, currency, None, None)` tuple. The amount is a float, and
@@ -666,6 +702,13 @@ $ git clone https://github.com/mideind/Tokenizer
 $ cd Tokenizer
 $ # [ Activate your virtualenv here, if you have one ]
 $ pip install -e ".[dev]"
+```
+
+Alternatively, with [uv](https://docs.astral.sh/uv/), which installs the
+development tools at the versions pinned in `uv.lock`:
+
+```console
+$ uv sync --all-groups
 ```
 
 ## Test suite
@@ -725,8 +768,35 @@ The file `test/toktest_normal.txt` contains a running text from recent
 news articles, containing no edge cases. The gold standard for that file
 can be found in the file `test/toktest_normal_gold_expected.txt`.
 
+### Performance bench
+
+The script `bench/bench.py` times several workloads (`tokenize()` with and
+without annotation, `split_into_sentences()`, and others) on the test set,
+and records a digest of the complete output of each workload. A change can
+thus be checked for both its speed and identical output:
+
+```console
+$ python bench/bench.py --save /tmp/base.json      # before the change
+$ python bench/bench.py --compare /tmp/base.json   # after the change
+```
+
+The script `bench/profile.sh` profiles a workload with the sampling profiler
+of CPython 3.15.
+
 ## Changelog
 
+* Version 3.7.0: Month ranges written as a single word, such as
+  *ágúst-september* or *júlí–ágúst*, are now split into two `TOK.DATEREL`
+  tokens with the hyphen or en dash between them. A free-standing percent
+  or permille sign (`%`, `‰`) is now a `TOK.PUNCTUATION` token, not a
+  `TOK.WORD`. A number followed by a separate percent or permille sign now
+  keeps the space in the text of the `TOK.PERCENT` token (*12,3 %*) also
+  before punctuation, where it was previously dropped. Tokenization takes 15-19%
+  less time on CPython and about 10% less on PyPy, with identical output.
+  Added a performance bench (`bench/`). The gold file of the large test set
+  has been regenerated (it dated from version 2.0.0) and is now enforced
+  by the test suite. Cleaned up code for ruff 0.16. The unused `twine`
+  has been removed from the `dev` extra.
 * Version 3.6.4: Improved tokenization performance by constructing rough tokens
   directly with their lazy origin offsets and skipping a redundant second
   whitespace-tokenization pass unless HTML escape replacement is enabled. This
