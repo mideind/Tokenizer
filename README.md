@@ -917,7 +917,7 @@ of CPython 3.15.
 
 ## MIT License
 
-Copyright (C) 2016-2025 [Miðeind ehf.](https://mideind.is)
+Copyright (C) 2016-2026 [Miðeind ehf.](https://mideind.is)
 Original author: Vilhjálmur Þorsteinsson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

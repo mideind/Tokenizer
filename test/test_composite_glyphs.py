@@ -4,7 +4,7 @@ Test suite for composite glyph handling in the tokenizer.
 Tests the --keep_composite_glyphs flag and replace_composite_glyphs option
 to ensure combining Unicode characters are handled correctly.
 
-Copyright (C) 2016-2025 Miðeind ehf.
+Copyright (C) 2016-2026 Miðeind ehf.
 Original author: Vilhjálmur Þorsteinsson
 
 This software is licensed under the MIT License:

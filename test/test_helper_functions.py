@@ -1,6 +1,6 @@
 """
     Test helper functions from definitions.py
-    Copyright (C) 2025 Miðeind ehf.
+    Copyright (C) 2025-2026 Miðeind ehf.
 """
 
 import pytest

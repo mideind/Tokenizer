@@ -1,6 +1,6 @@
 """
 Test the command line interface (CLI) of the tokenizer.
-Copyright (C) 2025 Miðeind ehf.
+Copyright (C) 2025-2026 Miðeind ehf.
 """
 # ruff: noqa: E501 # Allow long lines in test files
 
