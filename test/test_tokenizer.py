@@ -2446,6 +2446,28 @@ def test_abbr_at_eos() -> None:
     assert len([tok for tok in toklist if tok.kind == TOK.S_END]) == 2
 
 
+def test_month_range_original() -> None:
+    """Test that a month range keeps the original text of its parts"""
+    text = "Hér komum við mánaðamótin mars-apríl og júlí–ágúst."
+    toklist = list(t.tokenize(text, original=True))
+    assert "".join(tok.original or "" for tok in toklist) == text
+    rng = [(tok.kind, tok.txt, tok.original) for tok in toklist[5:8]]
+    assert rng == [
+        (TOK.DATEREL, "mars", " mars"),
+        (TOK.PUNCTUATION, "-", "-"),
+        (TOK.DATEREL, "apríl", "apríl"),
+    ]
+    rng = [(tok.kind, tok.txt, tok.original) for tok in toklist[9:12]]
+    assert rng == [
+        (TOK.DATEREL, "júlí", " júlí"),
+        (TOK.PUNCTUATION, "–", "–"),
+        (TOK.DATEREL, "ágúst", "ágúst"),
+    ]
+    for tok in toklist[5:12]:
+        assert tok.original is not None
+        assert len(tok.origin_spans) == len(tok.txt)
+
+
 def test_time_token() -> None:
     toklist = list(
         t.tokenize("2.55pm - Síðasta tilraun setur Knights fram klukkan hálf")

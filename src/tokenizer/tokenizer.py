@@ -3010,9 +3010,13 @@ def parse_date_and_time(token_stream: Iterator[Tok]) -> Iterator[Tok]:
                     m1 = MONTHS.get(a0.lower())
                     m2 = MONTHS.get(a1.lower())
                     if m1 is not None and m2 is not None:
-                        yield TOK.Daterel(a0, y=0, m=m1, d=0)
-                        yield TOK.Punctuation(hchar)
-                        token = TOK.Daterel(a1, y=0, m=m2, d=0)
+                        # Split the token itself, so that the parts keep
+                        # their original text and origin spans
+                        first, rest = token.split(len(a0))
+                        hyphen, second = rest.split(1)
+                        yield TOK.Daterel(first, y=0, m=m1, d=0)
+                        yield TOK.Punctuation(hyphen)
+                        token = TOK.Daterel(second, y=0, m=m2, d=0)
 
             # Check for a single month, change to DATEREL
             if token.kind == TOK.WORD:
